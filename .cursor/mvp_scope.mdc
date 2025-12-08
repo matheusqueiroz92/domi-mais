@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Escopo do MVP
+
+Este documento limita o escopo do MVP.
+
+## Permitido
+
+- 2 jogadores
+- Mesmo dispositivo
+- Turnos protegidos
+- Animações simples
+- Jogo local
+
+## Proibido
+
+- Multiplayer online
+- Login
+- Ranking
+- IA avançada
+- Backend
+- Persistência
+
+Sempre priorizar conclusão do ciclo completo do jogo.

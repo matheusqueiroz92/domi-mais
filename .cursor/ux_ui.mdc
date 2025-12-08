@@ -1,0 +1,54 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — UX/UI e Experiência do Usuário
+
+Este documento define o padrão visual e interativo do jogo.
+
+## Estilo Visual
+
+- Design moderno e limpo.
+- Inspirado em jogos mobile atuais.
+- Mesa estilizada.
+- Peças com aparência levemente 3D.
+
+## Animações
+
+OBRIGATÓRIO:
+
+- Animação ao comprar peça.
+- Animação ao virar peça.
+- Animação ao encaixar peça.
+- Transições suaves entre turnos.
+
+Tecnologias permitidas:
+
+- Framer Motion
+- CSS Animations
+- Three.js (uso opcional e leve)
+
+## UX Obrigatória
+
+- Interface clara.
+- Feedback visual constante.
+- Pop-ups informativos obrigatórios.
+
+### Pop-ups Necessários
+
+- “Sua vez”
+- “Peça encaixa”
+- “Peça não encaixa”
+- “Blefe realizado”
+- “Passe o dispositivo para o próximo jogador”
+- “Fim de jogo”
+
+## Responsividade
+
+- Funcionar bem em desktop e mobile.
+- Interface touch-friendly.
+
+## MVP
+
+- UX simples, porém polida.
+- Sem excesso visual.

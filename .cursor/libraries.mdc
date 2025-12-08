@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Uso de Bibliotecas
+
+Este documento define como usar bibliotecas externas.
+
+## Animações
+
+- Usar Framer Motion
+- Evitar animações pesadas
+
+## UI
+
+- Pop-ups devem ser componentes próprios
+- Não usar bibliotecas externas para alertas
+
+## Dependências Permitidas
+
+- framer-motion
+- clsx
+- uuid
+
+Dependências adicionais só com justificativa explícita.

@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Stack Técnica Oficial
+
+Este documento define a stack permitida.
+
+## Tecnologias Obrigatórias
+
+- TypeScript
+- React 18+
+- Vite
+
+## Gerenciamento de Estado
+
+- useReducer + Context API
+- NÃO usar Redux no MVP
+
+## Renderização
+
+- Client-side only
+- Não usar Next.js
+
+## Backend
+
+- NÃO usar backend no MVP
+- NÃO usar banco de dados
+- NÃO usar autenticação
+
+## Deploy
+
+- Versionamento no GitHub
+- Deploy em VPS Hostinger
+- Domínio: domimais.com.br

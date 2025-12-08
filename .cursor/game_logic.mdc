@@ -1,0 +1,77 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Lógica de Implementação
+
+Este documento define a lógica obrigatória do jogo.
+O agente DEVE segui-lo fielmente.
+
+## Stack Obrigatória
+
+- TypeScript
+- React
+- Vite
+- Estado global controlado por useReducer + Context API
+
+## Estruturas de Dados
+
+### DominoPiece
+
+- id: string
+- left: number
+- right: number
+- sum: number
+- isFaceUp: boolean
+
+### Player
+
+- id: string
+- name: string
+- hand: DominoPiece[]
+- score: number
+
+### GameState
+
+- phase: setup | playing | transition | finished
+- players: Player[]
+- currentPlayerIndex: number
+- table:
+  - leftEnd: number | null
+  - rightEnd: number | null
+  - pieces: DominoPiece[]
+- drawPile: DominoPiece[]
+- selectedPiece: DominoPiece | null
+- activePlayerVisible: boolean
+- logs: string[]
+
+## Fluxo de Estados
+
+1. setup
+2. playing
+3. transition
+4. finished
+
+## Turnos
+
+- Jogador só age na própria vez.
+- Jogador só compra UMA peça por turno.
+- Peças compradas ficam visíveis apenas para o jogador ativo.
+- O estado sensível não deve renderizar fora do turno visível.
+
+## Restrições Lógicas
+
+- Não existe desfazer jogada.
+- O jogo nunca deve travar.
+- Sempre deve haver progressão até o final.
+
+## MVP
+
+- Sem backend.
+- Sem persistência.
+- Sem login.
+- Sem multiplayer online.
+
+## Evolução
+
+- Arquitetura deve permitir expansão futura.

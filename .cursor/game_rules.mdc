@@ -1,0 +1,78 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Regras Oficiais do Jogo (FONTE DE VERDADE)
+
+Este documento define as regras oficiais do jogo DomeMais.
+Qualquer implementação DEVE respeitar este arquivo.
+Em caso de conflito, ESTE DOCUMENTO PREVALECE.
+
+## Conceito Base
+
+- DomeMais é um jogo inspirado no dominó tradicional.
+- Cada peça possui dois valores numéricos (0 a 6).
+- Cada peça possui um valor oculto (verso) igual à soma dos lados.
+- O jogo estimula raciocínio lógico, dedução e blefe.
+
+## Estrutura do Jogo
+
+- Total de 28 peças.
+- Todas as peças iniciam viradas para baixo.
+- O jogo começa com uma peça inicial revelada:
+  - Preferência: [0|0]; se indisponível, [6|6].
+- A mesa segue as regras padrão de encaixe do dominó tradicional.
+
+## Jogadores
+
+- MVP suporta exatamente 2 jogadores.
+- Ambos jogam no MESMO dispositivo.
+- Sistema de turnos protegidos é obrigatório.
+
+## Início da Partida
+
+- Nenhum jogador inicia com peças na mão.
+- Jogador inicial é escolhido aleatoriamente.
+- Em cada turno, o jogador DEVE escolher uma única peça do monte.
+
+## Regras de Jogada
+
+- A peça escolhida é revelada apenas para o jogador da vez.
+- O sistema verifica se a peça encaixa em alguma ponta.
+
+### Caso a peça encaixe
+
+O jogador PODE:
+
+- Jogar a peça em uma das pontas válidas.
+- Blefar, declarando que não encaixa e ficar com a peça.
+
+### Caso a peça NÃO encaixe
+
+- O jogador é OBRIGADO a ficar com a peça na mão.
+- Nenhuma jogada na mesa é feita.
+
+## Blefe
+
+- O blefe é uma mecânica válida.
+- O sistema NÃO deve validar, registrar ou expor o blefe.
+- Nenhuma informação futura deve revelar o blefe.
+
+## Fim de Jogo
+
+- O jogo termina quando não houver mais peças no monte.
+
+### Condição de Vitória
+
+- Vence o jogador sem peças na mão.
+
+### Desempate
+
+- Soma-se o valor (verso) das peças restantes.
+- Vence quem tiver a MENOR soma.
+
+## MVP
+
+- Regras simples.
+- Totalmente jogável.
+- Sem multiplayer online.

@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Bootstrap do Projeto
+
+Você é um agente de IA atuando como ARQUITETO DE SOFTWARE.
+Antes de gerar qualquer código, considere TODOS os arquivos .mdc da pasta /.cursor como regras obrigatórias.
+
+## Objetivo
+
+Inicializar o projeto MVP do jogo DomeMais utilizando React + Vite + TypeScript,
+seguindo rigorosamente as regras do jogo, lógica, UX e stack definida.
+
+## Tarefas Obrigatórias
+
+1. Criar projeto Vite + React + TypeScript
+2. Organizar a estrutura de pastas conforme code_style.mdc
+3. Criar estado global do jogo usando useReducer + Context API
+4. Criar GameState inicial vazio (sem UI avançada)
+5. Garantir que o projeto compile e rode localmente
+
+## Restrições
+
+- NÃO implementar multiplayer online
+- NÃO criar backend
+- NÃO usar Redux
+- NÃO implementar UI final ainda
+
+## Resultado Esperado
+
+- Projeto funcional
+- Estrutura profissional
+- Código limpo e tipado
+- Pronto para evoluir lógica do jogo

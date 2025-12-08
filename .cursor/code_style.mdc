@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+
+# DomeMais — Estilo e Padrões de Código
+
+Este documento define como o código deve ser escrito.
+
+## Padrões Gerais
+
+- Código limpo e legível.
+- Componentes pequenos.
+- Lógica fora do JSX.
+
+## TypeScript
+
+- Tipagem explícita.
+- Proibido usar `any`.
+
+## Estrutura
+
+src/
+
+- components/
+- game/
+  - state/
+  - logic/
+  - utils/
+- hooks/
+- styles/
+
+## Nomenclatura
+
+- Componentes: PascalCase
+- Hooks: useSomething
+- Funções: camelCase
