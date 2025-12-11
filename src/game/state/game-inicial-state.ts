@@ -84,6 +84,7 @@ export function createInitialGameState(): GameState {
     drawPile,
     selectedPiece: null,
     activePlayerVisible: true,
+    hasDrawnPieceThisTurn: false,
     logs: initialPiece
       ? [`Peça inicial revelada: [${initialPiece.left}|${initialPiece.right}]`]
       : [],

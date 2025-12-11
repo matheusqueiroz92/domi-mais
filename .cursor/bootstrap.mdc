@@ -15,7 +15,7 @@ seguindo rigorosamente as regras do jogo, lógica, UX e stack definida.
 ## Tarefas Obrigatórias
 
 1. Criar projeto Vite + React + TypeScript
-2. Organizar a estrutura de pastas conforme code_style.mdc
+2. Organizar a estrutura de pastas coenforme code_style.mdc
 3. Criar estado global do jogo usando useReducer + Context API
 4. Criar GameState inicial vazio (sem UI avançada)
 5. Garantir que o projeto compile e rode localmente

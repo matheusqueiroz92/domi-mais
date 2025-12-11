@@ -31,13 +31,14 @@ export interface GameState {
   drawPile: DominoPiece[];
   selectedPiece: DominoPiece | null;
   activePlayerVisible: boolean;
+  hasDrawnPieceThisTurn: boolean; // Flag para rastrear se o jogador comprou uma peça nesta rodada
   logs: string[];
 }
 
 export type GameAction =
   | { type: 'INITIALIZE_GAME'; player1Name: string; player2Name: string }
   | { type: 'START_GAME' }
-  | { type: 'DRAW_PIECE' }
+  | { type: 'DRAW_PIECE'; pieceId: string }
   | { type: 'SELECT_PIECE'; pieceId: string }
   | { type: 'PLAY_PIECE'; pieceId: string; position: 'left' | 'right' }
   | { type: 'BLUFF'; pieceId: string }
