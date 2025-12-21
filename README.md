@@ -24,6 +24,7 @@
 
 - **Jogo Local**: 2 jogadores no mesmo dispositivo
 - **Mecânica de Blefe**: Jogadores podem blefar quando uma peça encaixa
+- **Valor no Verso**: O verso de cada peça de dominó exibe a soma dos seus dois lados, permitindo dedução estratégica sem revelar os valores específicos
 - **Interface Moderna**: Design inspirado em jogos mobile com animações suaves
 - **Mesa Realista**: Visualização de mesa de madeira com peças 3D
 - **Sistema de Turnos Protegidos**: Cada jogador vê apenas suas próprias peças
@@ -463,6 +464,6 @@ Para dúvidas, sugestões ou problemas, abra uma [issue](https://github.com/seu-
 
 <div align="center">
 
-**Desenvolvido por Matheus Queiroz usando React, TypeScript e Vite**
+**Desenvolvido por [Matheus Queiroz](https://matheusqueiroz.dev.br)**
 
 </div>
