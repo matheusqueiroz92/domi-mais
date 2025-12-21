@@ -18,7 +18,7 @@
 
 ## 📋 Sobre o Projeto
 
-**DomeMais** é um jogo de dominó digital inspirado no dominó tradicional, com uma mecânica única de **blefe** que adiciona camadas estratégicas ao jogo. O jogo foi desenvolvido como MVP (Minimum Viable Product) para ser jogado localmente por 2 jogadores no mesmo dispositivo.
+**DomeMais** é um jogo de dominó digital inspirado no dominó tradicional, trazendo uma mecânica exclusiva de **blefe** que adiciona camadas estratégicas ao jogo. Um diferencial é que o verso de cada peça exibe o valor da soma dos seus lados, permitindo aos adversários deduzirem informações sem revelar a peça completamente. O jogo foi desenvolvido como MVP (Minimum Viable Product) para ser jogado localmente por 2 jogadores no mesmo dispositivo.
 
 ### 🎯 Características Principais
 
@@ -463,8 +463,6 @@ Para dúvidas, sugestões ou problemas, abra uma [issue](https://github.com/seu-
 
 <div align="center">
 
-**Desenvolvido com ❤️ usando React, TypeScript e Vite**
-
-⭐ Se este projeto foi útil, considere dar uma estrela!
+**Desenvolvido por Matheus Queiroz usando React, TypeScript e Vite**
 
 </div>
