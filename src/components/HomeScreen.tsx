@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Modal } from './Modal';
+import logoDomiMais from '../../public/logo-domi-mais.jpeg';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
@@ -37,17 +38,8 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            🎲 DomiMais
+            <img src={logoDomiMais} alt="DomiMais" className="home-screen__logo" width={700} height={350} />
           </motion.h1>
-
-          <motion.p
-            className="home-screen__subtitle"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            Jogo de Dominó com Blefe
-          </motion.p>
 
           <motion.div
             className="home-screen__rules"
@@ -67,25 +59,23 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
 
             <div className="home-screen__rule-section">
               <h3 className="home-screen__rule-title">🎮 Funcionamento</h3>
-              <ul className="home-screen__rule-list">
-                <li>
-                  Cada jogador deve comprar uma peça do monte por turno
-                </li>
-                <li>
-                  O verso de cada peça mostra a soma dos seus dois lados
-                </li>
-                <li>
-                  Se a peça encaixa nas pontas da mesa, você pode jogá-la ou
-                  blefar
-                </li>
-                <li>
-                  Se não encaixa, você deve ficar com a peça na mão
-                </li>
-                <li>
-                  O jogo termina quando o monte acaba ou quando não há mais
-                  peças que encaixam
-                </li>
-              </ul>
+              <p className="home-screen__rule-text">
+                - Cada jogador deve comprar uma peça do monte por turno
+              </p>
+              <p className="home-screen__rule-text">
+                - O verso de cada peça mostra a soma dos seus dois lados
+              </p>
+              <p className="home-screen__rule-text">
+                - Se a peça encaixa nas pontas da mesa, você pode jogá-la ou
+                blefar
+              </p>
+              <p className="home-screen__rule-text">
+                - Se não encaixa, você deve ficar com a peça na mão
+              </p>
+              <p className="home-screen__rule-text">
+                - O jogo termina quando o monte acaba ou quando não há mais
+                peças que encaixam
+              </p>
             </div>
 
             <div className="home-screen__rule-section">
@@ -99,13 +89,21 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
 
             <div className="home-screen__rule-section">
               <h3 className="home-screen__rule-title">✨ Características</h3>
-              <ul className="home-screen__rule-list">
-                <li>28 peças de dominó (todas as combinações de 0-0 até 6-6)</li>
-                <li>Jogo local para 2 jogadores no mesmo dispositivo</li>
-                <li>Interface moderna com animações suaves</li>
-                <li>Mesa realista com visualização 3D</li>
-                <li>Sistema de turnos protegidos</li>
-              </ul>
+              <p className="home-screen__rule-text">
+                - 28 peças de dominó (todas as combinações de 0-0 até 6-6)
+              </p>
+              <p className="home-screen__rule-text">
+                - Jogo local para 2 jogadores no mesmo dispositivo
+              </p>
+              <p className="home-screen__rule-text">
+                - Interface moderna com animações suaves
+              </p>
+              <p className="home-screen__rule-text">
+                - Mesa realista com visualização 3D
+              </p>
+              <p className="home-screen__rule-text">
+                - Sistema de turnos protegidos
+              </p>
             </div>
           </motion.div>
 
