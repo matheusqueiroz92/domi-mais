@@ -1,4 +1,4 @@
-# 🎲 DomeMais
+# 🎲 DomiMais
 
 <div align="center">
 
@@ -467,3 +467,38 @@ Para dúvidas, sugestões ou problemas, abra uma [issue](https://github.com/seu-
 **Desenvolvido por [Matheus Queiroz](https://matheusqueiroz.dev.br)**
 
 </div>
+
+
+
+
+Precisamos agora fazer o deploy de um novo repositório na VPS. O repositório está no github e é público. Esse repositório se trata de uma aplicação fullstack (backend + frontend) chamada etern-ai. Ela está disponível em um único repositório monorepo, utilizando o Turborepo.
+
+O backend foi desenvolvido com Node.js, TypeScript, Fastify, Drizzle, Postgres e Docker. O frontend foi desenvolvido com React, Vite, TrypeScript, TailwindCSS, Tanstack Query e Tanstack Router.
+
+Essa aplicação vai estar disponível no domínio eternai.com.br.
+
+Precisamos configurar tanto o NGINX quanto o PM2 para realizar o deploy dessa aplicação na VPS.
+
+Os nomes das pastas:
+
+Backend: apps/api
+Frontend: apps/web
+Vou te mostrar os scripts do frontend e backend que eu uso na aplicação:
+
+Backend:
+"scripts": {
+"dev": "tsx watch --env-file=.env src/server.ts",
+"build": "tsc",
+"start": "node dist/server.js",
+"db:generate": "drizzle-kit generate",
+"db:migrate": "drizzle-kit migrate",
+"db:studio": "drizzle-kit studio",
+"db:push": "drizzle-kit push"
+},
+
+Frontend:
+"scripts": {
+"dev": "vite --host",
+"build": "tsc -b && vite build",
+"preview": "vite preview"
+},

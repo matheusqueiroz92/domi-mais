@@ -2,7 +2,7 @@
 alwaysApply: true
 ---
 
-# DomeMais — Regras Oficiais do Jogo (FONTE DE VERDADE)
+# DomiMais — Regras Oficiais do Jogo (FONTE DE VERDADE)
 
 Este documento define as regras oficiais do jogo DomeMais.
 Qualquer implementação DEVE respeitar este arquivo.

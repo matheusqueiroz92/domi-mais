@@ -1,0 +1,214 @@
+.home-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 50%, #1a202c 100%);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.home-screen::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(139, 111, 71, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(101, 67, 33, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-screen__content {
+  max-width: 800px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+}
+
+.home-screen__title {
+  font-size: 48px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 12px 0;
+  color: #333;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.home-screen__subtitle {
+  font-size: 20px;
+  text-align: center;
+  color: #666;
+  margin: 0 0 32px 0;
+  font-weight: 300;
+}
+
+.home-screen__rules {
+  margin-bottom: 32px;
+}
+
+.home-screen__section-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.home-screen__rule-section {
+  margin-bottom: 24px;
+}
+
+.home-screen__rule-section:last-child {
+  margin-bottom: 0;
+}
+
+.home-screen__rule-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4a90e2;
+  margin: 0 0 12px 0;
+}
+
+.home-screen__rule-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+
+.home-screen__rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.home-screen__rule-list li {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #555;
+  padding-left: 24px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.home-screen__rule-list li::before {
+  content: '•';
+  position: absolute;
+  left: 8px;
+  color: #4a90e2;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.home-screen__play-button {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Player Names Form */
+.player-names-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.player-names-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-names-form__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.player-names-form__input {
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.player-names-form__input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.player-names-form__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.player-names-form__actions .btn {
+  flex: 1;
+}
+
+.btn--secondary {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn--secondary:hover {
+  background: #7f8c8d;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  transform: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .home-screen {
+    padding: 16px;
+  }
+
+  .home-screen__content {
+    padding: 24px;
+  }
+
+  .home-screen__title {
+    font-size: 36px;
+  }
+
+  .home-screen__subtitle {
+    font-size: 18px;
+  }
+
+  .home-screen__section-title {
+    font-size: 20px;
+  }
+
+  .home-screen__rule-title {
+    font-size: 16px;
+  }
+
+  .home-screen__rule-text,
+  .home-screen__rule-list li {
+    font-size: 14px;
+  }
+
+  .player-names-form__actions {
+    flex-direction: column;
+  }
+}

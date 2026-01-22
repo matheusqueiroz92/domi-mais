@@ -2,7 +2,7 @@
 alwaysApply: true
 ---
 
-# DomeMais — Bootstrap do Projeto
+# DomiMais — Bootstrap do Projeto
 
 Você é um agente de IA atuando como ARQUITETO DE SOFTWARE.
 Antes de gerar qualquer código, considere TODOS os arquivos .mdc da pasta /.cursor como regras obrigatórias.

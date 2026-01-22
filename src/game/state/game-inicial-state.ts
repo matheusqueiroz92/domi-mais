@@ -30,31 +30,12 @@ function shufflePieces<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Encontra a peça inicial [0|0] ou [6|6]
-function findInitialPiece(pieces: DominoPiece[]): DominoPiece | null {
-  const zeroZero = pieces.find((p) => p.left === 0 && p.right === 0);
-  if (zeroZero) return zeroZero;
-
-  const sixSix = pieces.find((p) => p.left === 6 && p.right === 6);
-  if (sixSix) return sixSix;
-
-  return null;
-}
-
-export function createInitialGameState(): GameState {
+export function createInitialGameState(
+  player1Name: string,
+  player2Name: string
+): GameState {
   const allPieces = generateDominoPieces();
   const shuffledPieces = shufflePieces(allPieces);
-
-  // Encontra e remove a peça inicial
-  const initialPiece = findInitialPiece(shuffledPieces);
-  const drawPile = initialPiece
-    ? shuffledPieces.filter((p) => p.id !== initialPiece.id)
-    : shuffledPieces;
-
-  // Se encontrou peça inicial, vira ela
-  if (initialPiece) {
-    initialPiece.isFaceUp = true;
-  }
 
   // Escolhe jogador inicial aleatoriamente
   const currentPlayerIndex = Math.floor(Math.random() * 2);
@@ -64,30 +45,28 @@ export function createInitialGameState(): GameState {
     players: [
       {
         id: 'player-1',
-        name: 'Jogador 1',
+        name: player1Name,
         hand: [],
         score: 0,
       },
       {
         id: 'player-2',
-        name: 'Jogador 2',
+        name: player2Name,
         hand: [],
         score: 0,
       },
     ],
     currentPlayerIndex,
     table: {
-      leftEnd: initialPiece ? initialPiece.left : null,
-      rightEnd: initialPiece ? initialPiece.right : null,
-      pieces: initialPiece ? [initialPiece] : [],
+      leftEnd: null,
+      rightEnd: null,
+      pieces: [],
     },
-    drawPile,
+    drawPile: shuffledPieces,
     selectedPiece: null,
     activePlayerVisible: true,
     hasDrawnPieceThisTurn: false,
-    logs: initialPiece
-      ? [`Peça inicial revelada: [${initialPiece.left}|${initialPiece.right}]`]
-      : [],
+    logs: [],
   };
 }
 

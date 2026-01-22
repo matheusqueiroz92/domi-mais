@@ -2,7 +2,7 @@
 alwaysApply: true
 ---
 
-# DomeMais — Lógica de Implementação
+# DomiMais — Lógica de Implementação
 
 Este documento define a lógica obrigatória do jogo.
 O agente DEVE segui-lo fielmente.

@@ -220,6 +220,15 @@
   font-size: 12px;
 }
 
+.btn--danger {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: #c0392b;
+}
+
 /* Players Section */
 .players-and-pile-container {
   display: grid;
@@ -319,6 +328,26 @@
   display: flex;
   justify-content: center;
   margin-bottom: 16px;
+}
+
+/* Choose Initial Message */
+.choose-initial-message {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 16px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.choose-initial-message__text {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
 }
 
 /* Logs Section */

@@ -7,9 +7,10 @@ interface DrawPileProps {
   pieces: DominoPieceType[];
   onSelectPiece: (pieceId: string) => void;
   disabled?: boolean;
+  isChoosingInitial?: boolean;
 }
 
-export function DrawPile({ pieces, onSelectPiece, disabled = false }: DrawPileProps) {
+export function DrawPile({ pieces, onSelectPiece, disabled = false, isChoosingInitial = false }: DrawPileProps) {
   if (pieces.length === 0) {
     return (
       <div className="draw-pile draw-pile--empty">
@@ -21,7 +22,11 @@ export function DrawPile({ pieces, onSelectPiece, disabled = false }: DrawPilePr
   return (
     <div className="draw-pile">
       <h3 className="draw-pile__title">Monte de Peças</h3>
-      <p className="draw-pile__subtitle">Clique em uma peça para comprá-la</p>
+      <p className="draw-pile__subtitle">
+        {isChoosingInitial 
+          ? 'Escolha a peça inicial do jogo' 
+          : 'Clique em uma peça para comprá-la'}
+      </p>
       <div className="draw-pile__container">
         {pieces.map((piece, index) => (
           <motion.div

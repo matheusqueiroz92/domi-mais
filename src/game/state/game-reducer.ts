@@ -1,4 +1,5 @@
 import type { GameState, GameAction, DominoPiece } from './game-types';
+import { createInitialGameState } from './game-inicial-state';
 
 // Verifica se o jogo está fechado (nenhuma peça disponível encaixa nas pontas)
 function isGameBlocked(state: GameState): boolean {
@@ -88,9 +89,8 @@ function placePieceAtPosition(
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'INITIALIZE_GAME': {
-      // Estado inicial já é criado pela função createInitialGameState
-      // Esta ação pode ser usada para reiniciar o jogo com novos nomes
-      return state;
+      // Cria um novo estado inicial com os nomes dos jogadores
+      return createInitialGameState(action.player1Name, action.player2Name);
     }
 
     case 'START_GAME': {
@@ -98,8 +98,45 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
+        phase: 'choosing-initial', // Nova fase para escolher peça inicial
+        logs: [...state.logs, `Jogo iniciado! ${state.players[state.currentPlayerIndex].name} deve escolher a peça inicial`],
+      };
+    }
+
+    case 'CHOOSE_INITIAL_PIECE': {
+      // Só permite escolher peça inicial na fase 'choosing-initial'
+      if (state.phase !== 'choosing-initial') return state;
+      if (state.drawPile.length === 0) return state;
+
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      
+      // Encontra a peça específica no monte
+      const pieceIndex = state.drawPile.findIndex((p) => p.id === action.pieceId);
+      if (pieceIndex === -1) return state; // Peça não encontrada
+
+      const chosenPiece = state.drawPile[pieceIndex];
+      const newDrawPile = state.drawPile.filter((p) => p.id !== action.pieceId);
+
+      // Coloca a peça inicial na mesa virada para cima
+      const initialPiece: DominoPiece = {
+        ...chosenPiece,
+        isFaceUp: true,
+      };
+
+      return {
+        ...state,
         phase: 'playing',
-        logs: [...state.logs, `Jogo iniciado! Vez de ${state.players[state.currentPlayerIndex].name}`],
+        drawPile: newDrawPile,
+        table: {
+          leftEnd: initialPiece.left,
+          rightEnd: initialPiece.right,
+          pieces: [initialPiece],
+        },
+        logs: [
+          ...state.logs,
+          `${currentPlayer.name} escolheu a peça inicial: [${initialPiece.left}|${initialPiece.right}]`,
+          `Vez de ${currentPlayer.name}`,
+        ],
       };
     }
 
@@ -439,6 +476,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           `Jogo finalizado! ${winner.name} venceu com ${winner.score} pontos`,
         ],
       };
+    }
+
+    case 'RESET_GAME': {
+      // Reseta o jogo para o estado inicial
+      return createInitialGameState('Jogador 1', 'Jogador 2');
     }
 
     default:

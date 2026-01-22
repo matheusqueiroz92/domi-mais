@@ -7,6 +7,7 @@ import { createInitialGameState } from './game-inicial-state';
 interface GameContextType {
   state: GameState;
   dispatch: React.Dispatch<GameAction>;
+  initializeGame: (player1Name: string, player2Name: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -16,10 +17,17 @@ interface GameProviderProps {
 }
 
 export function GameProvider({ children }: GameProviderProps) {
-  const [state, dispatch] = useReducer(gameReducer, createInitialGameState());
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    createInitialGameState('Jogador 1', 'Jogador 2')
+  );
+
+  const initializeGame = (player1Name: string, player2Name: string) => {
+    dispatch({ type: 'INITIALIZE_GAME', player1Name, player2Name });
+  };
 
   return (
-    <GameContext.Provider value={{ state, dispatch }}>
+    <GameContext.Provider value={{ state, dispatch, initializeGame }}>
       {children}
     </GameContext.Provider>
   );

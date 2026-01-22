@@ -15,7 +15,7 @@ export interface Player {
   score: number;
 }
 
-export type GamePhase = 'setup' | 'playing' | 'transition' | 'finished';
+export type GamePhase = 'setup' | 'choosing-initial' | 'playing' | 'transition' | 'finished';
 
 export interface Table {
   leftEnd: number | null;
@@ -38,10 +38,12 @@ export interface GameState {
 export type GameAction =
   | { type: 'INITIALIZE_GAME'; player1Name: string; player2Name: string }
   | { type: 'START_GAME' }
+  | { type: 'CHOOSE_INITIAL_PIECE'; pieceId: string }
   | { type: 'DRAW_PIECE'; pieceId: string }
   | { type: 'SELECT_PIECE'; pieceId: string }
   | { type: 'PLAY_PIECE'; pieceId: string; position: 'left' | 'right' }
   | { type: 'BLUFF'; pieceId: string }
   | { type: 'END_TURN' }
-  | { type: 'END_GAME' };
+  | { type: 'END_GAME' }
+  | { type: 'RESET_GAME' };
 

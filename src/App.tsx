@@ -1,15 +1,20 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import { GameProvider, useGame } from "./game/state/game-context";
 import { DominoPiece } from "./components/DominoPiece";
 import { GameTable } from "./components/GameTable";
 import { GameModal } from "./components/GameModal";
 import { DrawPile } from "./components/DrawPile";
+import { HomeScreen } from "./components/HomeScreen";
+import { Modal } from "./components/Modal";
 import { useGameModals } from "./hooks/useGameModals";
 import "./App.css";
 
 function GameContent() {
-  const { state, dispatch } = useGame();
+  const { state, dispatch, initializeGame } = useGame();
   const { currentModal, closeModal } = useGameModals(state);
+  const [showHomeScreen, setShowHomeScreen] = useState(true);
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
 
   const currentPlayer = state.players[state.currentPlayerIndex];
   const nextPlayer =
@@ -40,14 +45,22 @@ function GameContent() {
     state.phase === "playing" &&
     state.drawPile.length > 0 &&
     !hasUnplayedDrawnPiece;
+  const canChooseInitial =
+    state.phase === "choosing-initial" && state.drawPile.length > 0;
   const canEndTurn =
     state.phase === "transition" ||
     (state.phase === "playing" &&
       state.selectedPiece !== null &&
       !selectedPieceFits);
 
-  const handleStartGame = () => {
+  const handleStartGame = (player1Name: string, player2Name: string) => {
+    initializeGame(player1Name, player2Name);
+    setShowHomeScreen(false);
     dispatch({ type: "START_GAME" });
+  };
+
+  const handleChooseInitialPiece = (pieceId: string) => {
+    dispatch({ type: "CHOOSE_INITIAL_PIECE", pieceId });
   };
 
   const handleDrawPiece = (pieceId: string) => {
@@ -78,6 +91,21 @@ function GameContent() {
     dispatch({ type: "END_TURN" });
   };
 
+  const handleAbandonGame = () => {
+    setShowAbandonModal(true);
+  };
+
+  const confirmAbandonGame = () => {
+    dispatch({ type: "RESET_GAME" });
+    setShowHomeScreen(true);
+    setShowAbandonModal(false);
+  };
+
+  // Mostra a tela inicial se ainda não iniciou o jogo
+  if (showHomeScreen || state.phase === "setup") {
+    return <HomeScreen onStartGame={handleStartGame} />;
+  }
+
   return (
     <div className="app">
       <motion.header
@@ -86,41 +114,53 @@ function GameContent() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="app-title">DomeMais</h1>
+        <h1 className="app-title">DomiMais</h1>
         <div className="app-header-info">
-          {state.phase === "setup" ? (
-            <motion.button
-              className="btn btn--primary"
-              onClick={handleStartGame}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              Iniciar Jogo
-            </motion.button>
-          ) : (
-            <>
-              <div className="game-info__item">
-                <span className="game-info__label">Fase:</span>
-                <span className="game-info__value">{state.phase}</span>
-              </div>
-              <div className="game-info__item">
-                <span className="game-info__label">Jogador:</span>
-                <span className="game-info__value">{currentPlayer.name}</span>
-              </div>
-              <div className="game-info__item">
-                <span className="game-info__label">Monte:</span>
-                <span className="game-info__value">
-                  {state.drawPile.length} peças
-                </span>
-              </div>
-            </>
-          )}
+          <div className="game-info__item">
+            <span className="game-info__label">Fase:</span>
+            <span className="game-info__value">
+              {state.phase === "choosing-initial" ? "Escolhendo peça inicial" : state.phase}
+            </span>
+          </div>
+          <div className="game-info__item">
+            <span className="game-info__label">Jogador:</span>
+            <span className="game-info__value">{currentPlayer.name}</span>
+          </div>
+          <div className="game-info__item">
+            <span className="game-info__label">Monte:</span>
+            <span className="game-info__value">
+              {state.drawPile.length} peças
+            </span>
+          </div>
+          <motion.button
+            className="btn btn--danger"
+            onClick={handleAbandonGame}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Abandonar partida"
+          >
+            Sair
+          </motion.button>
         </div>
       </motion.header>
 
       <div className="game-container">
+        {/* Mensagem para escolher peça inicial */}
+        <AnimatePresence>
+          {state.phase === "choosing-initial" && (
+            <motion.div
+              className="choose-initial-message"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <p className="choose-initial-message__text">
+                {currentPlayer.name}, escolha a peça inicial do monte
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Fase de Jogo */}
         <AnimatePresence>
           {state.phase === "playing" &&
@@ -185,9 +225,8 @@ function GameContent() {
                 return (
                   <motion.div
                     key={player.id}
-                    className={`player-card ${
-                      isCurrentPlayer ? "player-card--active" : ""
-                    }`}
+                    className={`player-card ${isCurrentPlayer ? "player-card--active" : ""
+                      }`}
                     initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -199,10 +238,10 @@ function GameContent() {
                         <span className="player-stat__value">
                           {player.hand.length +
                             (isCurrentPlayer &&
-                            state.selectedPiece &&
-                            !player.hand.find(
-                              (p) => p.id === state.selectedPiece?.id
-                            )
+                              state.selectedPiece &&
+                              !player.hand.find(
+                                (p) => p.id === state.selectedPiece?.id
+                              )
                               ? 1
                               : 0)}
                         </span>
@@ -218,102 +257,102 @@ function GameContent() {
                     </div>
                     {(player.hand.length > 0 ||
                       (isCurrentPlayer && state.selectedPiece)) && (
-                      <div className="player-hand">
-                        <AnimatePresence mode="popLayout">
-                          {player.hand.map((piece) => {
-                            const isSelected =
-                              state.selectedPiece?.id === piece.id;
-                            // Permite selecionar peças da mão apenas se:
-                            // 1. É o jogador atual
-                            // 2. Está na fase de jogo
-                            // 3. Já comprou uma peça do monte nesta rodada
-                            const canSelect =
-                              isCurrentPlayer &&
-                              state.phase === "playing" &&
-                              state.hasDrawnPieceThisTurn;
+                        <div className="player-hand">
+                          <AnimatePresence mode="popLayout">
+                            {player.hand.map((piece) => {
+                              const isSelected =
+                                state.selectedPiece?.id === piece.id;
+                              // Permite selecionar peças da mão apenas se:
+                              // 1. É o jogador atual
+                              // 2. Está na fase de jogo
+                              // 3. Já comprou uma peça do monte nesta rodada
+                              const canSelect =
+                                isCurrentPlayer &&
+                                state.phase === "playing" &&
+                                state.hasDrawnPieceThisTurn;
 
-                            return (
-                              <motion.div
-                                key={piece.id}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <DominoPiece
-                                  piece={piece}
-                                  size="small"
-                                  isFaceUp={
-                                    isCurrentPlayer && state.activePlayerVisible
-                                  }
-                                  isSelected={isSelected}
-                                  onClick={
-                                    canSelect
-                                      ? () =>
+                              return (
+                                <motion.div
+                                  key={piece.id}
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <DominoPiece
+                                    piece={piece}
+                                    size="small"
+                                    isFaceUp={
+                                      isCurrentPlayer && state.activePlayerVisible
+                                    }
+                                    isSelected={isSelected}
+                                    onClick={
+                                      canSelect
+                                        ? () =>
                                           handleSelectPieceFromHand(piece.id)
-                                      : undefined
-                                  }
-                                />
-                              </motion.div>
-                            );
-                          })}
-                        </AnimatePresence>
-                        {/* Mostra a peça selecionada do monte na mão do jogador atual */}
-                        {isCurrentPlayer &&
-                          state.selectedPiece &&
-                          !player.hand.find(
-                            (p) => p.id === state.selectedPiece?.id
-                          ) && (
-                            <AnimatePresence mode="wait">
-                              <motion.div
-                                key={`selected-drawn-${state.selectedPiece.id}`}
-                                layoutId={`piece-${state.selectedPiece.id}`}
-                                initial={{
-                                  scale: 0.5,
-                                  opacity: 0,
-                                  rotate: -180,
-                                }}
-                                animate={{
-                                  scale: 1,
-                                  opacity: 1,
-                                  rotate: 0,
-                                }}
-                                exit={{
-                                  opacity: 0,
-                                  scale: 0.5,
-                                }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 300,
-                                  damping: 25,
-                                  duration: 0.8,
-                                }}
-                              >
-                                <DominoPiece
-                                  piece={state.selectedPiece}
-                                  size="small"
-                                  isFaceUp={state.activePlayerVisible}
-                                  isSelected={true}
-                                />
-                                {/* Botão de Blefe quando a peça encaixa */}
-                                {selectedPieceFits && (
-                                  <motion.button
-                                    className="btn btn--warning btn--small bluff-hand-button"
-                                    onClick={handleBluff}
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    Blefar
-                                  </motion.button>
-                                )}
-                              </motion.div>
-                            </AnimatePresence>
-                          )}
-                      </div>
-                    )}
+                                        : undefined
+                                    }
+                                  />
+                                </motion.div>
+                              );
+                            })}
+                          </AnimatePresence>
+                          {/* Mostra a peça selecionada do monte na mão do jogador atual */}
+                          {isCurrentPlayer &&
+                            state.selectedPiece &&
+                            !player.hand.find(
+                              (p) => p.id === state.selectedPiece?.id
+                            ) && (
+                              <AnimatePresence mode="wait">
+                                <motion.div
+                                  key={`selected-drawn-${state.selectedPiece.id}`}
+                                  layoutId={`piece-${state.selectedPiece.id}`}
+                                  initial={{
+                                    scale: 0.5,
+                                    opacity: 0,
+                                    rotate: -180,
+                                  }}
+                                  animate={{
+                                    scale: 1,
+                                    opacity: 1,
+                                    rotate: 0,
+                                  }}
+                                  exit={{
+                                    opacity: 0,
+                                    scale: 0.5,
+                                  }}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 300,
+                                    damping: 25,
+                                    duration: 0.8,
+                                  }}
+                                >
+                                  <DominoPiece
+                                    piece={state.selectedPiece}
+                                    size="small"
+                                    isFaceUp={state.activePlayerVisible}
+                                    isSelected={true}
+                                  />
+                                  {/* Botão de Blefe quando a peça encaixa */}
+                                  {selectedPieceFits && (
+                                    <motion.button
+                                      className="btn btn--warning btn--small bluff-hand-button"
+                                      onClick={handleBluff}
+                                      initial={{ opacity: 0, y: -10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: 0.4 }}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      Blefar
+                                    </motion.button>
+                                  )}
+                                </motion.div>
+                              </AnimatePresence>
+                            )}
+                        </div>
+                      )}
                   </motion.div>
                 );
               })}
@@ -321,11 +360,12 @@ function GameContent() {
           </div>
 
           {/* Monte de Peças */}
-          {canDraw && (
+          {(canDraw || canChooseInitial) && (
             <DrawPile
               pieces={state.drawPile}
-              onSelectPiece={handleDrawPiece}
+              onSelectPiece={canChooseInitial ? handleChooseInitialPiece : handleDrawPiece}
               disabled={false}
+              isChoosingInitial={canChooseInitial}
             />
           )}
         </div>
@@ -361,6 +401,35 @@ function GameContent() {
         currentPlayerName={currentPlayer.name}
         nextPlayerName={nextPlayer.name}
       />
+
+      {/* Modal de Confirmação para Abandonar */}
+      <Modal
+        isOpen={showAbandonModal}
+        onClose={() => setShowAbandonModal(false)}
+        title="Abandonar Partida"
+        type="warning"
+        showCloseButton={false}
+      >
+        <p style={{ marginBottom: '20px', textAlign: 'center' }}>
+          Tem certeza que deseja abandonar a partida? Todo o progresso será perdido.
+        </p>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            className="btn btn--danger"
+            onClick={confirmAbandonGame}
+            style={{ flex: 1 }}
+          >
+            Sim, Abandonar
+          </button>
+          <button
+            className="btn btn--secondary"
+            onClick={() => setShowAbandonModal(false)}
+            style={{ flex: 1 }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
