@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GameProvider, useGame } from "./game/state/game-context";
 import { DominoPiece } from "./components/DominoPiece";
 import { GameTable } from "./components/GameTable";
@@ -12,7 +12,7 @@ import "./App.css";
 
 function GameContent() {
   const { state, dispatch, initializeGame } = useGame();
-  const { currentModal, closeModal } = useGameModals(state);
+  const { currentModal, closeModal, winnerName, winnerScore } = useGameModals(state);
   const [showHomeScreen, setShowHomeScreen] = useState(true);
   const [showAbandonModal, setShowAbandonModal] = useState(false);
 
@@ -47,11 +47,11 @@ function GameContent() {
     !hasUnplayedDrawnPiece;
   const canChooseInitial =
     state.phase === "choosing-initial" && state.drawPile.length > 0;
-  const canEndTurn =
-    state.phase === "transition" ||
-    (state.phase === "playing" &&
-      state.selectedPiece !== null &&
-      !selectedPieceFits);
+  
+  // Permite selecionar peças da mão se já comprou do monte OU se o monte está vazio
+  const canSelectFromHand =
+    state.phase === "playing" &&
+    (state.hasDrawnPieceThisTurn || state.drawPile.length === 0);
 
   const handleStartGame = (player1Name: string, player2Name: string) => {
     initializeGame(player1Name, player2Name);
@@ -87,9 +87,53 @@ function GameContent() {
     dispatch({ type: "SELECT_PIECE", pieceId });
   };
 
-  const handleEndTurn = () => {
-    dispatch({ type: "END_TURN" });
-  };
+  // Ref para rastrear a última peça selecionada que não encaixa
+  const lastNonFittingPieceRef = useRef<string | null>(null);
+  const autoAddTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Efeito para adicionar automaticamente à mão quando peça não encaixa
+  useEffect(() => {
+    // Limpa timer anterior se existir
+    if (autoAddTimerRef.current) {
+      clearTimeout(autoAddTimerRef.current);
+      autoAddTimerRef.current = null;
+    }
+
+    if (
+      state.phase === "playing" &&
+      state.selectedPiece &&
+      !selectedPieceFits &&
+      (state.hasDrawnPieceThisTurn || state.drawPile.length === 0) &&
+      lastNonFittingPieceRef.current !== state.selectedPiece.id
+    ) {
+      // Marca que esta peça já foi processada
+      lastNonFittingPieceRef.current = state.selectedPiece.id;
+      
+      // Adiciona à mão automaticamente após 2.5 segundos (tempo para ver o modal)
+      autoAddTimerRef.current = setTimeout(() => {
+        const currentPlayer = state.players[state.currentPlayerIndex];
+        const pieceInHand = currentPlayer.hand.find(
+          (p) => p.id === state.selectedPiece?.id
+        );
+        
+        // Se a peça ainda não está na mão, adiciona
+        if (!pieceInHand && state.selectedPiece) {
+          dispatch({ type: "AUTO_ADD_TO_HAND" });
+        }
+        autoAddTimerRef.current = null;
+      }, 2500);
+    } else if (!state.selectedPiece) {
+      // Reset quando não há peça selecionada
+      lastNonFittingPieceRef.current = null;
+    }
+
+    return () => {
+      if (autoAddTimerRef.current) {
+        clearTimeout(autoAddTimerRef.current);
+        autoAddTimerRef.current = null;
+      }
+    };
+  }, [state.selectedPiece, selectedPieceFits, state.phase, state.hasDrawnPieceThisTurn, state.drawPile.length, state.players, state.currentPlayerIndex, dispatch]);
 
   const handleAbandonGame = () => {
     setShowAbandonModal(true);
@@ -184,26 +228,6 @@ function GameContent() {
             )}
         </AnimatePresence>
 
-        {/* Botão Finalizar Turno */}
-        <AnimatePresence>
-          {canEndTurn && (
-            <motion.div
-              className="end-turn-container"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-            >
-              <motion.button
-                className="btn btn--primary btn--large"
-                onClick={handleEndTurn}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Finalizar Turno
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Mesa do Jogo */}
         <GameTable
@@ -262,14 +286,14 @@ function GameContent() {
                             {player.hand.map((piece) => {
                               const isSelected =
                                 state.selectedPiece?.id === piece.id;
-                              // Permite selecionar peças da mão apenas se:
+                              // Permite selecionar peças da mão se:
                               // 1. É o jogador atual
                               // 2. Está na fase de jogo
-                              // 3. Já comprou uma peça do monte nesta rodada
+                              // 3. Já comprou uma peça do monte nesta rodada OU o monte está vazio
                               const canSelect =
                                 isCurrentPlayer &&
                                 state.phase === "playing" &&
-                                state.hasDrawnPieceThisTurn;
+                                (state.hasDrawnPieceThisTurn || state.drawPile.length === 0);
 
                               return (
                                 <motion.div
@@ -283,7 +307,8 @@ function GameContent() {
                                     piece={piece}
                                     size="small"
                                     isFaceUp={
-                                      isCurrentPlayer && state.activePlayerVisible
+                                      (isCurrentPlayer && state.activePlayerVisible) ||
+                                      state.phase === "finished"
                                     }
                                     isSelected={isSelected}
                                     onClick={
@@ -331,7 +356,10 @@ function GameContent() {
                                   <DominoPiece
                                     piece={state.selectedPiece}
                                     size="small"
-                                    isFaceUp={state.activePlayerVisible}
+                                    isFaceUp={
+                                      state.activePlayerVisible ||
+                                      state.phase === "finished"
+                                    }
                                     isSelected={true}
                                   />
                                   {/* Botão de Blefe quando a peça encaixa */}
@@ -400,6 +428,8 @@ function GameContent() {
         onClose={closeModal}
         currentPlayerName={currentPlayer.name}
         nextPlayerName={nextPlayer.name}
+        winnerName={winnerName}
+        winnerScore={winnerScore}
       />
 
       {/* Modal de Confirmação para Abandonar */}

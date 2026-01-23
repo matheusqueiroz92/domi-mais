@@ -3,18 +3,29 @@ import { createInitialGameState } from './game-inicial-state';
 
 // Verifica se o jogo está fechado (nenhuma peça disponível encaixa nas pontas)
 function isGameBlocked(state: GameState): boolean {
-  const { table, drawPile, players } = state;
+  const { table, players, drawPile } = state;
   
   // Se não há pontas definidas, o jogo não está fechado
   if (table.leftEnd === null || table.rightEnd === null) {
     return false;
   }
 
-  // Coleta todas as peças disponíveis (monte + mãos dos jogadores)
+  // Se ainda há peças no monte, o jogo não está bloqueado
+  // Os jogadores podem comprar peças do monte
+  if (drawPile.length > 0) {
+    return false;
+  }
+
+  // Se o monte está vazio, verifica apenas as peças das mãos dos jogadores
   const allAvailablePieces: DominoPiece[] = [
-    ...drawPile,
     ...players.flatMap(player => player.hand),
   ];
+
+  // Se não há peças disponíveis nas mãos, o jogo não está bloqueado
+  // (pode ser que algum jogador tenha vencido, mas isso é verificado em hasEmptyHand)
+  if (allAvailablePieces.length === 0) {
+    return false;
+  }
 
   // Valores que precisam encaixar (pontas da mesa)
   const neededValues = [table.leftEnd, table.rightEnd];
@@ -28,6 +39,45 @@ function isGameBlocked(state: GameState): boolean {
 
   // Se não há nenhuma peça que encaixe, o jogo está fechado
   return !canPlay;
+}
+
+// Verifica se algum jogador não tem mais peças na mão (venceu)
+// IMPORTANTE: Só considera vitória se o monte também estiver vazio
+// ou se o jogador realmente não tem mais peças disponíveis
+function hasEmptyHand(state: GameState): { hasWinner: boolean; winnerIndex: number | null } {
+  // Só verifica vitória se o monte está vazio
+  // Se ainda há peças no monte, o jogador pode comprar, então não venceu ainda
+  if (state.drawPile.length > 0) {
+    return {
+      hasWinner: false,
+      winnerIndex: null,
+    };
+  }
+
+  // Se o monte está vazio, verifica se algum jogador não tem peças na mão
+  const emptyHandIndex = state.players.findIndex(player => player.hand.length === 0);
+  return {
+    hasWinner: emptyHandIndex !== -1,
+    winnerIndex: emptyHandIndex !== -1 ? emptyHandIndex : null,
+  };
+}
+
+// Alterna automaticamente para o próximo jogador
+function switchToNextPlayer(state: GameState): GameState {
+  const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+  
+  return {
+    ...state,
+    currentPlayerIndex: nextPlayerIndex,
+    phase: 'playing',
+    activePlayerVisible: true,
+    // Se o monte está vazio, permite jogar peças da mão sem precisar comprar
+    hasDrawnPieceThisTurn: state.drawPile.length === 0,
+    logs: [
+      ...state.logs,
+      `Vez de ${state.players[nextPlayerIndex].name}`,
+    ],
+  };
 }
 
 // Verifica se uma peça encaixa em uma posição específica
@@ -142,6 +192,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'DRAW_PIECE': {
       if (state.phase !== 'playing') return state;
+      // Se o monte está vazio, não permite comprar (jogador deve usar peças da mão)
       if (state.drawPile.length === 0) return state;
       // Não permite comprar peça se já tiver uma selecionada que não foi jogada/blefada
       if (state.selectedPiece !== null) {
@@ -170,31 +221,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         isFaceUp: true,
       };
 
-      const newState = {
+      return {
         ...state,
         drawPile: newDrawPile,
         selectedPiece: visiblePiece,
         hasDrawnPieceThisTurn: true, // Marca que o jogador comprou uma peça nesta rodada
-      };
-
-      // Verifica se o jogo está fechado após comprar a peça
-      const isBlocked = isGameBlocked(newState);
-      const isDrawPileEmpty = newDrawPile.length === 0;
-
-      if (isBlocked || isDrawPileEmpty) {
-        // Se está fechado ou monte vazio, não permite mais ações
-        // O jogo será finalizado no próximo END_TURN ou PLAY_PIECE
-        return {
-          ...newState,
-          logs: [
-            ...state.logs,
-            `${currentPlayer.name} comprou uma peça do monte (soma: ${drawnPiece.sum})`,
-          ],
-        };
-      }
-
-      return {
-        ...newState,
         logs: [
           ...state.logs,
           `${currentPlayer.name} comprou uma peça do monte (soma: ${drawnPiece.sum})`,
@@ -204,8 +235,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SELECT_PIECE': {
       if (state.phase !== 'playing') return state;
-      // Só permite selecionar peça da mão se o jogador já tiver comprado uma peça do monte nesta rodada
-      if (!state.hasDrawnPieceThisTurn) return state;
+      // Permite selecionar peça da mão se:
+      // 1. Já comprou uma peça do monte nesta rodada, OU
+      // 2. O monte está vazio (pode jogar apenas com peças da mão)
+      const canSelect = state.hasDrawnPieceThisTurn || state.drawPile.length === 0;
+      if (!canSelect) return state;
 
       const currentPlayer = state.players[state.currentPlayerIndex];
       const piece = currentPlayer.hand.find((p) => p.id === action.pieceId);
@@ -282,21 +316,51 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return player;
       });
 
-      // Verifica fim de jogo
-      const newDrawPile = state.drawPile;
-      const isDrawPileEmpty = newDrawPile.length === 0;
-      
-      // Cria estado temporário para verificar se está fechado
+      // Cria estado temporário para verificar condições de fim de jogo
       const tempState: GameState = {
         ...state,
         players: newPlayers,
         table: newTable,
-        drawPile: newDrawPile,
+        drawPile: state.drawPile,
       };
-      const isBlocked = isGameBlocked(tempState);
 
-      // Se o jogo acabou (monte vazio) ou está fechado, calcula pontuação
-      if (isDrawPileEmpty || isBlocked) {
+      // Verifica se algum jogador não tem mais peças (venceu)
+      const { hasWinner, winnerIndex } = hasEmptyHand(tempState);
+      
+      if (hasWinner && winnerIndex !== null) {
+        // Jogador venceu por não ter mais peças
+        const playersWithScore = newPlayers.map((player) => {
+          const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
+          return { ...player, score };
+        });
+
+        // Revela todas as peças dos jogadores
+        const playersWithRevealedPieces = playersWithScore.map((player) => ({
+          ...player,
+          hand: player.hand.map((p) => ({ ...p, isFaceUp: true })),
+        }));
+
+        return {
+          ...state,
+          players: playersWithRevealedPieces,
+          table: newTable,
+          selectedPiece: null,
+          phase: 'finished',
+          activePlayerVisible: true, // Mostra todas as peças
+          logs: [
+            ...state.logs,
+            `${currentPlayer.name} jogou [${placedPiece.left}|${placedPiece.right}] na ${action.position === 'left' ? 'esquerda' : 'direita'}`,
+            `${newPlayers[winnerIndex].name} não tem mais peças na mão!`,
+            `Jogo finalizado! ${newPlayers[winnerIndex].name} venceu!`,
+          ],
+        };
+      }
+
+      // Verifica se o jogo está fechado (nenhuma peça encaixa)
+      const isBlocked = isGameBlocked(tempState);
+      
+      if (isBlocked) {
+        // Jogo fechado - calcula pontuação
         const playersWithScore = newPlayers.map((player) => {
           const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
           return { ...player, score };
@@ -306,26 +370,30 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           current.score < prev.score ? current : prev
         );
 
-        const endReason = isBlocked 
-          ? 'Jogo fechado! Nenhuma peça disponível encaixa nas pontas.'
-          : 'Monte de peças acabou.';
+        // Revela todas as peças dos jogadores
+        const playersWithRevealedPieces = playersWithScore.map((player) => ({
+          ...player,
+          hand: player.hand.map((p) => ({ ...p, isFaceUp: true })),
+        }));
 
         return {
           ...state,
-          players: playersWithScore,
+          players: playersWithRevealedPieces,
           table: newTable,
           selectedPiece: null,
           phase: 'finished',
+          activePlayerVisible: true, // Mostra todas as peças
           logs: [
             ...state.logs,
             `${currentPlayer.name} jogou [${placedPiece.left}|${placedPiece.right}] na ${action.position === 'left' ? 'esquerda' : 'direita'}`,
-            endReason,
+            'Jogo fechado! Nenhuma peça disponível encaixa nas pontas.',
             `Jogo finalizado! ${winner.name} venceu com ${winner.score} pontos`,
           ],
         };
       }
 
-      return {
+      // Jogo continua - alterna para o próximo jogador automaticamente
+      const stateAfterPlay = {
         ...state,
         players: newPlayers,
         table: newTable,
@@ -336,6 +404,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           `${currentPlayer.name} jogou [${placedPiece.left}|${placedPiece.right}] na ${action.position === 'left' ? 'esquerda' : 'direita'}`,
         ],
       };
+
+      // Alterna automaticamente após um pequeno delay (será tratado no componente)
+      return switchToNextPlayer(stateAfterPlay);
     }
 
     case 'BLUFF': {
@@ -370,7 +441,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return player;
       });
 
-      return {
+      const stateAfterBluff = {
         ...state,
         players: newPlayers,
         selectedPiece: null,
@@ -380,80 +451,107 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           `${currentPlayer.name} declarou que a peça não encaixa (blefe)`,
         ],
       };
+
+      // Alterna automaticamente para o próximo jogador
+      return switchToNextPlayer(stateAfterBluff);
     }
 
-    case 'END_TURN': {
-      // Permite finalizar turno em 'transition' ou em 'playing' quando há peça que não encaixa
-      if (state.phase !== 'transition' && state.phase !== 'playing') return state;
+    case 'AUTO_ADD_TO_HAND': {
+      // Adiciona automaticamente a peça selecionada à mão quando não encaixa
+      if (state.phase !== 'playing' || !state.selectedPiece) return state;
 
-      // Se há uma peça selecionada que não foi jogada, adiciona à mão do jogador
-      let newPlayers = state.players;
-      if (state.selectedPiece) {
-        const currentPlayer = state.players[state.currentPlayerIndex];
-        newPlayers = state.players.map((player) => {
-          if (player.id === currentPlayer.id) {
-            return {
-              ...player,
-              hand: [...player.hand, { ...state.selectedPiece!, isFaceUp: false }],
-            };
-          }
-          return player;
-        });
-      }
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      const pieceInHand = currentPlayer.hand.find((p) => p.id === state.selectedPiece!.id);
+      
+      // Se já está na mão, não faz nada
+      if (pieceInHand) return state;
 
-      // Cria estado temporário para verificar se está fechado
+      const newPlayers = state.players.map((player) => {
+        if (player.id === currentPlayer.id) {
+          return {
+            ...player,
+            hand: [...player.hand, { ...state.selectedPiece!, isFaceUp: false }],
+          };
+        }
+        return player;
+      });
+
+      // Verifica condições de fim de jogo
       const tempState: GameState = {
         ...state,
         players: newPlayers,
+        selectedPiece: null,
       };
-      const isBlocked = isGameBlocked(tempState);
-      const isDrawPileEmpty = state.drawPile.length === 0;
 
-      // Verifica se o jogo acabou (monte vazio ou fechado)
-      if (isDrawPileEmpty || isBlocked) {
-        // Calcula pontuação final
+      const { hasWinner, winnerIndex } = hasEmptyHand(tempState);
+      const isBlocked = isGameBlocked(tempState);
+
+      if (hasWinner && winnerIndex !== null) {
         const playersWithScore = newPlayers.map((player) => {
           const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
           return { ...player, score };
         });
 
-        const winner = playersWithScore.reduce((prev, current) =>
-          current.score < prev.score ? current : prev
-        );
-
-        const endReason = isBlocked 
-          ? 'Jogo fechado! Nenhuma peça disponível encaixa nas pontas.'
-          : 'Monte de peças acabou.';
+        const playersWithRevealedPieces = playersWithScore.map((player) => ({
+          ...player,
+          hand: player.hand.map((p) => ({ ...p, isFaceUp: true })),
+        }));
 
         return {
           ...state,
-          players: playersWithScore,
+          players: playersWithRevealedPieces,
           selectedPiece: null,
           phase: 'finished',
+          activePlayerVisible: true,
           logs: [
             ...state.logs,
-            endReason,
+            `${newPlayers[winnerIndex].name} não tem mais peças na mão!`,
+            `Jogo finalizado! ${newPlayers[winnerIndex].name} venceu!`,
+          ],
+        };
+      }
+
+      if (isBlocked) {
+        const playersWithScore = newPlayers.map((player) => {
+          const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
+          return { ...player, score };
+        });
+
+        const playersWithRevealedPieces = playersWithScore.map((player) => ({
+          ...player,
+          hand: player.hand.map((p) => ({ ...p, isFaceUp: true })),
+        }));
+
+        const winner = playersWithRevealedPieces.reduce((prev, current) =>
+          current.score < prev.score ? current : prev
+        );
+
+        return {
+          ...state,
+          players: playersWithRevealedPieces,
+          selectedPiece: null,
+          phase: 'finished',
+          activePlayerVisible: true,
+          logs: [
+            ...state.logs,
+            'Jogo fechado! Nenhuma peça disponível encaixa nas pontas.',
             `Jogo finalizado! ${winner.name} venceu com ${winner.score} pontos`,
           ],
         };
       }
 
-      // Passa para o próximo jogador
-      const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
-
-      return {
+      // Alterna para o próximo jogador
+      return switchToNextPlayer({
         ...state,
         players: newPlayers,
         selectedPiece: null,
-        currentPlayerIndex: nextPlayerIndex,
-        phase: 'playing',
-        activePlayerVisible: true,
-        hasDrawnPieceThisTurn: false, // Reseta a flag para o próximo jogador
-        logs: [
-          ...state.logs,
-          `Vez de ${state.players[nextPlayerIndex].name}`,
-        ],
-      };
+      });
+    }
+
+    case 'END_TURN': {
+      // Esta ação não é mais usada, mas mantida para compatibilidade
+      // A alternância de turnos agora é automática
+      return state;
     }
 
     case 'END_GAME': {

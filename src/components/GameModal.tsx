@@ -6,9 +6,11 @@ interface GameModalProps {
   onClose: () => void;
   currentPlayerName?: string;
   nextPlayerName?: string;
+  winnerName?: string;
+  winnerScore?: number;
 }
 
-export function GameModal({ type, onClose, currentPlayerName, nextPlayerName }: GameModalProps) {
+export function GameModal({ type, onClose, currentPlayerName, nextPlayerName, winnerName, winnerScore }: GameModalProps) {
   if (!type) return null;
 
   const modalConfig = {
@@ -50,6 +52,15 @@ export function GameModal({ type, onClose, currentPlayerName, nextPlayerName }: 
     'game-over': {
       title: 'Fim de Jogo!',
       content: 'O jogo terminou. Verifique os resultados.',
+      type: 'success' as const,
+      showCloseButton: true,
+      autoClose: undefined,
+    },
+    'winner': {
+      title: '🎉 Parabéns!',
+      content: winnerName 
+        ? `${winnerName} venceu${winnerScore !== undefined ? ` com ${winnerScore} pontos` : ''}!`
+        : 'Jogo finalizado!',
       type: 'success' as const,
       showCloseButton: true,
       autoClose: undefined,

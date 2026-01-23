@@ -5,12 +5,27 @@ import type { GameModalType } from '../game/utils/game-modals';
 interface UseGameModalsReturn {
   currentModal: GameModalType | null;
   closeModal: () => void;
+  winnerName?: string;
+  winnerScore?: number;
 }
 
 export function useGameModals(state: GameState): UseGameModalsReturn {
   const [currentModal, setCurrentModal] = useState<GameModalType | null>(null);
   const [lastPhase, setLastPhase] = useState<GameState['phase']>(state.phase);
   const [lastSelectedPiece, setLastSelectedPiece] = useState(state.selectedPiece);
+  
+  // Calcula ganhador quando o jogo termina
+  const winner = state.phase === 'finished' 
+    ? (() => {
+        const playersWithScore = state.players.map((player) => {
+          const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
+          return { ...player, score };
+        });
+        return playersWithScore.reduce((prev, current) =>
+          current.score < prev.score ? current : prev
+        );
+      })()
+    : null;
 
   useEffect(() => {
     // Modal de "Sua vez" quando muda de turno
@@ -47,10 +62,21 @@ export function useGameModals(state: GameState): UseGameModalsReturn {
       return;
     }
 
-    // Modal de fim de jogo
+    // Modal de fim de jogo - mostra ganhador
     if (state.phase === 'finished' && lastPhase !== 'finished') {
-      setCurrentModal('game-over');
+      // Calcula o ganhador (menor pontuação)
+      const playersWithScore = state.players.map((player) => {
+        const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
+        return { ...player, score };
+      });
+      
+      const winner = playersWithScore.reduce((prev, current) =>
+        current.score < prev.score ? current : prev
+      );
+      
+      setCurrentModal('winner');
       setLastPhase(state.phase);
+      // Retorna informações do ganhador através do estado
       return;
     }
 
@@ -65,6 +91,8 @@ export function useGameModals(state: GameState): UseGameModalsReturn {
   return {
     currentModal,
     closeModal,
+    winnerName: winner?.name,
+    winnerScore: winner?.score,
   };
 }
 

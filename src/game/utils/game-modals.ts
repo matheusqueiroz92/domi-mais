@@ -4,5 +4,6 @@ export type GameModalType =
   | 'piece-doesnt-fit'
   | 'bluff-performed'
   | 'pass-device'
-  | 'game-over';
+  | 'game-over'
+  | 'winner';
 

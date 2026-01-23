@@ -45,5 +45,6 @@ export type GameAction =
   | { type: 'BLUFF'; pieceId: string }
   | { type: 'END_TURN' }
   | { type: 'END_GAME' }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'AUTO_ADD_TO_HAND' };
 
