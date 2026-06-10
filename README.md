@@ -18,7 +18,7 @@
 
 ## 📋 Sobre o Projeto
 
-**DomMais** é um jogo de dominó digital inspirado no dominó tradicional, trazendo uma mecânica exclusiva de **blefe** que adiciona camadas estratégicas ao jogo. Um diferencial é que o verso de cada peça exibe o valor da soma dos seus lados, permitindo aos adversários deduzirem informações sem revelar a peça completamente. O jogo foi desenvolvido como MVP (Minimum Viable Product) para ser jogado localmente por 2 jogadores no mesmo dispositivo.
+**DomiMais** é um jogo de dominó digital inspirado no dominó tradicional, trazendo uma mecânica exclusiva de **blefe** que adiciona camadas estratégicas ao jogo. Um diferencial é que o verso de cada peça exibe o valor da soma dos seus lados, permitindo aos adversários deduzirem informações sem revelar a peça completamente. O jogo foi desenvolvido como MVP (Minimum Viable Product) para ser jogado localmente por 2 jogadores no mesmo dispositivo.
 
 ### 🎯 Características Principais
 
