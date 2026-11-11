@@ -1,63 +1,43 @@
-# Notas de Deploy - DomiMais
+# Notas de Deploy — DomiMais
 
-## Erro de Git: Dubious Ownership
+O site roda na VPS em um contêiner Docker (build com Node, servido por Nginx)
+atrás do Traefik.
 
-Se você encontrar o erro:
+- Código-fonte na VPS: `/var/www/domi-mais`
+- `docker-compose.yml`: `/opt/apps/domi-mais`
+- `Dockerfile`: em `/var/www/domi-mais` (ainda não versionado no repositório)
+
+## Antes de publicar (no computador)
+
+```bash
+npm test
+npm run lint
+npm run build
+git push origin main
 ```
-fatal: detected dubious ownership in repository at '/var/www/domi-mais'
+
+O build do Docker roda `npm run build`, que inclui a checagem de tipos. Se o
+`npm run build` falhar localmente, o deploy também falha.
+
+## Publicar (na VPS)
+
+```bash
+cd /var/www/domi-mais && git pull origin main
+cd /opt/apps/domi-mais && docker compose up -d --build
 ```
 
-### Solução Rápida:
+O `--build` é obrigatório: sem ele o Docker reaproveita a imagem antiga. Se o
+build falhar, o contêiner anterior continua no ar.
+
+## Conferir
+
+```bash
+cd /var/www/domi-mais && git log -1 --oneline   # deve ser o último commit do GitHub
+docker ps --filter name=domi-mais               # contêiner recriado há pouco
+```
+
+## Erro de Git: dubious ownership
+
 ```bash
 git config --global --add safe.directory /var/www/domi-mais
 ```
-
-### Verificar se funcionou:
-```bash
-cd /var/www/domi-mais
-git pull
-```
-
-## Processo de Deploy
-
-1. **No servidor, navegue até o diretório:**
-   ```bash
-   cd /var/www/domi-mais
-   ```
-
-2. **Faça pull das alterações:**
-   ```bash
-   git pull origin main
-   ```
-
-3. **Instale/atualize dependências (se necessário):**
-   ```bash
-   npm install
-   ```
-
-4. **Build da aplicação:**
-   ```bash
-   npm run build
-   ```
-
-5. **Reinicie o servidor (se estiver usando PM2 ou similar):**
-   ```bash
-   pm2 restart domi-mais
-   # ou
-   pm2 reload domi-mais
-   ```
-
-## Estrutura Esperada no Servidor
-
-```
-/var/www/domi-mais/
-├── dist/              # Build de produção
-├── node_modules/       # Dependências
-├── src/                # Código fonte
-├── package.json
-└── ...
-```
-
-## Configuração do Servidor Web
-
-Certifique-se de que o servidor web (Nginx/Apache) está apontando para o diretório `dist/` após o build.

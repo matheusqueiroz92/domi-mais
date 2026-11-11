@@ -20,6 +20,11 @@ Este documento define como usar bibliotecas externas.
 
 - framer-motion
 - clsx
-- uuid
+
+## Dependências de Desenvolvimento (testes)
+
+- vitest
+- jsdom
+- @testing-library/react, @testing-library/jest-dom, @testing-library/user-event
 
 Dependências adicionais só com justificativa explícita.

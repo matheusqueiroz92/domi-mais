@@ -34,20 +34,23 @@ export function Modal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <motion.div
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
+        <motion.div
+          className="modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
           <motion.div
             className={clsx('modal', `modal--${type}`)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
             transition={{ type: 'spring', duration: 0.3 }}
+            onClick={(event) => event.stopPropagation()}
           >
             {title && <h2 className="modal__title">{title}</h2>}
             <div className="modal__content">{children}</div>
@@ -57,7 +60,7 @@ export function Modal({
               </button>
             )}
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );

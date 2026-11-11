@@ -1,0 +1,85 @@
+# DomiMais — Regras oficiais
+
+Este documento é a fonte de verdade das regras do jogo. A implementação fica em
+`src/game/logic` e cada regra abaixo tem testes automatizados
+(`src/game/logic/__tests__`).
+
+## Conceito
+
+- O DomiMais usa as 28 peças do dominó tradicional (de 0-0 até 6-6).
+- O **verso** de cada peça mostra a **soma** dos seus dois lados. Quem vê uma
+  peça virada sabe a soma, mas não os valores (soma 7 pode ser 1|6, 2|5 ou 3|4).
+- São 2 jogadores.
+
+## Início da partida
+
+1. As 28 peças ficam no **monte**, viradas (mostrando a soma).
+2. Nenhum jogador começa com peças na mão.
+3. Um jogador é sorteado. Ele **escolhe qualquer peça do monte** para ser a peça
+   inicial; ela é aberta na mesa e define as duas pontas.
+4. O mesmo jogador faz o primeiro turno.
+
+## O turno enquanto há peças no monte
+
+1. **Compra obrigatória:** o jogador escolhe **uma** peça do monte (vendo só a
+   soma). A peça vai para a mão dele e só ele vê os valores.
+2. Em seguida ele escolhe **uma** destas opções:
+   - **Jogar** uma peça que encaixe em uma das pontas da mesa. Pode ser a peça
+     que acabou de comprar ou outra que já estava na mão.
+   - **Ficar com a peça**: encerrar o turno sem jogar.
+3. A vez passa para o outro jogador.
+
+Uma peça encaixa em uma ponta quando um dos seus lados é igual ao valor da
+ponta. Só se joga uma peça por turno.
+
+## Blefe
+
+- Quando a peça comprada **encaixa**, o jogador pode mesmo assim ficar com ela,
+  fingindo que não encaixava. Isso é o blefe.
+- O blefe serve apenas para confundir o adversário. **Não existe ação de
+  duvidar** nem penalidade.
+- O jogo **nunca valida, registra ou expõe o blefe**: "ficar com a peça" é a
+  mesma ação, com a mesma tela e o mesmo registro, encaixando ou não.
+
+## Quando o monte acaba
+
+A partida **não termina** quando o monte fica vazio. Ela continua só com as
+peças das mãos:
+
+- Não há mais compra.
+- Quem tem peça que encaixa é **obrigado a jogar** (não é possível blefar).
+- Quem não tem peça que encaixa **passa a vez automaticamente**.
+
+Exceção: quem compra a **última** peça do monte ainda pode ficar com ela nesse
+mesmo turno, como em qualquer turno de compra.
+
+## Fim da partida
+
+Enquanto houver peças no monte, a partida nunca termina. Com o monte vazio, ela
+termina em uma destas situações:
+
+| Situação | Quem vence |
+|---|---|
+| Um jogador está **sem peças na mão** | Esse jogador |
+| **Jogo fechado**: nenhuma peça das duas mãos encaixa | Quem tem a **menor soma** das peças da mão |
+| Jogo fechado com **somas iguais** | **Empate** |
+| Os dois jogadores sem peças na mão | **Empate** |
+
+A soma de cada jogador é a soma dos versos das peças que sobraram na mão. Mão
+vazia vence mesmo que o adversário tenha soma zero (só a peça 0|0).
+
+## Jogo no mesmo dispositivo
+
+Enquanto existir o modo de dois jogadores no mesmo dispositivo, a troca de turno
+é **protegida**: a tela é coberta e as mãos ficam ocultas até o próximo jogador
+tocar em **"Estou pronto"**.
+
+## Decisões registradas
+
+| Data | Decisão |
+|---|---|
+| 11/11/2026 | A peça inicial é escolhida livremente no monte pelo jogador sorteado. |
+| 11/11/2026 | A partida continua depois que o monte acaba. |
+| 11/11/2026 | Com o monte vazio, jogar é obrigatório e quem não pode jogar passa automaticamente. |
+| 11/11/2026 | Somas iguais no jogo fechado dão empate. |
+| 11/11/2026 | Não há ação "Duvido": o blefe é só para confundir. |

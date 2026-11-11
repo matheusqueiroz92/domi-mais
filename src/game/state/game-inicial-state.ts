@@ -1,72 +1,54 @@
-import type { GameState, DominoPiece } from './game-types';
+import type { DominoPiece, GameState } from './game-types';
+import { generateDominoPieces, shufflePieces } from '../logic/pieces';
+import type { RandomFn } from '../logic/pieces';
 
-// Gera todas as 28 peças do dominó
-function generateDominoPieces(): DominoPiece[] {
-  const pieces: DominoPiece[] = [];
-  let idCounter = 0;
-
-  for (let left = 0; left <= 6; left++) {
-    for (let right = left; right <= 6; right++) {
-      pieces.push({
-        id: `piece-${idCounter++}`,
-        left,
-        right,
-        sum: left + right,
-        isFaceUp: false,
-      });
-    }
-  }
-
-  return pieces;
+export interface InitialGameOptions {
+  /** Peças do monte, já na ordem desejada. Padrão: as 28 peças em ordem fixa. */
+  pieces?: DominoPiece[];
+  /** Índice do jogador que começa. Padrão: 0. */
+  startingPlayerIndex?: number;
+  /** Troca de turno protegida (jogo no mesmo dispositivo). Padrão: `true`. */
+  protectTurns?: boolean;
 }
 
-// Embaralha as peças
-function shufflePieces<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
+/**
+ * Cria o estado de uma partida nova, na fase `setup`.
+ * É determinística: o sorteio (embaralhar e escolher quem começa) é feito
+ * fora, por `createRandomSetup`, e entra por `options`.
+ */
 export function createInitialGameState(
   player1Name: string,
-  player2Name: string
+  player2Name: string,
+  options: InitialGameOptions = {}
 ): GameState {
-  const allPieces = generateDominoPieces();
-  const shuffledPieces = shufflePieces(allPieces);
-
-  // Escolhe jogador inicial aleatoriamente
-  const currentPlayerIndex = Math.floor(Math.random() * 2);
+  const { pieces = generateDominoPieces(), startingPlayerIndex = 0, protectTurns = true } = options;
 
   return {
     phase: 'setup',
     players: [
-      {
-        id: 'player-1',
-        name: player1Name,
-        hand: [],
-        score: 0,
-      },
-      {
-        id: 'player-2',
-        name: player2Name,
-        hand: [],
-        score: 0,
-      },
+      { id: 'player-1', name: player1Name, hand: [], score: 0 },
+      { id: 'player-2', name: player2Name, hand: [], score: 0 },
     ],
-    currentPlayerIndex,
-    table: {
-      leftEnd: null,
-      rightEnd: null,
-      pieces: [],
-    },
-    drawPile: shuffledPieces,
-    selectedPiece: null,
-    activePlayerVisible: true,
-    hasDrawnPieceThisTurn: false,
+    currentPlayerIndex: startingPlayerIndex,
+    table: { leftEnd: null, rightEnd: null, pieces: [] },
+    drawPile: pieces.map((piece) => ({ ...piece, isFaceUp: false })),
+    turnStep: 'draw',
+    drawnPieceId: null,
+    selectedPieceId: null,
+    autoPassedPlayerIndexes: [],
+    protectTurns,
+    result: null,
     logs: [],
   };
 }
 
+/** Sorteia o monte embaralhado e quem começa a partida. */
+export function createRandomSetup(rng: RandomFn = Math.random): {
+  shuffledPieces: DominoPiece[];
+  startingPlayerIndex: number;
+} {
+  return {
+    shuffledPieces: shufflePieces(generateDominoPieces(), rng),
+    startingPlayerIndex: Math.floor(rng() * 2),
+  };
+}

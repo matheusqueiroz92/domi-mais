@@ -2,25 +2,23 @@
 alwaysApply: true
 ---
 
-# DomiMais — Escopo do MVP
+# DomiMais — Escopo e Próximas Etapas
 
-Este documento limita o escopo do MVP.
+O MVP (2 jogadores no mesmo dispositivo) está concluído. As etapas seguintes,
+nesta ordem, são:
 
-## Permitido
+1. Nova tela inicial e novo layout da mesa (pensados primeiro para celular)
+2. Modo contra o computador (com níveis de dificuldade; o bot também blefa)
+3. Tutorial interativo e modo "dica"
+4. PWA com partida salva em localStorage (uso offline)
+5. Multiplayer online por sala com código, sem login, com chat livre e filtro
+   de palavras ofensivas (exige backend WebSocket com estado no servidor)
 
-- 2 jogadores
-- Mesmo dispositivo
-- Turnos protegidos
-- Animações simples
-- Jogo local
+O modo no mesmo dispositivo será removido quando as etapas 2 e 5 estiverem
+prontas.
 
-## Proibido
+Regras para qualquer etapa:
 
-- Multiplayer online
-- Login
-- Ranking
-- IA avançada
-- Backend
-- Persistência
-
-Sempre priorizar conclusão do ciclo completo do jogo.
+- Não implementar etapas futuras antes da hora.
+- Regras do jogo só em `src/game/logic`, sempre com testes.
+- Documentar o que for implementado (docs/, README, CHANGELOG).

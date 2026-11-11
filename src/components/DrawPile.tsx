@@ -39,10 +39,8 @@ export function DrawPile({ pieces, onSelectPiece, disabled = false, isChoosingIn
             whileHover={!disabled ? { scale: 1.1, y: -5 } : {}}
             whileTap={!disabled ? { scale: 0.95 } : {}}
           >
-            <div
-              className={`draw-pile__piece ${disabled ? 'draw-pile__piece--disabled' : ''}`}
-              onClick={() => !disabled && onSelectPiece(piece.id)}
-            >
+            {/* O clique é tratado só na peça (antes era disparado duas vezes). */}
+            <div className={`draw-pile__piece ${disabled ? 'draw-pile__piece--disabled' : ''}`}>
               <DominoPiece
                 piece={piece}
                 isFaceUp={false}

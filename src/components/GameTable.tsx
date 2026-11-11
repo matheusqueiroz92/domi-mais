@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { DominoPiece } from './DominoPiece';
-import type { Table, DominoPiece as DominoPieceType } from '../game/state/game-types';
+import type { Table } from '../game/state/game-types';
 import './GameTable.css';
 
 interface GameTableProps {
   table: Table;
-  selectedPiece?: DominoPieceType | null;
   canFitLeft?: boolean;
   canFitRight?: boolean;
   onPlayPiece?: (position: 'left' | 'right') => void;
@@ -75,6 +74,15 @@ export function GameTable({ table, canFitLeft = false, canFitRight = false, onPl
             <motion.div 
               className={`game-table__end-indicator game-table__end-indicator--left ${canFitLeft ? 'game-table__end-indicator--clickable' : ''}`}
               onClick={canFitLeft && onPlayPiece ? () => onPlayPiece('left') : undefined}
+              role={canFitLeft ? 'button' : undefined}
+              tabIndex={canFitLeft ? 0 : undefined}
+              aria-label={canFitLeft ? 'Jogar na ponta esquerda' : undefined}
+              onKeyDown={(event) => {
+                if (canFitLeft && onPlayPiece && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault();
+                  onPlayPiece('left');
+                }
+              }}
               animate={canFitLeft ? {
                 scale: [1, 1.1, 1],
                 boxShadow: [
@@ -105,6 +113,15 @@ export function GameTable({ table, canFitLeft = false, canFitRight = false, onPl
             <motion.div 
               className={`game-table__end-indicator game-table__end-indicator--right ${canFitRight ? 'game-table__end-indicator--clickable' : ''}`}
               onClick={canFitRight && onPlayPiece ? () => onPlayPiece('right') : undefined}
+              role={canFitRight ? 'button' : undefined}
+              tabIndex={canFitRight ? 0 : undefined}
+              aria-label={canFitRight ? 'Jogar na ponta direita' : undefined}
+              onKeyDown={(event) => {
+                if (canFitRight && onPlayPiece && (event.key === 'Enter' || event.key === ' ')) {
+                  event.preventDefault();
+                  onPlayPiece('right');
+                }
+              }}
               animate={canFitRight ? {
                 scale: [1, 1.1, 1],
                 boxShadow: [

@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Modal } from './Modal';
-import logoDomiMais from '../../public/logo-domi-mais.jpeg';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
@@ -38,7 +37,7 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <img src={logoDomiMais} alt="DomiMais" className="home-screen__logo" width={700} height={350} />
+            <img src="/logo-domi-mais.jpeg" alt="DomiMais" className="home-screen__logo" width={700} height={350} />
           </motion.h1>
 
           <motion.div
@@ -52,38 +51,41 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
             <div className="home-screen__rule-section">
               <h3 className="home-screen__rule-title">🎯 Objetivo</h3>
               <p className="home-screen__rule-text">
-                Vence o jogador com a menor soma das peças restantes na mão ao
-                final do jogo.
+                Vence quem ficar sem peças na mão. Se o jogo fechar (nenhuma
+                peça encaixa), vence quem tiver a menor soma das peças da mão;
+                somas iguais dão empate.
               </p>
             </div>
 
             <div className="home-screen__rule-section">
               <h3 className="home-screen__rule-title">🎮 Funcionamento</h3>
               <p className="home-screen__rule-text">
-                - Cada jogador deve comprar uma peça do monte por turno
+                - Ninguém começa com peças: as 28 ficam no monte, viradas
               </p>
               <p className="home-screen__rule-text">
                 - O verso de cada peça mostra a soma dos seus dois lados
               </p>
               <p className="home-screen__rule-text">
-                - Se a peça encaixa nas pontas da mesa, você pode jogá-la ou
-                blefar
+                - O jogador sorteado escolhe no monte a peça inicial da mesa
               </p>
               <p className="home-screen__rule-text">
-                - Se não encaixa, você deve ficar com a peça na mão
+                - Em cada turno você compra uma peça do monte e pode jogar uma
+                peça que encaixe em uma das pontas, ou ficar com a peça
+                comprada
               </p>
               <p className="home-screen__rule-text">
-                - O jogo termina quando o monte acaba ou quando não há mais
-                peças que encaixam
+                - Quando o monte acaba, o jogo continua com as peças das mãos:
+                quem tem peça que encaixa é obrigado a jogar, e quem não tem
+                passa a vez automaticamente
               </p>
             </div>
 
             <div className="home-screen__rule-section">
               <h3 className="home-screen__rule-title">🎭 Blefe</h3>
               <p className="home-screen__rule-text">
-                Quando uma peça encaixa, você pode blefar e fingir que não
-                encaixa, ficando com a peça na mão. Use essa estratégia para
-                confundir seu oponente!
+                Mesmo quando a peça comprada encaixa, você pode ficar com ela e
+                fingir que não encaixava. O jogo nunca revela o blefe: use a
+                soma do verso para deduzir o que o adversário guardou!
               </p>
             </div>
 

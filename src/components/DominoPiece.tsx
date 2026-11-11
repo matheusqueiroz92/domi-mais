@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import type { KeyboardEvent } from "react";
 import type { DominoPiece as DominoPieceType } from "../game/state/game-types";
 import clsx from "clsx";
 import "./DominoPiece.css";
@@ -95,8 +96,24 @@ export function DominoPiece({
   // Se não especificou orientação, buchas ficam verticais, outras horizontais
   const finalOrientation = orientation || (isBucha ? "vertical" : "horizontal");
 
+  const label = isFaceUp
+    ? `Peça ${piece.left}|${piece.right}`
+    : `Peça virada, soma ${piece.sum}`;
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (onClick && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
   const pieceContent = (
     <div
+      role={onClick ? "button" : "img"}
+      aria-label={label}
+      aria-pressed={onClick ? isSelected : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
       className={clsx("domino-piece", `domino-piece--${size}`, {
         "domino-piece--selected": isSelected,
         "domino-piece--face-down": !isFaceUp,
