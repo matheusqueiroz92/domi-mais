@@ -7,14 +7,13 @@ import { seededRandom } from '../../logic/__tests__/helpers';
 
 const initAction: GameAction = {
   type: 'INITIALIZE_GAME',
-  player1Name: 'Ana',
-  player2Name: 'Beto',
+  playerNames: ['Ana', 'Beto'],
   shuffledPieces: generateDominoPieces().reverse(),
   startingPlayerIndex: 1,
 };
 
 describe('gameReducer', () => {
-  const blank = createInitialGameState('Jogador 1', 'Jogador 2');
+  const blank = createInitialGameState(['Jogador 1', 'Jogador 2']);
 
   it('INITIALIZE_GAME cria a partida com os nomes, o monte e o jogador inicial recebidos', () => {
     const state = gameReducer(blank, initAction);
@@ -23,6 +22,23 @@ describe('gameReducer', () => {
     expect(state.currentPlayerIndex).toBe(1);
     expect(state.drawPile[0]).toMatchObject({ left: 6, right: 6 });
     expect(state.protectTurns).toBe(true);
+  });
+
+  it('aceita 3 e 4 jogadores', () => {
+    for (const playerNames of [['Ana', 'Beto', 'Caio'], ['Ana', 'Beto', 'Caio', 'Dani']]) {
+      const state = gameReducer(blank, { ...initAction, playerNames, startingPlayerIndex: 2 });
+      expect(state.players.map((p) => p.name)).toEqual(playerNames);
+      expect(new Set(state.players.map((p) => p.id)).size).toBe(playerNames.length);
+      expect(state.currentPlayerIndex).toBe(2);
+    }
+  });
+
+  it('ignora configuração inválida (menos de 2, mais de 4 ou jogador inicial inexistente)', () => {
+    expect(gameReducer(blank, { ...initAction, playerNames: ['Ana'] })).toBe(blank);
+    expect(
+      gameReducer(blank, { ...initAction, playerNames: ['A', 'B', 'C', 'D', 'E'] })
+    ).toBe(blank);
+    expect(gameReducer(blank, { ...initAction, startingPlayerIndex: 2 })).toBe(blank);
   });
 
   it('é puro: a mesma ação sobre o mesmo estado dá o mesmo resultado', () => {
@@ -76,18 +92,29 @@ describe('gameReducer', () => {
 
 describe('createRandomSetup', () => {
   it('sorteia as 28 peças e um jogador inicial válido, de forma reproduzível', () => {
-    const a = createRandomSetup(seededRandom(7));
-    const b = createRandomSetup(seededRandom(7));
+    const a = createRandomSetup(2, seededRandom(7));
+    const b = createRandomSetup(2, seededRandom(7));
     expect(a).toEqual(b);
     expect(a.shuffledPieces).toHaveLength(28);
     expect([0, 1]).toContain(a.startingPlayerIndex);
   });
 
-  it('os dois jogadores podem ser sorteados para começar', () => {
+  it.each([2, 3, 4])('com %i jogadores, qualquer um pode ser sorteado para começar', (count) => {
     const starters = new Set<number>();
-    for (let seed = 1; seed <= 40; seed++) {
-      starters.add(createRandomSetup(seededRandom(seed)).startingPlayerIndex);
+    for (let seed = 1; seed <= 80; seed++) {
+      starters.add(createRandomSetup(count, seededRandom(seed)).startingPlayerIndex);
     }
-    expect(starters).toEqual(new Set([0, 1]));
+    expect(starters).toEqual(new Set(Array.from({ length: count }, (_, i) => i)));
+  });
+});
+
+describe('createInitialGameState', () => {
+  it.each([0, 1, 5])('recusa partida com %i jogadores', (count) => {
+    const names = Array.from({ length: count }, (_, i) => `J${i}`);
+    expect(() => createInitialGameState(names)).toThrow(/de 2 a 4 jogadores/);
+  });
+
+  it('recusa jogador inicial fora da lista', () => {
+    expect(() => createInitialGameState(['Ana', 'Beto'], { startingPlayerIndex: 2 })).toThrow();
   });
 });

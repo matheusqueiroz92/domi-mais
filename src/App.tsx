@@ -7,7 +7,7 @@ import {
   getCurrentPlayer,
   getSelectedPiece,
   getSelectedPlayableSides,
-  getWinner,
+  getWinners,
   mustDraw,
 } from "./game/logic/selectors";
 import type { GamePhase, GameState } from "./game/state/game-types";
@@ -40,7 +40,11 @@ function getStatusMessage(state: GameState): string | null {
     .map((index) => state.players[index].name)
     .join(" e ");
   const passNotice = passed
-    ? `${passed} não tem peça que encaixa e passou a vez. `
+    ? `${passed} ${
+        state.autoPassedPlayerIndexes.length > 1 ? "não têm" : "não tem"
+      } peça que encaixa e ${
+        state.autoPassedPlayerIndexes.length > 1 ? "passaram" : "passou"
+      } a vez. `
     : "";
 
   if (mustDraw(state)) {
@@ -66,10 +70,12 @@ function GameContent() {
   const canSelectFromHand = isPlaying && state.turnStep === "play";
   const showDrawPile = state.phase === "choosing-initial" || mustDraw(state);
   const statusMessage = getStatusMessage(state);
-  const winner = getWinner(state);
+  const winners = getWinners(state);
+  const winner = winners.length === 1 ? winners[0] : null;
+  const tiedNames = winners.map((player) => player.name).join(" e ");
 
-  const handleStartGame = (player1Name: string, player2Name: string) => {
-    initializeGame(player1Name, player2Name);
+  const handleStartGame = (playerNames: string[]) => {
+    initializeGame(playerNames);
     dispatch({ type: "START_GAME" });
     setResultDismissed(false);
     setShowHomeScreen(false);
@@ -281,10 +287,10 @@ function GameContent() {
               {state.result.reason === "empty-hand"
                 ? winner
                   ? `${winner.name} venceu: ficou sem peças na mão!`
-                  : "Os dois jogadores ficaram sem peças na mão."
+                  : `Empate entre ${tiedNames}: ficaram sem peças na mão.`
                 : winner
                   ? `Jogo fechado. ${winner.name} venceu com a menor soma!`
-                  : "Jogo fechado com somas iguais."}
+                  : `Jogo fechado. Empate entre ${tiedNames}, com a menor soma.`}
             </p>
             <p style={{ marginBottom: "20px", textAlign: "center" }}>
               {state.players

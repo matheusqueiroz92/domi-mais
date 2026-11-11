@@ -6,7 +6,7 @@ export interface GameContextType {
   state: GameState;
   dispatch: Dispatch<GameAction>;
   /** Sorteia o monte e quem começa, e inicia uma partida nova na fase `setup`. */
-  initializeGame: (player1Name: string, player2Name: string) => void;
+  initializeGame: (playerNames: string[]) => void;
 }
 
 export const GameContext = createContext<GameContextType | undefined>(undefined);

@@ -31,7 +31,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | Campo | Significado |
 |---|---|
 | `phase` | `setup`, `choosing-initial`, `transition`, `playing` ou `finished` |
-| `players` | Jogadores, cada um com `hand` (mão) e `score` (soma final) |
+| `players` | De 2 a 4 jogadores, na ordem dos turnos, cada um com `hand` (mão) e `score` (soma final) |
 | `currentPlayerIndex` | Jogador da vez |
 | `table` | Peças na mesa e valores das pontas (`leftEnd`, `rightEnd`) |
 | `drawPile` | Monte |
@@ -40,7 +40,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | `selectedPieceId` | Peça da mão selecionada para jogar |
 | `autoPassedPlayerIndexes` | Quem passou a vez automaticamente na última troca |
 | `protectTurns` | Liga a troca de turno protegida (mesmo dispositivo) |
-| `result` | Resultado final: motivo, vencedor (`null` = empate) e somas |
+| `result` | Resultado final: motivo, `winnerIndexes` (um índice = vitória; vários = empate entre eles) e somas |
 | `logs` | Histórico em texto |
 
 ### Fases
@@ -57,7 +57,7 @@ playing ──(monte vazio e alguém sem peças, ou jogo fechado)──► finis
 
 | Ação | Função do motor | Válida quando |
 |---|---|---|
-| `INITIALIZE_GAME` | `createInitialGameState` | Sempre (cria partida nova) |
+| `INITIALIZE_GAME` | `createInitialGameState` | Recebe de 2 a 4 nomes (`playerNames`); configuração inválida é ignorada |
 | `START_GAME` | `startGame` | `phase = setup` |
 | `CHOOSE_INITIAL_PIECE` | `chooseInitialPiece` | `phase = choosing-initial` |
 | `CONFIRM_READY` | `confirmReady` | `phase = transition` |
@@ -85,6 +85,14 @@ Depois de `playPiece` ou `keepPiece`:
    é pulado e entra em `autoPassedPlayerIndexes`.
 3. Se o jogador mudou e `protectTurns` está ligado, a fase vira `transition`.
 
+### Número de jogadores
+
+O motor não assume 2 jogadores em nenhum ponto: a troca de turno, o passe
+automático e o resultado percorrem `players`. Os limites ficam em
+`MIN_PLAYERS` e `MAX_PLAYERS` (`rules.ts`). Para o modo contra o computador,
+basta que alguns jogadores tenham suas ações escolhidas por código em vez de
+cliques; o motor é o mesmo.
+
 ### Blefe
 
 `keepPiece` é a única ação para "não jogar". O motor não sabe nem registra se a
@@ -103,10 +111,11 @@ npm run test:watch # modo interativo
 | `logic/__tests__/pieces.test.ts` | As 28 peças, embaralhamento, soma |
 | `logic/__tests__/rules.test.ts` | Encaixe, orientação, mesa, fim de jogo |
 | `logic/__tests__/engine.test.ts` | Cada ação, monte vazio, blefe, regressão dos bugs |
-| `logic/__tests__/simulation.test.ts` | 600 partidas aleatórias completas com invariantes |
+| `logic/__tests__/multiplayer.test.ts` | Regras específicas de 3 e 4 jogadores |
+| `logic/__tests__/simulation.test.ts` | 1.200 partidas aleatórias completas (2, 3 e 4 jogadores) com invariantes |
 | `state/__tests__/game-reducer.test.ts` | Reducer e sorteio |
 | `components/__tests__/components.test.tsx` | Peça, mesa, modal, troca de turno |
-| `App.test.tsx` | Fluxo pela interface, inclusive uma partida inteira |
+| `App.test.tsx` | Fluxo pela interface, inclusive partidas inteiras com 2, 3 e 4 jogadores |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças
 únicas somando monte, mesa e mãos; as peças da mesa formam uma corrente válida;

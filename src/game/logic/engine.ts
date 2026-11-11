@@ -36,10 +36,11 @@ function finishGame(state: GameState, result: GameResult): GameState {
       ? 'Fim de jogo: há jogador sem peças na mão.'
       : 'Jogo fechado! Nenhuma peça das mãos encaixa nas pontas.';
 
+  const winnerNames = result.winnerIndexes.map((index) => players[index].name);
   const outcomeLog =
-    result.winnerIndex === null
-      ? 'A partida terminou empatada.'
-      : `${players[result.winnerIndex].name} venceu!`;
+    winnerNames.length === 1
+      ? `${winnerNames[0]} venceu!`
+      : `A partida terminou empatada entre ${winnerNames.join(' e ')}.`;
 
   return {
     ...state,

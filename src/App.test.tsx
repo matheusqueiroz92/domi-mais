@@ -6,11 +6,17 @@ import { seededRandom } from './game/logic/__tests__/helpers';
 const FACE_UP = /^Peça \d\|\d$/;
 const FACE_DOWN = /^Peça virada, soma \d+$/;
 
-function startMatch() {
+function startMatch(names: string[] = ['Ana', 'Beto']) {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: 'Jogar' }));
-  fireEvent.change(screen.getByLabelText('Nome do Jogador 1'), { target: { value: 'Ana' } });
-  fireEvent.change(screen.getByLabelText('Nome do Jogador 2'), { target: { value: 'Beto' } });
+  if (names.length !== 2) {
+    fireEvent.click(screen.getByRole('radio', { name: `${names.length} jogadores` }));
+  }
+  names.forEach((name, index) => {
+    fireEvent.change(screen.getByLabelText(`Nome do Jogador ${index + 1}`), {
+      target: { value: name },
+    });
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Iniciar Jogo' }));
 }
 
@@ -111,8 +117,54 @@ describe('App (jogo no mesmo dispositivo)', () => {
     expect(screen.getByRole('button', { name: 'Jogar' })).toBeInTheDocument();
   });
 
-  it('uma partida inteira jogada pela interface chega ao resultado final', () => {
-    startMatch();
+  it('permite escolher 2, 3 ou 4 jogadores e pede um nome para cada um', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Jogar' }));
+
+    expect(screen.getByRole('radio', { name: '2 jogadores' })).toBeChecked();
+    expect(screen.queryByLabelText('Nome do Jogador 3')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: '4 jogadores' }));
+    expect(screen.getByLabelText('Nome do Jogador 4')).toBeInTheDocument();
+
+    ['Ana', 'Beto', 'Caio'].forEach((name, index) => {
+      fireEvent.change(screen.getByLabelText(`Nome do Jogador ${index + 1}`), {
+        target: { value: name },
+      });
+    });
+    // Falta o quarto nome.
+    expect(screen.getByRole('button', { name: 'Iniciar Jogo' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('radio', { name: '3 jogadores' }));
+    expect(screen.getByRole('button', { name: 'Iniciar Jogo' })).toBeEnabled();
+  });
+
+  it('com 3 jogadores mostra as três mãos e a vez passa de um para o outro', () => {
+    startMatch(['Ana', 'Beto', 'Caio']);
+    expect(screen.getAllByTestId(/^player-card-/)).toHaveLength(3);
+    chooseInitialPiece();
+
+    const seen: string[] = [];
+    for (let turn = 0; turn < 3; turn++) {
+      fireEvent.click(pileButtons()[0]);
+      fireEvent.click(screen.getByRole('button', { name: 'Ficar com a peça' }));
+      const cover = screen.getByRole('dialog', { name: /Passe o dispositivo para/ });
+      seen.push(cover.textContent ?? '');
+      fireEvent.click(screen.getByRole('button', { name: 'Estou pronto' }));
+    }
+
+    // Em três trocas de turno, cada um dos três jogadores é chamado uma vez.
+    for (const name of ['Ana', 'Beto', 'Caio']) {
+      expect(seen.filter((text) => text.includes(`Passe o dispositivo para ${name}`))).toHaveLength(1);
+    }
+  });
+
+  it.each([
+    [['Ana', 'Beto']],
+    [['Ana', 'Beto', 'Caio']],
+    [['Ana', 'Beto', 'Caio', 'Dani']],
+  ])('uma partida inteira jogada pela interface chega ao resultado final (%j)', (names) => {
+    startMatch(names);
     chooseInitialPiece();
 
     const isOver = () => screen.queryByRole('dialog', { name: /Fim de jogo|Empate/ });
@@ -150,7 +202,9 @@ describe('App (jogo no mesmo dispositivo)', () => {
     }
 
     const result = isOver()!;
-    expect(result).toHaveTextContent(/Ana: \d+ · Beto: \d+/);
+    expect(result).toHaveTextContent(
+      new RegExp(names.map((name) => `${name}: \\d+`).join(' · '))
+    );
     expect(screen.getByText('0 peças')).toBeInTheDocument();
 
     fireEvent.click(within(result).getByRole('button', { name: 'Nova partida' }));

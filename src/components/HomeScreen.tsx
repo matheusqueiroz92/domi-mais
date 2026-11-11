@@ -1,24 +1,37 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Modal } from './Modal';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../game/logic/rules';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
-  onStartGame: (player1Name: string, player2Name: string) => void;
+  /** Recebe os nomes dos jogadores (de 2 a 4), na ordem dos turnos. */
+  onStartGame: (playerNames: string[]) => void;
 }
 
 export function HomeScreen({ onStartGame }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
-  const [player1Name, setPlayer1Name] = useState('');
-  const [player2Name, setPlayer2Name] = useState('');
+  const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
+  const [names, setNames] = useState<string[]>(() => Array(MAX_PLAYERS).fill(''));
+
+  const playerNames = names.slice(0, playerCount).map((name) => name.trim());
+  const canStart = playerNames.every((name) => name.length > 0);
+  const countOptions = Array.from(
+    { length: MAX_PLAYERS - MIN_PLAYERS + 1 },
+    (_, index) => MIN_PLAYERS + index
+  );
 
   const handlePlayClick = () => {
     setShowPlayerModal(true);
   };
 
+  const handleNameChange = (index: number, value: string) => {
+    setNames((current) => current.map((name, i) => (i === index ? value : name)));
+  };
+
   const handleStartGame = () => {
-    if (player1Name.trim() && player2Name.trim()) {
-      onStartGame(player1Name.trim(), player2Name.trim());
+    if (canStart) {
+      onStartGame(playerNames);
     }
   };
 
@@ -53,7 +66,7 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
               <p className="home-screen__rule-text">
                 Vence quem ficar sem peças na mão. Se o jogo fechar (nenhuma
                 peça encaixa), vence quem tiver a menor soma das peças da mão;
-                somas iguais dão empate.
+                quem empatar na menor soma divide a vitória.
               </p>
             </div>
 
@@ -95,7 +108,7 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
                 - 28 peças de dominó (todas as combinações de 0-0 até 6-6)
               </p>
               <p className="home-screen__rule-text">
-                - Jogo local para 2 jogadores no mesmo dispositivo
+                - De 2 a 4 jogadores no mesmo dispositivo, cada um por si
               </p>
               <p className="home-screen__rule-text">
                 - Interface moderna com animações suaves
@@ -134,40 +147,51 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
         showCloseButton={false}
       >
         <div className="player-names-form">
-          <div className="player-names-form__field">
-            <label htmlFor="player1" className="player-names-form__label">
-              Nome do Jogador 1
-            </label>
-            <input
-              id="player1"
-              type="text"
-              className="player-names-form__input"
-              placeholder="Digite o nome do primeiro jogador"
-              value={player1Name}
-              onChange={(e) => setPlayer1Name(e.target.value)}
-              autoFocus
-            />
-          </div>
+          <fieldset className="player-names-form__field player-count">
+            <legend className="player-names-form__label">Quantos jogadores?</legend>
+            <div className="player-count__options">
+              {countOptions.map((count) => (
+                <label
+                  key={count}
+                  className={`player-count__option ${
+                    playerCount === count ? 'player-count__option--active' : ''
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="player-count"
+                    value={count}
+                    checked={playerCount === count}
+                    onChange={() => setPlayerCount(count)}
+                  />
+                  {count} jogadores
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
-          <div className="player-names-form__field">
-            <label htmlFor="player2" className="player-names-form__label">
-              Nome do Jogador 2
-            </label>
-            <input
-              id="player2"
-              type="text"
-              className="player-names-form__input"
-              placeholder="Digite o nome do segundo jogador"
-              value={player2Name}
-              onChange={(e) => setPlayer2Name(e.target.value)}
-            />
-          </div>
+          {Array.from({ length: playerCount }, (_, index) => (
+            <div className="player-names-form__field" key={index}>
+              <label htmlFor={`player${index + 1}`} className="player-names-form__label">
+                Nome do Jogador {index + 1}
+              </label>
+              <input
+                id={`player${index + 1}`}
+                type="text"
+                className="player-names-form__input"
+                placeholder={`Digite o nome do jogador ${index + 1}`}
+                value={names[index]}
+                onChange={(e) => handleNameChange(index, e.target.value)}
+                autoFocus={index === 0}
+              />
+            </div>
+          ))}
 
           <div className="player-names-form__actions">
             <button
               className="btn btn--primary"
               onClick={handleStartGame}
-              disabled={!player1Name.trim() || !player2Name.trim()}
+              disabled={!canStart}
             >
               Iniciar Jogo
             </button>

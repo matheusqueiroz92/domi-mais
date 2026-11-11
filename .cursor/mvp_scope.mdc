@@ -4,11 +4,12 @@ alwaysApply: true
 
 # DomiMais — Escopo e Próximas Etapas
 
-O MVP (2 jogadores no mesmo dispositivo) está concluído. As etapas seguintes,
+O MVP (2 a 4 jogadores no mesmo dispositivo) está concluído. As etapas seguintes,
 nesta ordem, são:
 
 1. Nova tela inicial e novo layout da mesa (pensados primeiro para celular)
-2. Modo contra o computador (com níveis de dificuldade; o bot também blefa)
+2. Modo contra o computador em partidas de 2, 3 ou 4 jogadores (com níveis de
+   dificuldade; o bot também blefa)
 3. Tutorial interativo e modo "dica"
 4. PWA com partida salva em localStorage (uso offline)
 5. Multiplayer online por sala com código, sem login, com chat livre e filtro

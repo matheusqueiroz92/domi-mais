@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 11/11/2026
+
+- Partidas com **2, 3 ou 4 jogadores**, cada um por si. A tela de início pede a
+  quantidade de jogadores e um nome para cada um.
+- Empate passa a ser só entre os jogadores que cumprem a condição de vitória
+  (mesma menor soma ou mãos vazias); os demais perdem.
+- `GameResult.winnerIndex` virou `winnerIndexes` (lista) e a ação
+  `INITIALIZE_GAME` recebe `playerNames`.
+- Testes novos para 3 e 4 jogadores; a simulação passou a cobrir 1.200 partidas.
+
 ## 0.2.0 — 11/11/2026
 
 ### Regras

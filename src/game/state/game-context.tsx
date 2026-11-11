@@ -1,7 +1,11 @@
 import { useReducer } from 'react';
 import type { ReactNode } from 'react';
 import { gameReducer } from './game-reducer';
-import { createInitialGameState, createRandomSetup } from './game-inicial-state';
+import {
+  DEFAULT_PLAYER_NAMES,
+  createInitialGameState,
+  createRandomSetup,
+} from './game-inicial-state';
 import { GameContext } from './use-game';
 
 interface GameProviderProps {
@@ -10,12 +14,16 @@ interface GameProviderProps {
 
 export function GameProvider({ children }: GameProviderProps) {
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
-    createInitialGameState('Jogador 1', 'Jogador 2')
+    createInitialGameState(DEFAULT_PLAYER_NAMES)
   );
 
-  const initializeGame = (player1Name: string, player2Name: string) => {
+  const initializeGame = (playerNames: string[]) => {
     // O sorteio acontece aqui, fora do reducer, para o reducer continuar puro.
-    dispatch({ type: 'INITIALIZE_GAME', player1Name, player2Name, ...createRandomSetup() });
+    dispatch({
+      type: 'INITIALIZE_GAME',
+      playerNames,
+      ...createRandomSetup(playerNames.length),
+    });
   };
 
   return (

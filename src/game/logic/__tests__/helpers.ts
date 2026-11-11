@@ -7,6 +7,9 @@ export function piece(left: number, right: number, id = `${left}-${right}`): Dom
   return { id, left, right, sum: left + right, isFaceUp: false };
 }
 
+/** Nomes usados nos cenários de teste, na ordem dos turnos. */
+export const PLAYER_NAMES = ['Ana', 'Beto', 'Caio', 'Dani'];
+
 /** Mesa com uma única peça aberta. */
 export function tableWith(left: number, right: number) {
   return {
@@ -20,8 +23,10 @@ interface Scenario {
   table?: [number, number];
   handA?: DominoPiece[];
   handB?: DominoPiece[];
+  /** Mãos de todos os jogadores (2 a 4). Quando informado, substitui handA/handB. */
+  hands?: DominoPiece[][];
   pile?: DominoPiece[];
-  current?: 0 | 1;
+  current?: number;
   turnStep?: GameState['turnStep'];
   drawnPieceId?: string | null;
   protectTurns?: boolean;
@@ -32,22 +37,24 @@ export function scenario({
   table = [3, 5],
   handA = [],
   handB = [],
+  hands,
   pile = [],
   current = 0,
   turnStep,
   drawnPieceId = null,
   protectTurns = true,
 }: Scenario = {}): GameState {
-  const base = createInitialGameState('Ana', 'Beto', { pieces: pile, protectTurns });
+  const allHands = hands ?? [handA, handB];
+  const base = createInitialGameState(PLAYER_NAMES.slice(0, allHands.length), {
+    pieces: pile,
+    protectTurns,
+  });
   return {
     ...base,
     phase: 'playing',
     currentPlayerIndex: current,
     table: tableWith(table[0], table[1]),
-    players: [
-      { ...base.players[0], hand: handA },
-      { ...base.players[1], hand: handB },
-    ],
+    players: base.players.map((player, index) => ({ ...player, hand: allHands[index] })),
     turnStep: turnStep ?? (pile.length > 0 ? 'draw' : 'play'),
     drawnPieceId,
   };

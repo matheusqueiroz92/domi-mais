@@ -212,3 +212,48 @@
     flex-direction: column;
   }
 }
+
+/* Seleção da quantidade de jogadores */
+.player-count {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.player-count__options {
+  display: flex;
+  gap: 8px;
+}
+
+.player-count__option {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border: 2px solid #d0d7de;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  text-align: center;
+}
+
+.player-count__option--active {
+  border-color: #4a90e2;
+  background: #eaf3fd;
+}
+
+.player-count__option:focus-within {
+  outline: 2px solid #4a90e2;
+  outline-offset: 2px;
+}
+
+.player-count__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}

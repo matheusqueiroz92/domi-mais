@@ -6,7 +6,7 @@ import { canKeepPiece } from '../engine';
 import { handSum } from '../pieces';
 import { getPlayableSides, hasPlayablePiece, isBlocked } from '../rules';
 import type { RandomFn } from '../pieces';
-import { seededRandom } from './helpers';
+import { PLAYER_NAMES, seededRandom } from './helpers';
 
 /** Todas as ações válidas no estado atual. */
 function legalActions(state: GameState): GameAction[] {
@@ -48,12 +48,11 @@ function checkInvariants(state: GameState) {
   }
 }
 
-function playRandomGame(rng: RandomFn, protectTurns: boolean): GameState {
-  let state = createInitialGameState('Ana', 'Beto', {
-    ...(() => {
-      const { shuffledPieces, startingPlayerIndex } = createRandomSetup(rng);
-      return { pieces: shuffledPieces, startingPlayerIndex };
-    })(),
+function playRandomGame(rng: RandomFn, playerCount: number, protectTurns: boolean): GameState {
+  const { shuffledPieces, startingPlayerIndex } = createRandomSetup(playerCount, rng);
+  let state = createInitialGameState(PLAYER_NAMES.slice(0, playerCount), {
+    pieces: shuffledPieces,
+    startingPlayerIndex,
     protectTurns,
   });
 
@@ -78,16 +77,20 @@ function playRandomGame(rng: RandomFn, protectTurns: boolean): GameState {
 }
 
 describe('simulação de partidas completas', () => {
-  it.each([true, false])(
-    '300 partidas aleatórias sempre terminam com resultado coerente (protectTurns=%s)',
-    (protectTurns) => {
-      const reasons = new Set<string>();
-      let ties = 0;
+  const cases = [2, 3, 4].flatMap((playerCount) =>
+    [true, false].map((protectTurns) => ({ playerCount, protectTurns }))
+  );
 
-      for (let seed = 1; seed <= 300; seed++) {
-        const state = playRandomGame(seededRandom(seed), protectTurns);
+  it.each(cases)(
+    '200 partidas aleatórias com $playerCount jogadores sempre terminam com resultado coerente (protectTurns=$protectTurns)',
+    ({ playerCount, protectTurns }) => {
+      const reasons = new Set<string>();
+
+      for (let seed = 1; seed <= 200; seed++) {
+        const state = playRandomGame(seededRandom(seed), playerCount, protectTurns);
 
         expect(state.phase).toBe('finished');
+        expect(state.players).toHaveLength(playerCount);
         expect(state.drawPile).toHaveLength(0);
 
         const result = state.result!;
@@ -96,32 +99,25 @@ describe('simulação de partidas completas', () => {
         expect(state.players.map((p) => p.score)).toEqual(scores);
         reasons.add(result.reason);
 
+        const winners = result.winnerIndexes;
+        const losers = state.players.map((_, index) => index).filter((i) => !winners.includes(i));
+        expect(winners.length).toBeGreaterThan(0);
+
         if (result.reason === 'empty-hand') {
-          expect(state.players.some((p) => p.hand.length === 0)).toBe(true);
+          // Vencem todos os que estão sem peças (mesmo que alguém só tenha o [0|0]).
+          for (const i of winners) expect(state.players[i].hand).toHaveLength(0);
+          for (const i of losers) expect(state.players[i].hand.length).toBeGreaterThan(0);
         } else {
           expect(isBlocked(state.players, state.table)).toBe(true);
           expect(state.players.every((p) => p.hand.length > 0)).toBe(true);
-        }
-
-        if (result.winnerIndex === null) {
-          ties++;
-          expect(scores[0]).toBe(scores[1]);
-        } else {
-          const winner = state.players[result.winnerIndex];
-          const loser = state.players[1 - result.winnerIndex];
-          if (result.reason === 'empty-hand') {
-            // Mão vazia vence mesmo que o adversário só tenha o [0|0] (soma 0).
-            expect(winner.hand).toHaveLength(0);
-            expect(loser.hand.length).toBeGreaterThan(0);
-          } else {
-            expect(handSum(winner.hand)).toBeLessThan(handSum(loser.hand));
-          }
+          const lowest = Math.min(...scores);
+          for (const i of winners) expect(scores[i]).toBe(lowest);
+          for (const i of losers) expect(scores[i]).toBeGreaterThan(lowest);
         }
       }
 
       // As duas formas de terminar aparecem na amostra.
       expect(reasons).toEqual(new Set(['empty-hand', 'blocked']));
-      expect(ties).toBeGreaterThanOrEqual(0);
     }
   );
 });

@@ -1,5 +1,6 @@
 import type { GameAction, GameState } from './game-types';
-import { createInitialGameState } from './game-inicial-state';
+import { DEFAULT_PLAYER_NAMES, createInitialGameState } from './game-inicial-state';
+import { isValidPlayerCount } from '../logic/rules';
 import {
   chooseInitialPiece,
   confirmReady,
@@ -18,7 +19,14 @@ import {
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'INITIALIZE_GAME':
-      return createInitialGameState(action.player1Name, action.player2Name, {
+      // Configuração inválida (fora de 2 a 4 jogadores) é ignorada.
+      if (
+        !isValidPlayerCount(action.playerNames.length) ||
+        !(action.startingPlayerIndex in action.playerNames)
+      ) {
+        return state;
+      }
+      return createInitialGameState(action.playerNames, {
         pieces: action.shuffledPieces,
         startingPlayerIndex: action.startingPlayerIndex,
         protectTurns: action.protectTurns,
@@ -46,7 +54,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return keepPiece(state);
 
     case 'RESET_GAME':
-      return createInitialGameState('Jogador 1', 'Jogador 2');
+      return createInitialGameState(DEFAULT_PLAYER_NAMES);
 
     default:
       return state;

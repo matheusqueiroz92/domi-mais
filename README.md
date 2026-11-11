@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -24,7 +24,8 @@ seus dois lados, o que permite ao adversário deduzir informações sem ver a pe
 (soma 7 pode ser 1|6, 2|5 ou 3|4). O jogo foi criado com intuito educacional,
 para estimular o raciocínio lógico.
 
-A versão atual é jogada por 2 jogadores no mesmo dispositivo e está publicada
+A versão atual é jogada por 2, 3 ou 4 jogadores no mesmo dispositivo, cada um
+por si, e está publicada
 em [domimais.com.br](https://domimais.com.br).
 
 ## 🎯 Como jogar
@@ -38,7 +39,7 @@ em [domimais.com.br](https://domimais.com.br).
 5. Quando o monte acaba, o jogo continua com as peças das mãos: quem tem peça
    que encaixa é obrigado a jogar e quem não tem passa a vez automaticamente.
 6. **Vence** quem ficar sem peças. Se o jogo fechar, vence a menor soma das
-   peças da mão; somas iguais dão empate.
+   peças da mão; quem empatar na menor soma divide a vitória.
 
 As regras completas estão em [docs/REGRAS.md](docs/REGRAS.md).
 
@@ -103,12 +104,12 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 ## 🔮 Próximos passos
 
 - [ ] Nova tela inicial e novo layout da mesa
-- [ ] Modo contra o computador
+- [ ] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [ ] Tutorial interativo e modo "dica"
 - [ ] PWA com partida salva para uso offline
 - [ ] Multiplayer online por sala com código, com chat
 
-O modo de dois jogadores no mesmo dispositivo será removido quando os modos
+O modo no mesmo dispositivo será removido quando os modos
 contra o computador e online estiverem prontos.
 
 ## 📄 Licença

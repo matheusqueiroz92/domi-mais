@@ -26,8 +26,11 @@ export function getSelectedPlayableSides(state: GameState): Record<TableSide, bo
   return getPlayableSides(piece, state.table);
 }
 
-/** Vencedor da partida encerrada; `null` em caso de empate ou partida em andamento. */
-export function getWinner(state: GameState): Player | null {
-  if (!state.result || state.result.winnerIndex === null) return null;
-  return state.players[state.result.winnerIndex];
+/**
+ * Vencedores da partida encerrada: um jogador (vitória) ou vários (empate
+ * entre eles). Lista vazia enquanto a partida está em andamento.
+ */
+export function getWinners(state: GameState): Player[] {
+  if (!state.result) return [];
+  return state.result.winnerIndexes.map((index) => state.players[index]);
 }

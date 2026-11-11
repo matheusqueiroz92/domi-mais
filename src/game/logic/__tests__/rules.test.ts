@@ -98,23 +98,23 @@ describe('fim de jogo (computeResult)', () => {
 
   it('com o monte vazio, vence quem está sem peças na mão', () => {
     const state = scenario({ handA: [piece(3, 4)], handB: [] });
-    expect(computeResult(state)).toEqual({ reason: 'empty-hand', winnerIndex: 1, scores: [7, 0] });
+    expect(computeResult(state)).toEqual({ reason: 'empty-hand', winnerIndexes: [1], scores: [7, 0] });
   });
 
   it('dois jogadores sem peças: empate', () => {
     const state = scenario({ handA: [], handB: [] });
-    expect(computeResult(state)).toEqual({ reason: 'empty-hand', winnerIndex: null, scores: [0, 0] });
+    expect(computeResult(state)).toEqual({ reason: 'empty-hand', winnerIndexes: [0, 1], scores: [0, 0] });
   });
 
   it('jogo fechado: vence a menor soma', () => {
     const state = scenario({ handA: [piece(1, 1), piece(2, 2)], handB: [piece(0, 1)] });
     expect(isBlocked(state.players, state.table)).toBe(true);
-    expect(computeResult(state)).toEqual({ reason: 'blocked', winnerIndex: 1, scores: [6, 1] });
+    expect(computeResult(state)).toEqual({ reason: 'blocked', winnerIndexes: [1], scores: [6, 1] });
   });
 
   it('jogo fechado com somas iguais: empate', () => {
     const state = scenario({ handA: [piece(1, 2)], handB: [piece(0, 1), piece(1, 1)] });
-    expect(computeResult(state)).toEqual({ reason: 'blocked', winnerIndex: null, scores: [3, 3] });
+    expect(computeResult(state)).toEqual({ reason: 'blocked', winnerIndexes: [0, 1], scores: [3, 3] });
   });
 
   it('continua quando alguma peça ainda encaixa', () => {

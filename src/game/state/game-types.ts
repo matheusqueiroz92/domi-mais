@@ -60,8 +60,11 @@ export type GameEndReason = 'empty-hand' | 'blocked';
 
 export interface GameResult {
   reason: GameEndReason;
-  /** Índice do vencedor em `players`, ou `null` em caso de empate. */
-  winnerIndex: number | null;
+  /**
+   * Índices dos vencedores em `players`. Um único índice é vitória;
+   * dois ou mais é empate entre eles (os demais jogadores perdem).
+   */
+  winnerIndexes: number[];
   /** Soma da mão de cada jogador, na ordem de `players`. */
   scores: number[];
 }
@@ -96,8 +99,8 @@ export interface GameState {
 export type GameAction =
   | {
       type: 'INITIALIZE_GAME';
-      player1Name: string;
-      player2Name: string;
+      /** Nomes dos jogadores, na ordem dos turnos (de 2 a 4). */
+      playerNames: string[];
       /** As 28 peças já embaralhadas (o reducer não sorteia nada). */
       shuffledPieces: DominoPiece[];
       /** Índice do jogador que começa (sorteado fora do reducer). */

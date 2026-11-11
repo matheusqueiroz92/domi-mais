@@ -8,6 +8,14 @@ import type {
 } from '../state/game-types';
 import { handSum } from './pieces';
 
+/** Quantidade mínima e máxima de jogadores em uma partida. */
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 4;
+
+export function isValidPlayerCount(count: number): boolean {
+  return Number.isInteger(count) && count >= MIN_PLAYERS && count <= MAX_PLAYERS;
+}
+
 /** Valor da ponta da mesa em um dos lados (`null` com a mesa vazia). */
 export function getTableEnd(table: Table, side: TableSide): number | null {
   return side === 'left' ? table.leftEnd : table.rightEnd;
@@ -89,7 +97,9 @@ export function isBlocked(players: readonly Player[], table: Table): boolean {
  * - enquanto houver peças no monte, a partida nunca termina;
  * - com o monte vazio, vence quem ficar sem peças na mão;
  * - com o monte vazio e nenhuma peça encaixando (jogo fechado), vence a menor
- *   soma das peças da mão; somas iguais dão empate.
+ *   soma das peças da mão;
+ * - se mais de um jogador cumpre a condição de vitória (mãos vazias ou a mesma
+ *   menor soma), há empate entre eles e os demais perdem.
  */
 export function computeResult(
   state: Pick<GameState, 'players' | 'table' | 'drawPile'>
@@ -105,7 +115,7 @@ export function computeResult(
   if (emptyHanded.length > 0) {
     return {
       reason: 'empty-hand',
-      winnerIndex: emptyHanded.length === 1 ? emptyHanded[0] : null,
+      winnerIndexes: emptyHanded,
       scores,
     };
   }
@@ -117,7 +127,7 @@ export function computeResult(
       .filter((index) => index !== -1);
     return {
       reason: 'blocked',
-      winnerIndex: winners.length === 1 ? winners[0] : null,
+      winnerIndexes: winners,
       scores,
     };
   }

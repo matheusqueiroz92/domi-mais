@@ -9,12 +9,12 @@ import {
   selectPiece,
   startGame,
 } from '../engine';
-import { getSelectedPiece, getSelectedPlayableSides, getWinner, mustDraw } from '../selectors';
+import { getSelectedPiece, getSelectedPlayableSides, getWinners, mustDraw } from '../selectors';
 import { createInitialGameState } from '../../state/game-inicial-state';
 import { piece, scenario } from './helpers';
 
 describe('início da partida', () => {
-  const setup = createInitialGameState('Ana', 'Beto', { startingPlayerIndex: 1 });
+  const setup = createInitialGameState(['Ana', 'Beto'], { startingPlayerIndex: 1 });
 
   it('nenhum jogador começa com peças e as 28 estão no monte', () => {
     expect(setup.phase).toBe('setup');
@@ -240,15 +240,15 @@ describe('fim de jogo', () => {
     const state = playPiece(start, '3-4', 'left');
 
     expect(state.phase).toBe('finished');
-    expect(state.result).toEqual({ reason: 'empty-hand', winnerIndex: 0, scores: [0, 12] });
-    expect(getWinner(state)?.name).toBe('Ana');
+    expect(state.result).toEqual({ reason: 'empty-hand', winnerIndexes: [0], scores: [0, 12] });
+    expect(getWinners(state).map((p) => p.name)).toEqual(['Ana']);
     expect(state.players.map((p) => p.score)).toEqual([0, 12]);
   });
 
   it('mão vazia vence mesmo que o adversário só tenha o [0|0] (soma zero)', () => {
     const start = scenario({ handA: [piece(3, 4)], handB: [piece(0, 0)] });
     const state = playPiece(start, '3-4', 'left');
-    expect(state.result).toEqual({ reason: 'empty-hand', winnerIndex: 0, scores: [0, 0] });
+    expect(state.result).toEqual({ reason: 'empty-hand', winnerIndexes: [0], scores: [0, 0] });
   });
 
   it('quando o monte acaba, quem já estava sem peças vence', () => {
@@ -256,7 +256,7 @@ describe('fim de jogo', () => {
     const start = scenario({ handA: [], handB: [], pile: [piece(1, 2)] });
     const state = keepPiece(drawPiece(start, '1-2'));
     expect(state.phase).toBe('finished');
-    expect(state.result).toMatchObject({ reason: 'empty-hand', winnerIndex: 1 });
+    expect(state.result).toMatchObject({ reason: 'empty-hand', winnerIndexes: [1] });
   });
 
   it('jogo fechado: vence a menor soma', () => {
@@ -268,7 +268,7 @@ describe('fim de jogo', () => {
     const state = playPiece(start, '3-6', 'left');
 
     expect(state.phase).toBe('finished');
-    expect(state.result).toEqual({ reason: 'blocked', winnerIndex: 0, scores: [2, 8] });
+    expect(state.result).toEqual({ reason: 'blocked', winnerIndexes: [0], scores: [2, 8] });
   });
 
   it('regressão (bug 3): somas iguais no jogo fechado dão empate', () => {
@@ -279,9 +279,9 @@ describe('fim de jogo', () => {
     const state = playPiece(start, '3-6', 'left');
 
     expect(state.phase).toBe('finished');
-    expect(state.result).toEqual({ reason: 'blocked', winnerIndex: null, scores: [3, 3] });
-    expect(getWinner(state)).toBeNull();
-    expect(state.logs[state.logs.length - 1]).toBe('A partida terminou empatada.');
+    expect(state.result).toEqual({ reason: 'blocked', winnerIndexes: [0, 1], scores: [3, 3] });
+    expect(getWinners(state).map((p) => p.name)).toEqual(['Ana', 'Beto']);
+    expect(state.logs[state.logs.length - 1]).toBe('A partida terminou empatada entre Ana e Beto.');
   });
 
   it('o monte acabar NÃO encerra a partida se ainda há jogadas', () => {
