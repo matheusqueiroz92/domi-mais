@@ -64,16 +64,6 @@ export function useGameModals(state: GameState): UseGameModalsReturn {
 
     // Modal de fim de jogo - mostra ganhador
     if (state.phase === 'finished' && lastPhase !== 'finished') {
-      // Calcula o ganhador (menor pontuação)
-      const playersWithScore = state.players.map((player) => {
-        const score = player.hand.reduce((sum, piece) => sum + piece.sum, 0);
-        return { ...player, score };
-      });
-      
-      const winner = playersWithScore.reduce((prev, current) =>
-        current.score < prev.score ? current : prev
-      );
-      
       setCurrentModal('winner');
       setLastPhase(state.phase);
       // Retorna informações do ganhador através do estado

@@ -393,7 +393,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Jogo continua - alterna para o próximo jogador automaticamente
-      const stateAfterPlay = {
+      const stateAfterPlay: GameState = {
         ...state,
         players: newPlayers,
         table: newTable,
@@ -441,7 +441,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return player;
       });
 
-      const stateAfterBluff = {
+      const stateAfterBluff: GameState = {
         ...state,
         players: newPlayers,
         selectedPiece: null,

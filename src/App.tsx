@@ -47,11 +47,6 @@ function GameContent() {
     !hasUnplayedDrawnPiece;
   const canChooseInitial =
     state.phase === "choosing-initial" && state.drawPile.length > 0;
-  
-  // Permite selecionar peças da mão se já comprou do monte OU se o monte está vazio
-  const canSelectFromHand =
-    state.phase === "playing" &&
-    (state.hasDrawnPieceThisTurn || state.drawPile.length === 0);
 
   const handleStartGame = (player1Name: string, player2Name: string) => {
     initializeGame(player1Name, player2Name);
@@ -89,7 +84,7 @@ function GameContent() {
 
   // Ref para rastrear a última peça selecionada que não encaixa
   const lastNonFittingPieceRef = useRef<string | null>(null);
-  const autoAddTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoAddTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Efeito para adicionar automaticamente à mão quando peça não encaixa
   useEffect(() => {
