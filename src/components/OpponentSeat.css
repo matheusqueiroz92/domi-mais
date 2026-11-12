@@ -70,9 +70,18 @@
   grid-area: right;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .seat--left,
   .seat--right {
-    width: 96px;
+    width: 120px;
+    padding: 12px 8px;
+  }
+
+  .seat__name {
+    font-size: 15px;
+  }
+
+  .seat__count {
+    font-size: 12px;
   }
 }

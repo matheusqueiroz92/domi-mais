@@ -23,8 +23,11 @@ A interface está descrita em `docs/ARQUITETURA.md` (seção Interface).
   são sempre os mesmos.
 - O monte fica em duas fileiras de 14 lugares; cada peça mantém o seu lugar.
 - O jogador da vez fica embaixo; adversários em volta da mesa, só com os versos.
-- A linha de peças dobra em fileiras ("cobrinha"); não encolher peças até
-  ficarem ilegíveis.
+- A linha de peças é uma "cobrinha" com curvas em ângulo reto (`layoutSnake`):
+  a peça de canto fica em pé, perpendicular à anterior. As peças usam o maior
+  tamanho que cabe na mesa.
+- Em telas grandes (a partir de 1024 × 640) a partida ocupa a janela inteira,
+  sem rolagem.
 - Troca de turno no mesmo aparelho sempre passa pela tela "Passe o dispositivo".
 - Alvos de toque com pelo menos 44 px; controles são `<button>`, `<a>` ou
   `<input>` de verdade, com rótulo acessível.

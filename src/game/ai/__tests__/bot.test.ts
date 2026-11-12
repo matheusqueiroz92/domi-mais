@@ -3,9 +3,26 @@ import type { BotLevel, GameState } from '../../state/game-types';
 import { gameReducer } from '../../state/game-reducer';
 import { createInitialGameState, createRandomSetup } from '../../state/game-inicial-state';
 import { BLUFF_CHANCE, chooseBotAction, fitProbability, getBotView, unknownPieces } from '../bot';
+import { generateDominoPieces } from '../../logic/pieces';
 import { PLAYER_NAMES, piece, scenario, seededRandom } from '../../logic/__tests__/helpers';
 
 const LEVELS: BotLevel[] = ['easy', 'medium', 'hard'];
+
+/**
+ * Completa a mesa com todas as peças que não estão nas mãos nem no monte,
+ * como acontece em uma partida de verdade (as pontas não mudam). Assim o
+ * computador vê uma situação coerente: 28 peças no total.
+ */
+function withFullTable(state: GameState): GameState {
+  const key = (p: { left: number; right: number }) => [p.left, p.right].sort().join('-');
+  const used = new Set(
+    [...state.table.pieces, ...state.drawPile, ...state.players.flatMap((p) => p.hand)].map(key)
+  );
+  const filler = generateDominoPieces()
+    .filter((p) => !used.has(key(p)))
+    .map((p) => ({ ...p, id: `mesa-${p.id}`, isFaceUp: true }));
+  return { ...state, table: { ...state.table, pieces: [...state.table.pieces, ...filler] } };
+}
 
 /** Torna o jogador da vez (e os demais) controlados pelo computador. */
 function asBots(state: GameState, level: BotLevel): GameState {
@@ -98,17 +115,28 @@ describe('decisões do computador', () => {
     expect(gameReducer(state, action!)).not.toBe(state);
   });
 
-  it('difícil compra a peça com mais chance de encaixar, deduzida pela soma', () => {
-    // Pontas 6 e 5. Soma 12 só pode ser 6|6 (encaixa com certeza); soma 2 não pode ter 5 nem 6.
-    const state = asBots(scenario({ table: [6, 5], pile: [piece(0, 2), piece(6, 6), piece(1, 1)] }), 'hard');
-    for (let seed = 1; seed <= 10; seed++) {
-      expect(chooseBotAction(state, seededRandom(seed))).toEqual({ type: 'DRAW_PIECE', pieceId: '6-6' });
+  it.each(['medium', 'hard'] as const)(
+    '%s compra a peça com mais chance de encaixar, deduzida pela soma',
+    (level) => {
+      // Pontas 6 e 5. Soma 12 só pode ser 6|6 (encaixa com certeza); soma 2 não pode ter 5 nem 6.
+      const state = asBots(
+        scenario({ table: [6, 5], pile: [piece(0, 2), piece(6, 6), piece(1, 1)] }),
+        level
+      );
+      for (let seed = 1; seed <= 10; seed++) {
+        expect(chooseBotAction(state, seededRandom(seed))).toEqual({ type: 'DRAW_PIECE', pieceId: '6-6' });
+      }
     }
-  });
+  );
 
-  it('médio compra a peça de menor soma', () => {
-    const state = asBots(scenario({ pile: [piece(5, 6), piece(0, 1), piece(4, 4)] }), 'medium');
-    expect(chooseBotAction(state, seededRandom(1))).toEqual({ type: 'DRAW_PIECE', pieceId: '0-1' });
+  it('fácil compra no escuro: acaba escolhendo peças diferentes', () => {
+    const state = asBots(scenario({ table: [6, 5], pile: [piece(0, 2), piece(6, 6), piece(1, 1)] }), 'easy');
+    const picks = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const action = chooseBotAction(state, seededRandom(seed));
+      if (action?.type === 'DRAW_PIECE') picks.add(action.pieceId);
+    }
+    expect(picks.size).toBe(3);
   });
 
   it.each(LEVELS)('nível %s: fica com a peça quando nada encaixa', (level) => {
@@ -139,7 +167,7 @@ describe('decisões do computador', () => {
     expect(next.result).toMatchObject({ reason: 'empty-hand', winnerIndexes: [0] });
   });
 
-  it('difícil prefere deixar pontas em que suas outras peças encaixam', () => {
+  it('médio prefere deixar pontas em que suas outras peças encaixam', () => {
     // [3|1] deixaria pontas 1 e 5; [5|2] deixaria 3 e 2. A mão tem [2|2] e [2|0]:
     // jogar [5|2] mantém duas peças jogáveis.
     const state = asBots(
@@ -150,10 +178,9 @@ describe('decisões do computador', () => {
         turnStep: 'play',
         drawnPieceId: '3-1',
       }),
-      'hard'
+      'medium'
     );
-    // Sementes que não caem no blefe.
-    const actions = [3, 4, 5, 6, 7].map((seed) => chooseBotAction(state, seededRandom(seed)));
+    const actions = [1, 2, 3, 4, 5, 6, 7, 8].map((seed) => chooseBotAction(state, seededRandom(seed)));
     for (const action of actions.filter((a) => a?.type === 'PLAY_PIECE')) {
       expect(action).toMatchObject({ pieceId: '5-2' });
     }
@@ -220,48 +247,130 @@ function playBotGame(levels: BotLevel[], seed: number): GameState {
 
 describe('partidas inteiras entre computadores', () => {
   it.each([
-    [['easy', 'easy']],
-    [['medium', 'hard']],
-    [['easy', 'medium', 'hard']],
-    [['hard', 'hard', 'hard', 'hard']],
-    [['easy', 'hard', 'medium', 'easy']],
-  ] as BotLevel[][][])('%j: 60 partidas terminam com resultado válido', (levels) => {
-    for (let seed = 1; seed <= 60; seed++) {
-      const state = playBotGame(levels, seed);
-      expect(state.phase).toBe('finished');
-      expect(state.result!.winnerIndexes.length).toBeGreaterThan(0);
-      expect(state.players.every((p, i) => p.botLevel === levels[i])).toBe(true);
-    }
-  });
+    [['easy', 'easy'], 60],
+    [['medium', 'easy', 'medium'], 60],
+    [['medium', 'medium', 'easy', 'easy'], 60],
+    [['hard', 'medium'], 10],
+    [['easy', 'hard', 'medium'], 6],
+    [['hard', 'hard', 'hard', 'hard'], 4],
+  ] as [BotLevel[], number][])(
+    '%j: %i partidas terminam com resultado válido',
+    (levels, games) => {
+      for (let seed = 1; seed <= games; seed++) {
+        const state = playBotGame(levels, seed);
+        expect(state.phase).toBe('finished');
+        expect(state.result!.winnerIndexes.length).toBeGreaterThan(0);
+        expect(state.players.every((p, i) => p.botLevel === levels[i])).toBe(true);
+      }
+    },
+    120_000
+  );
 
-  it('o nível difícil vence o fácil na maioria das partidas', () => {
-    let hard = 0;
-    let easy = 0;
-    for (let seed = 1; seed <= 400; seed++) {
+  /** Vitórias de `a` e de `b` em partidas de dois jogadores, alternando os lugares. */
+  function duel(a: BotLevel, b: BotLevel, games: number) {
+    let winsA = 0;
+    let winsB = 0;
+    for (let seed = 1; seed <= games; seed++) {
       // Alterna os lugares para não favorecer quem começa.
-      const hardSeat = seed % 2;
-      const levels: BotLevel[] = hardSeat === 0 ? ['hard', 'easy'] : ['easy', 'hard'];
+      const seatA = seed % 2;
+      const levels: BotLevel[] = seatA === 0 ? [a, b] : [b, a];
       const winners = playBotGame(levels, seed).result!.winnerIndexes;
       if (winners.length === 1) {
-        if (winners[0] === hardSeat) hard++;
-        else easy++;
+        if (winners[0] === seatA) winsA++;
+        else winsB++;
       }
     }
-    expect(hard).toBeGreaterThan(easy * 1.3);
+    return { winsA, winsB };
+  }
+
+  it('o nível médio vence o fácil na grande maioria das partidas', () => {
+    const { winsA, winsB } = duel('medium', 'easy', 300);
+    expect(winsA).toBeGreaterThan(winsB * 3);
   });
 
-  it('o nível médio também vence o fácil na maioria das partidas', () => {
-    let medium = 0;
-    let easy = 0;
-    for (let seed = 1; seed <= 400; seed++) {
-      const seat = seed % 2;
-      const levels: BotLevel[] = seat === 0 ? ['medium', 'easy'] : ['easy', 'medium'];
-      const winners = playBotGame(levels, seed).result!.winnerIndexes;
-      if (winners.length === 1) {
-        if (winners[0] === seat) medium++;
-        else easy++;
-      }
+  it(
+    'o nível difícil vence o médio na maioria das partidas',
+    () => {
+      const { winsA, winsB } = duel('hard', 'medium', 60);
+      expect(winsA).toBeGreaterThan(winsB * 1.5);
+    },
+    120_000
+  );
+});
+
+describe('final de partida calculado (dois jogadores, monte vazio)', () => {
+  /** Posição aleatória de final: 5 peças para cada um, mesa com uma peça, vez do jogador 0. */
+  function randomEndgame(seed: number): GameState | null {
+    const rng = seededRandom(seed);
+    const { shuffledPieces } = createRandomSetup(2, rng);
+    const [first, ...rest] = shuffledPieces;
+    const base = withFullTable(
+      scenario({
+        table: [first.left, first.right],
+        handA: rest.slice(0, 5),
+        handB: rest.slice(5, 10),
+        protectTurns: false,
+      })
+    );
+    const ends = [base.table.leftEnd, base.table.rightEnd];
+    const canPlay = base.players[0].hand.some((p) => ends.includes(p.left) || ends.includes(p.right));
+    return canPlay ? base : null;
+  }
+
+  function finish(start: GameState, levels: BotLevel[], seed: number): GameState {
+    const rng = seededRandom(seed);
+    let state: GameState = {
+      ...start,
+      players: start.players.map((player, index) => ({ ...player, botLevel: levels[index] })),
+    };
+    for (let step = 0; step < 60 && state.phase !== 'finished'; step++) {
+      state = gameReducer(state, chooseBotAction(state, rng)!);
     }
-    expect(medium).toBeGreaterThan(easy);
+    return state;
+  }
+
+  it('partindo das mesmas posições, o difícil vence mais do que o médio venceria', () => {
+    let hardWins = 0;
+    let mediumWins = 0;
+    let positions = 0;
+
+    for (let seed = 1; seed <= 400; seed++) {
+      const start = randomEndgame(seed);
+      if (!start) continue;
+      positions++;
+      const withHard = finish(start, ['hard', 'medium'], seed).result!.winnerIndexes;
+      const withMedium = finish(start, ['medium', 'medium'], seed).result!.winnerIndexes;
+      const hardWon = withHard.length === 1 && withHard[0] === 0;
+      const mediumWon = withMedium.length === 1 && withMedium[0] === 0;
+      if (hardWon) hardWins++;
+      if (mediumWon) mediumWins++;
+    }
+
+    expect(positions).toBeGreaterThan(200);
+    expect(hardWins).toBeGreaterThan(mediumWins * 1.1);
+  });
+
+  it('enxerga a jogada que vence mesmo quando ela parece pior no momento', () => {
+    // Pontas 3 e 5. Jogar [5|6] (mais pontos) deixa 3 e 6 e o adversário fecha com [6|3]... e vence.
+    // Jogar [3|1] deixa 1 e 5: o adversário não tem jogada e o computador termina com [5|6].
+    const state = asBots(
+      withFullTable(
+        scenario({ handA: [piece(5, 6), piece(3, 1)], handB: [piece(6, 3)], protectTurns: false })
+      ),
+      'hard'
+    );
+    const first = chooseBotAction(state, seededRandom(1));
+    expect(first).toMatchObject({ type: 'PLAY_PIECE', pieceId: '3-1' });
+
+    let end = state;
+    const rng = seededRandom(2);
+    for (let step = 0; step < 10 && end.phase !== 'finished'; step++) {
+      end = gameReducer(end, chooseBotAction(end, rng)!);
+    }
+    expect(end.result).toMatchObject({ reason: 'empty-hand', winnerIndexes: [0] });
+
+    // O médio cai na armadilha: joga a peça de mais pontos.
+    const medium = chooseBotAction(asBots(state, 'medium'), seededRandom(1));
+    expect(medium).toMatchObject({ type: 'PLAY_PIECE', pieceId: '5-6' });
   });
 });

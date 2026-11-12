@@ -57,6 +57,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | `selectedPieceId` | Peça da mão selecionada para jogar |
 | `autoPassedPlayerIndexes` | Quem passou a vez automaticamente na última troca |
 | `protectTurns` | Liga a troca de turno protegida (mesmo dispositivo) |
+| `initialPieceId` | Id da peça inicial; a interface desenha a linha de peças a partir dela |
 | `lastPlayed` | Última peça colocada na mesa e quem a colocou (a interface destaca essa peça) |
 | `result` | Resultado final: motivo, `winnerIndexes` (um índice = vitória; vários = empate entre eles) e somas |
 | `logs` | Histórico em texto |
@@ -135,16 +136,31 @@ sejam diferentes.
 | Decisão | Fácil | Médio | Difícil |
 |---|---|---|---|
 | Peça inicial | Sorteia | Maior soma | Maior soma |
-| Compra | Sorteia | Menor soma | Maior chance de encaixar, deduzida pela soma (`fitProbability`); no empate, menor soma |
-| Jogada | Sorteia entre as possíveis | Peça de maior soma | Nota por jogada (`scoreMove`): pontos que saem da mão, buchas primeiro, pontas boas para a própria mão e ruins para os adversários |
-| Blefe | Nunca | 6% das vezes | 10% das vezes, e só com monte grande e peça de soma baixa |
+| Compra | Sorteia | Maior chance de encaixar, deduzida pela soma (`fitProbability`); no empate, menor soma | Pré-seleciona as melhores somas e decide por simulação |
+| Jogada | Sorteia entre as possíveis | Nota por jogada: pontos que saem da mão, buchas primeiro, pontas boas para a própria mão e ruins para os adversários | Simulação; no final de partida com dois jogadores, cálculo exato |
+| Blefe | Nunca | 6% das vezes | 3% das vezes, e só com monte grande e peça de soma baixa |
 
 `fitProbability` é a dedução que o jogo ensina: uma peça de soma 7 pode ser
 1|6, 2|5 ou 3|4; descontadas as peças já vistas, calcula-se a chance de ela
 encaixar em uma ponta.
 
-Em 2.000 partidas simuladas de dois jogadores: Difícil vence Fácil em cerca de
-89%, Médio vence Fácil em cerca de 64% e Difícil vence Médio em cerca de 73%.
+**Simulação (nível difícil).** Para comparar opções, o computador imagina
+`HARD_SAMPLES` "mundos possíveis" (`imagineWorld`): dá a cada peça virada uma
+identidade sorteada entre as que ela pode ser, respeitando a soma do verso.
+Em cada mundo, joga a partida até o fim com todos usando a tática do nível
+médio (`playOut`) e fica com a opção que mais vence. Todas as opções são
+testadas nos mesmos mundos. É a mesma informação pública de sempre: ele não
+olha as peças reais.
+
+**Final calculado.** Com dois jogadores e o monte vazio, todas as peças
+escondidas estão na mão do adversário e as somas dizem exatamente quais são.
+Nessa situação o difícil calcula a partida até o fim (`solveEndgame`) e
+escolhe a jogada de melhor resultado garantido.
+
+Força medida em partidas simuladas de dois jogadores: Médio vence Fácil em
+cerca de 87%; Difícil vence Médio em cerca de 75%; Difícil vence Fácil em
+cerca de 95%. O Médio atual equivale ao Difícil da versão 0.6.0. Com 4
+jogadores a sorte pesa mais e a vantagem do Difícil sobre três Médios é pequena.
 
 ### Como ele entra na partida
 
@@ -185,10 +201,16 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
   horário (`seatOpponents`): com 2 jogadores, em cima; com 3, à esquerda e à
   direita; com 4, à esquerda, em cima e à direita. Deles só aparecem os versos,
   com as somas.
-- A **mesa** (`GameTable`) mostra a linha de peças e os valores das pontas.
-  A linha dobra em fileiras que alternam o sentido
-  ("cobrinha"), calculadas por `layoutChain` a partir da largura medida; as
-  peças não encolhem até ficarem ilegíveis.
+- A **mesa** (`GameTable`) mostra a linha de peças e os valores das pontas,
+  em "cobrinha" com curvas em ângulo reto (`layoutSnake`). A peça inicial fica
+  no centro; o que foi jogado à direita cresce para a direita e, na borda, faz
+  a curva para cima; o que foi jogado à esquerda cresce para a esquerda e faz
+  a curva para baixo. Em cada curva a peça de canto fica em pé, perpendicular
+  à anterior, e a fileira seguinte volta no sentido contrário. Buchas ficam
+  atravessadas e nunca fazem a curva. Como cada braço só cresce pela ponta,
+  as peças já colocadas não saem do lugar.
+- O tamanho das peças da mesa é o maior que cabe (`fitSnake`): depende da
+  largura e, em telas grandes, também da altura disponível.
 - Quando a peça selecionada encaixa, aparecem os alvos tracejados **"Jogar"**
   nas pontas.
 - O **monte** (`DrawPile`) fica sempre visível, abaixo da mesa, em duas
@@ -226,8 +248,16 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
   `SoundToggle`, na tela inicial e na partida.
 - Falhas de áudio (navegador sem suporte, bloqueio) são ignoradas.
 
-O layout é pensado primeiro para celular (coluna única, até 560 px) e se
-alarga em telas a partir de 900 px.
+### Tamanhos de tela
+
+- **Celular e tablet:** coluna única; a página rola se precisar e a mesa
+  cresce para baixo.
+- **Telas grandes** (a partir de 1024 × 640): a partida ocupa a janela
+  inteira, sem rolagem. Em cima ficam a mesa e os adversários, usando toda a
+  altura que sobra; embaixo, o monte à esquerda e, à direita, o aviso, a mão do
+  jogador e o botão de encerrar o turno, cujo espaço fica reservado para a tela
+  não mudar de altura. Nesse modo a mesa recebe `fitHeight` e as peças diminuem,
+  se necessário, para a linha caber.
 
 ## Testes
 
@@ -245,10 +275,10 @@ npm run test:watch # modo interativo
 | `logic/__tests__/simulation.test.ts` | 1.200 partidas aleatórias completas (2, 3 e 4 jogadores) com invariantes |
 | `state/__tests__/game-reducer.test.ts` | Reducer e sorteio |
 | `components/__tests__/components.test.tsx` | Peça, mesa, modal, troca de turno |
-| `components/__tests__/table-layout.test.ts` | Fileiras da mesa (cobrinha) e assentos dos adversários |
+| `components/__tests__/table-layout.test.ts` | Cobrinha: curvas em ângulo reto, peças sem sobreposição e encostadas pelo mesmo número, tamanhos; assentos dos adversários |
 | `theme/__tests__/theme.test.ts` | Tema: padrão, gravação, falha de armazenamento |
 | `sound/__tests__/sound.test.ts` | Sons: geração, preferência, som desligado, falhas |
-| `ai/__tests__/bot.test.ts` | Visão do computador, dedução pela soma, decisões por nível, blefe, partidas entre computadores e força relativa dos níveis |
+| `ai/__tests__/bot.test.ts` | Visão do computador, dedução pela soma, decisões por nível, blefe, final calculado, partidas entre computadores e força relativa dos níveis |
 | `App.test.tsx` | Tela inicial, tema, som, embaralhar, fluxo da partida, partidas inteiras com 2, 3 e 4 jogadores e contra o computador |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças

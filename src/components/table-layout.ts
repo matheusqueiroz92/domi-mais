@@ -1,26 +1,42 @@
 /**
- * Cálculos de layout da mesa (sem React): a linha de peças dobra em fileiras
- * ("cobrinha") e os adversários são distribuídos em volta da mesa.
+ * Cálculos de layout da mesa (sem React): a linha de peças em "cobrinha", com
+ * curvas em ângulo reto, e os adversários distribuídos em volta da mesa.
  */
 import type { DominoPiece, TableSide } from '../game/state/game-types';
 import { isDouble } from '../game/logic/pieces';
 
-export type ChainItem =
-  | { kind: 'piece'; piece: DominoPiece }
-  | { kind: 'slot'; side: TableSide };
-
-export interface ChainRow {
-  /** Fileira que corre da direita para a esquerda (as peças são desenhadas invertidas). */
-  reversed: boolean;
-  items: ChainItem[];
+/** Um item posicionado na mesa: uma peça ou um alvo de jogada ("Jogar"). */
+export interface PlacedItem {
+  key: string;
+  kind: 'piece' | 'slot';
+  /** Peça desenhada (quando `kind` é `piece`). */
+  piece?: DominoPiece;
+  /** Ponta da mesa a que o alvo corresponde (quando `kind` é `slot`). */
+  side?: TableSide;
+  /** Canto superior esquerdo e tamanho, em px, dentro da área da linha de peças. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  orientation: 'horizontal' | 'vertical';
+  /** Desenhar a peça com os lados trocados. */
+  flipped: boolean;
+  /** Peça de canto: faz a curva de 90 graus da cobrinha. */
+  corner: boolean;
 }
 
-export interface ChainLayoutOptions {
-  /** Largura disponível para uma fileira, em px. */
-  maxWidth: number;
+export interface SnakeLayout {
+  items: PlacedItem[];
+  width: number;
+  height: number;
+}
+
+export interface SnakeOptions {
+  /** Largura disponível, em px. */
+  width: number;
   /** Lado de meia peça, em px. */
   half: number;
-  /** Espaço entre itens, em px. */
+  /** Espaço entre peças, em px. */
   gap?: number;
   /** Mostrar o alvo de jogada na ponta esquerda / direita. */
   leftSlot?: boolean;
@@ -30,58 +46,192 @@ export interface ChainLayoutOptions {
 /** Folga para borda e divisória da peça. */
 const PIECE_EXTRA = 4;
 
-/** Largura ocupada por uma peça na mesa: bucha fica em pé, as demais deitadas. */
-export function pieceWidth(piece: DominoPiece, half: number): number {
-  return (isDouble(piece) ? half : half * 2) + PIECE_EXTRA;
+/** Comprimento (lado maior) e largura (lado menor) de uma peça desenhada. */
+export function pieceSize(half: number): { long: number; short: number } {
+  return { long: half * 2 + PIECE_EXTRA, short: half + PIECE_EXTRA };
 }
 
-/** Largura do alvo de jogada (mínimo de 44 px para o toque). */
-export function slotWidth(half: number): number {
-  return Math.max(44, half * 2);
-}
-
-/** Lado de meia peça conforme a largura da mesa. */
-export function halfForWidth(tableWidth: number): number {
-  return tableWidth >= 520 ? 28 : 20;
+interface ArmItem {
+  key: string;
+  piece?: DominoPiece;
+  side?: TableSide;
 }
 
 /**
- * Distribui as peças da mesa em fileiras que cabem em `maxWidth`.
- * As fileiras alternam o sentido: a primeira vai da esquerda para a direita,
- * a segunda volta da direita para a esquerda, e assim por diante.
+ * Posiciona a linha de peças em "cobrinha", com curvas em ângulo reto.
+ *
+ * A peça inicial fica no centro. O que foi jogado à direita dela cresce para a
+ * direita e, ao chegar à borda, faz a curva para CIMA; o que foi jogado à
+ * esquerda cresce para a esquerda e faz a curva para BAIXO. Em cada curva, a
+ * peça de canto fica em pé (perpendicular à anterior) e a fileira seguinte
+ * volta no sentido contrário.
+ *
+ * Como cada braço só cresce pela ponta, as peças já colocadas não mudam de
+ * lugar quando outra é jogada.
  */
-export function layoutChain(pieces: readonly DominoPiece[], options: ChainLayoutOptions): ChainRow[] {
-  const { maxWidth, half, gap = 2, leftSlot = false, rightSlot = false } = options;
+export function layoutSnake(
+  pieces: readonly DominoPiece[],
+  initialPieceId: string | null,
+  options: SnakeOptions
+): SnakeLayout {
+  const { width, half, gap = 2, leftSlot = false, rightSlot = false } = options;
+  if (pieces.length === 0) return { items: [], width, height: 0 };
 
-  const items: ChainItem[] = [
-    ...(leftSlot ? [{ kind: 'slot', side: 'left' } as const] : []),
-    ...pieces.map((piece) => ({ kind: 'piece', piece }) as const),
-    ...(rightSlot ? [{ kind: 'slot', side: 'right' } as const] : []),
-  ];
+  const { long, short } = pieceSize(half);
+  const anchorIndex = Math.max(
+    0,
+    pieces.findIndex((piece) => piece.id === initialPieceId)
+  );
+  const anchor = pieces[anchorIndex];
+  const items: PlacedItem[] = [];
 
-  const rows: ChainRow[] = [];
-  let current: ChainItem[] = [];
-  let used = 0;
+  // Peça inicial, centralizada. A linha da primeira fileira é y = 0.
+  const anchorDouble = isDouble(anchor);
+  const anchorW = anchorDouble ? short : long;
+  const anchorX = (width - anchorW) / 2;
+  items.push({
+    key: anchor.id,
+    kind: 'piece',
+    piece: anchor,
+    x: anchorX,
+    y: anchorDouble ? -long / 2 : -short / 2,
+    w: anchorW,
+    h: anchorDouble ? long : short,
+    orientation: anchorDouble ? 'vertical' : 'horizontal',
+    flipped: false,
+    corner: false,
+  });
 
-  for (const item of items) {
-    const width = item.kind === 'slot' ? slotWidth(half) : pieceWidth(item.piece, half);
-    const needed = current.length === 0 ? width : used + gap + width;
+  /**
+   * Percorre um braço a partir da peça inicial.
+   * `dir`: +1 para a direita, -1 para a esquerda. `vdir`: +1 curva para baixo, -1 para cima.
+   */
+  const layoutArm = (arm: TableSide, list: ArmItem[]) => {
+    let dir = arm === 'right' ? 1 : -1;
+    const vdir = arm === 'right' ? -1 : 1;
+    let cursor = arm === 'right' ? anchorX + anchorW + gap : anchorX - gap;
+    let line = 0;
+    let prevDouble = anchorDouble;
+    // Lado da peça que encosta na anterior é o "de dentro": no braço direito é `left`.
+    const innerIsLeft = arm === 'right';
 
-    if (current.length > 0 && needed > maxWidth) {
-      rows.push({ reversed: rows.length % 2 === 1, items: current });
-      current = [item];
-      used = width;
-    } else {
-      current.push(item);
-      used = needed;
+    for (const item of list) {
+      const double = item.piece ? isDouble(item.piece) : false;
+      const base = { key: item.key, kind: item.piece ? 'piece' : 'slot', piece: item.piece, side: item.side } as const;
+
+      if (double) {
+        // Bucha: em pé, atravessada na fileira.
+        items.push({
+          ...base,
+          x: dir > 0 ? cursor : cursor - short,
+          y: line - long / 2,
+          w: short,
+          h: long,
+          orientation: 'vertical',
+          flipped: false,
+          corner: false,
+        });
+        cursor += dir * (short + gap);
+        prevDouble = true;
+        continue;
+      }
+
+      // Cabe deitada nesta fileira? Reserva o espaço de uma bucha na borda.
+      const fits =
+        dir > 0 ? cursor + long <= width - short - gap : cursor - long >= short + gap;
+
+      if (fits) {
+        items.push({
+          ...base,
+          x: dir > 0 ? cursor : cursor - long,
+          y: line - short / 2,
+          w: long,
+          h: short,
+          orientation: 'horizontal',
+          // O lado esquerdo do desenho é o "de dentro" quando a fileira vai para a direita.
+          flipped: (dir > 0) !== innerIsLeft,
+          corner: false,
+        });
+        cursor += dir * (long + gap);
+        prevDouble = false;
+        continue;
+      }
+
+      // Não cabe: peça de canto, em pé, presa à ponta da peça anterior.
+      const prevEdge = dir > 0 ? cursor - gap : cursor + gap;
+      const columnX = dir > 0 ? prevEdge - short : prevEdge;
+      const prevHalf = prevDouble ? long / 2 : short / 2;
+      const y = vdir > 0 ? line + prevHalf + gap : line - prevHalf - gap - long;
+      items.push({
+        ...base,
+        x: columnX,
+        y,
+        w: short,
+        h: long,
+        orientation: 'vertical',
+        // O lado de cima do desenho é o "de dentro" quando a curva desce.
+        flipped: (vdir > 0) !== innerIsLeft,
+        corner: true,
+      });
+      // A fileira seguinte passa pela metade de fora da peça de canto e volta.
+      line = vdir > 0 ? y + long - short / 2 : y + short / 2;
+      dir = -dir;
+      cursor = dir > 0 ? columnX + short + gap : columnX - gap;
+      prevDouble = false;
     }
-  }
+  };
 
-  if (current.length > 0) {
-    rows.push({ reversed: rows.length % 2 === 1, items: current });
-  }
+  const toItem = (piece: DominoPiece): ArmItem => ({ key: piece.id, piece });
+  const rightArm = pieces.slice(anchorIndex + 1).map(toItem);
+  const leftArm = pieces.slice(0, anchorIndex).reverse().map(toItem);
+  if (rightSlot) rightArm.push({ key: 'slot-right', side: 'right' });
+  if (leftSlot) leftArm.push({ key: 'slot-left', side: 'left' });
 
-  return rows;
+  layoutArm('right', rightArm);
+  layoutArm('left', leftArm);
+
+  // Normaliza: a linha de cima passa a ser y = 0.
+  const top = Math.min(...items.map((item) => item.y));
+  const bottom = Math.max(...items.map((item) => item.y + item.h));
+  for (const item of items) item.y -= top;
+
+  return { items, width, height: bottom - top };
+}
+
+/** Tamanhos de meia peça disponíveis, do maior para o menor. */
+export const HALF_SIZES = [52, 44, 38, 32, 28, 24, 20];
+
+/** Maior tamanho de meia peça adequado à largura da mesa. */
+export function maxHalfForWidth(width: number): number {
+  if (width >= 1300) return 52;
+  if (width >= 1000) return 44;
+  if (width >= 760) return 38;
+  if (width >= 520) return 32;
+  if (width >= 360) return 28;
+  if (width >= 260) return 24;
+  return 20;
+}
+
+/**
+ * Escolhe o maior tamanho de peça com que a linha cabe na área disponível.
+ * `maxHeight` só é informado quando a altura da mesa é fixa (telas grandes);
+ * sem ele, vale só o limite pela largura e a mesa cresce para baixo.
+ */
+export function fitSnake(
+  pieces: readonly DominoPiece[],
+  initialPieceId: string | null,
+  options: Omit<SnakeOptions, 'half'> & { maxHeight?: number }
+): SnakeLayout & { half: number } {
+  const { maxHeight = Infinity, ...rest } = options;
+  const cap = maxHalfForWidth(rest.width);
+  const sizes = HALF_SIZES.filter((half) => half <= cap);
+
+  let last: (SnakeLayout & { half: number }) | null = null;
+  for (const half of sizes) {
+    last = { ...layoutSnake(pieces, initialPieceId, { ...rest, half }), half };
+    if (last.height <= maxHeight) return last;
+  }
+  return last ?? { ...layoutSnake(pieces, initialPieceId, { ...rest, half: 20 }), half: 20 };
 }
 
 /** Posição de uma peça espalhada na mesa, em % da área da mesa, e seu giro em graus. */

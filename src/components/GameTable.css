@@ -36,15 +36,24 @@
   height: 32px;
 }
 
-/* Linha de peças em "cobrinha": cada fileira alterna o sentido. */
-.game-table__chain {
+/* Área onde a linha de peças é desenhada. */
+.game-table__area {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
   width: 100%;
-  flex: 1;
+  flex: 1 0 auto;
+}
+
+/* Linha de peças em "cobrinha": cada item é posicionado por coordenadas. */
+.game-table__snake {
+  position: relative;
+  width: 100%;
+  flex: none;
+}
+
+.game-table__piece {
+  position: absolute;
 }
 
 /* Destaque da última peça colocada na mesa. */
@@ -54,24 +63,10 @@
   outline-offset: 1px;
 }
 
-/* Uma fileira só: centralizada na mesa. */
-.game-table__chain--single {
-  align-items: center;
-}
-
-.game-table__row {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.game-table__row--reversed {
-  flex-direction: row-reverse;
-}
-
+/* Alvo de jogada na ponta da linha. */
 .game-table__slot {
-  flex: none;
-  height: 44px;
+  position: absolute;
+  padding: 0;
   border: 2px dashed var(--select);
   border-radius: 8px;
   background: transparent;
@@ -81,6 +76,13 @@
   cursor: pointer;
 }
 
+/* Área de toque maior do que o desenho do alvo. */
+.game-table__slot::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
 .game-table__empty {
   align-self: center;
   text-align: center;
@@ -88,9 +90,16 @@
   font-style: italic;
 }
 
-@media (min-width: 900px) {
+/* Telas grandes: a mesa ocupa a altura que sobra na janela. */
+@media (min-width: 1024px) and (min-height: 640px) {
   .game-table {
-    min-height: 380px;
-    padding: 18px 20px;
+    min-height: 0;
+    padding: 16px 20px 12px;
+    overflow: auto;
+  }
+
+  .game-table__area {
+    flex: 1 1 0;
+    min-height: 0;
   }
 }

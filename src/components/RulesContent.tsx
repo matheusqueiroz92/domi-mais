@@ -17,7 +17,10 @@ export function RulesContent() {
           <li>Jogam de 2 a 4 pessoas, cada uma por si.</li>
           <li>Ninguém começa com peças: as 28 ficam no monte, viradas.</li>
           <li>O verso de cada peça mostra a soma dos seus dois lados.</li>
-          <li>O jogador sorteado escolhe no monte a peça inicial da mesa.</li>
+          <li>
+            O jogador sorteado escolhe no monte a peça inicial da mesa. Depois disso a vez passa
+            ao próximo jogador.
+          </li>
           <li>
             Em cada turno você compra uma peça do monte e pode jogar uma peça que encaixe em uma
             das pontas, ou ficar com a peça comprada.

@@ -103,6 +103,11 @@ export interface GameState {
    */
   protectTurns: boolean;
   /**
+   * Id da peça inicial da mesa. A interface desenha a linha de peças a partir
+   * dela: o que foi jogado à esquerda cresce para um lado, e à direita, para o outro.
+   */
+  initialPieceId: string | null;
+  /**
    * Última peça colocada na mesa e quem a colocou (inclui a peça inicial).
    * A interface usa para destacar a jogada mais recente.
    */

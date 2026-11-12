@@ -123,7 +123,8 @@ export function startGame(state: GameState): GameState {
 
 /**
  * O jogador sorteado escolhe qualquer peça do monte (vendo só a soma no
- * verso); ela é aberta na mesa e o mesmo jogador faz o primeiro turno.
+ * verso); ela é aberta na mesa e a vez passa para o próximo jogador, que faz
+ * a primeira compra.
  */
 export function chooseInitialPiece(state: GameState, pieceId: string): GameState {
   if (state.phase !== 'choosing-initial') return state;
@@ -137,19 +138,19 @@ export function chooseInitialPiece(state: GameState, pieceId: string): GameState
   const player = currentPlayer(state);
   const placed = table.pieces[0];
 
-  return {
+  // Escolher a peça inicial é o turno inteiro de quem começa.
+  return endTurn({
     ...state,
     phase: 'playing',
-    turnStep: 'draw',
     drawPile: state.drawPile.filter((p) => p.id !== pieceId),
     table,
+    initialPieceId: pieceId,
     lastPlayed: { playerIndex: state.currentPlayerIndex, pieceId },
     logs: [
       ...state.logs,
       `${player.name} escolheu a peça inicial: [${placed.left}|${placed.right}]`,
-      `Vez de ${player.name}`,
     ],
-  };
+  });
 }
 
 /** O próximo jogador confirma que está com o dispositivo ("Estou pronto"). */

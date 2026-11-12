@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
 import { seededRandom } from './game/logic/__tests__/helpers';
 import { THEME_STORAGE_KEY } from './theme/theme';
@@ -69,8 +69,14 @@ function handButtons() {
   return within(screen.getByTestId('hand')).queryAllByRole('button', { name: FACE_UP });
 }
 
+/**
+ * Escolhe a peça inicial. Depois dela a vez passa ao próximo jogador; no mesmo
+ * aparelho isso abre a tela de troca de turno, que o teste já confirma.
+ */
 function chooseInitialPiece() {
   fireEvent.click(pileButtons()[0]);
+  const ready = screen.queryByRole('button', { name: 'Estou pronto' });
+  if (ready) fireEvent.click(ready);
 }
 
 describe('App (jogo no mesmo dispositivo)', () => {
@@ -235,7 +241,21 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(screen.getByText('Monte · 28 peças')).toBeInTheDocument();
     });
 
-    it('depois da peça inicial, o mesmo jogador compra uma peça e ela aparece aberta na mão', () => {
+    it('quem escolhe a peça inicial não compra em seguida: a vez passa ao outro jogador', () => {
+      startMatch();
+      const starter = (screen.getByRole('status').textContent ?? '').split(',')[0];
+      const other = starter === 'Ana' ? 'Beto' : 'Ana';
+
+      fireEvent.click(pileButtons()[0]);
+
+      // A peça inicial está na mesa e a tela pede para passar o aparelho ao outro jogador.
+      expect(screen.getByRole('dialog', { name: `Passe o dispositivo para ${other}` })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Estou pronto' }));
+      expect(screen.getByRole('status')).toHaveTextContent(`${other}, compre uma peça do monte`);
+      expect(screen.getByRole('region', { name: `Mão de ${other}` })).toHaveTextContent('0 peças');
+    });
+
+    it('na compra, a peça aparece aberta e selecionada na mão', () => {
       startMatch();
       chooseInitialPiece();
 
@@ -468,6 +488,26 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(screen.getAllByTestId(/^seat-/)).toHaveLength(seats);
       expect(screen.getAllByRole('img', { name: 'Computador' })).toHaveLength(seats);
       expect(screen.getByRole('region', { name: 'Mão de Ana' })).toBeInTheDocument();
+    });
+
+    it('quando a pessoa escolhe a peça inicial, a primeira compra é do computador', () => {
+      // Procura uma semente em que a pessoa começa.
+      for (let seed = 1; seed <= 30; seed++) {
+        vi.spyOn(Math, 'random').mockImplementation(seededRandom(seed));
+        startSolo(1, 'Fácil');
+        const humanStarts = /Ana, escolha a peça inicial/.test(
+          screen.getByRole('status').textContent ?? ''
+        );
+        if (humanStarts) {
+          fireEvent.click(pileButtons()[0]);
+          expect(screen.getByRole('status')).toHaveTextContent('Bia está comprando uma peça…');
+          expect(pileButtons()).toHaveLength(0);
+          expect(screen.getByRole('region', { name: 'Mão de Ana' })).toHaveTextContent('0 peças');
+          return;
+        }
+        cleanup();
+      }
+      throw new Error('nenhuma semente em que a pessoa começa');
     });
 
     it('na vez do computador a pessoa não pode agir, e nada revela a peça dele', () => {

@@ -50,19 +50,24 @@ describe('gameReducer', () => {
     state = gameReducer(state, { type: 'START_GAME' });
     expect(state.phase).toBe('choosing-initial');
 
+    // O jogador 1 escolhe a peça inicial e a vez passa ao jogador 0.
     state = gameReducer(state, { type: 'CHOOSE_INITIAL_PIECE', pieceId: state.drawPile[0].id });
+    expect(state.phase).toBe('transition');
+    expect(state.currentPlayerIndex).toBe(0);
+
+    state = gameReducer(state, { type: 'CONFIRM_READY' });
     expect(state.phase).toBe('playing');
 
     const drawn = state.drawPile[0];
     state = gameReducer(state, { type: 'DRAW_PIECE', pieceId: drawn.id });
-    expect(state.players[1].hand).toHaveLength(1);
+    expect(state.players[0].hand).toHaveLength(1);
 
     state = gameReducer(state, { type: 'SELECT_PIECE', pieceId: drawn.id });
     expect(state.selectedPieceId).toBeNull();
 
     state = gameReducer(state, { type: 'KEEP_PIECE' });
     expect(state.phase).toBe('transition');
-    expect(state.currentPlayerIndex).toBe(0);
+    expect(state.currentPlayerIndex).toBe(1);
 
     state = gameReducer(state, { type: 'CONFIRM_READY' });
     expect(state.phase).toBe('playing');
@@ -73,6 +78,7 @@ describe('gameReducer', () => {
     state = gameReducer(state, { type: 'START_GAME' });
     // Monte invertido: a primeira peça é [6|6] e a segunda [5|6].
     state = gameReducer(state, { type: 'CHOOSE_INITIAL_PIECE', pieceId: state.drawPile[0].id });
+    state = gameReducer(state, { type: 'CONFIRM_READY' });
     const drawn = state.drawPile[0];
     state = gameReducer(state, { type: 'DRAW_PIECE', pieceId: drawn.id });
     state = gameReducer(state, { type: 'PLAY_PIECE', pieceId: drawn.id, position: 'left' });

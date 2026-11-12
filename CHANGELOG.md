@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.0 — 12/11/2026
+
+- **Regra da peça inicial:** quem escolhe a peça inicial não compra em seguida;
+  a vez passa ao próximo jogador, que faz a primeira compra.
+- **Cobrinha com curvas em ângulo reto:** a linha de peças parte da peça
+  inicial, no centro, e cresce para os dois lados; na borda, a peça de canto
+  fica em pé, perpendicular à anterior, e a fileira volta no sentido contrário.
+  As peças já colocadas não mudam de lugar.
+- **Telas grandes:** a partida ocupa a janela inteira, sem rolagem, com a mesa
+  usando todo o espaço e peças maiores (até 52 px por metade, contra 28 antes).
+  O monte fica à esquerda e a mão do jogador à direita, embaixo da mesa.
+- **Computador mais forte:** o Médio passou a jogar como o antigo Difícil. O
+  novo Difícil compara as opções simulando partidas possíveis e, no final com
+  dois jogadores, calcula a partida até o fim. Em simulações, vence o antigo
+  Difícil em cerca de 75% das partidas.
+- Estado do jogo ganhou `initialPieceId`.
+- 240 testes no total.
+
 ## 0.6.0 — 12/11/2026
 
 - **Modo contra o computador:** uma pessoa contra 1, 2 ou 3 adversários do

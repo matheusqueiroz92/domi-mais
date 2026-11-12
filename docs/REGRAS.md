@@ -16,9 +16,10 @@ Este documento é a fonte de verdade das regras do jogo. A implementação fica 
 1. As 28 peças ficam no **monte**, viradas (mostrando a soma).
 2. Nenhum jogador começa com peças na mão.
 3. A ordem dos turnos é a ordem em que os jogadores foram cadastrados. Um
-   jogador é sorteado para começar. Ele **escolhe qualquer peça do monte** para ser a peça
-   inicial; ela é aberta na mesa e define as duas pontas.
-4. O mesmo jogador faz o primeiro turno.
+   jogador é sorteado para começar. Ele **escolhe qualquer peça do monte** para
+   ser a peça inicial; ela é aberta na mesa e define as duas pontas.
+4. Escolher a peça inicial é o turno inteiro de quem começa: ele **não compra
+   em seguida**. A vez passa ao próximo jogador, que faz a primeira compra.
 
 ## O turno enquanto há peças no monte
 
@@ -81,9 +82,9 @@ turno:
 
 | Jogadores | Compras por jogador |
 |---|---|
-| 2 | 14 e 13 |
+| 2 | 14 para quem joga depois da peça inicial e 13 para quem começou |
 | 3 | 9 cada |
-| 4 | 7, 7, 7 e 6 |
+| 4 | 7, 7, 7 e 6 (quem começou compra 6) |
 
 Com mais de 4 jogadores as mãos ficariam pequenas demais para a dedução, por
 isso o limite é 4.
@@ -121,4 +122,5 @@ tocar em **"Estou pronto"**.
 | 11/11/2026 | O modo contra o computador (etapa futura) deverá aceitar 2, 3 ou 4 jogadores. |
 | 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
 | 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |
+| 12/11/2026 | Depois da peça inicial a vez passa ao próximo jogador; quem começou não compra em seguida. |
 | 12/11/2026 | Modo contra o computador: 1 a 3 adversários, níveis Fácil, Médio e Difícil; o computador joga só com informação pública e também blefa. |

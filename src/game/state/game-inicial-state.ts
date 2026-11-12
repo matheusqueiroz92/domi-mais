@@ -67,6 +67,7 @@ export function createInitialGameState(
     selectedPieceId: null,
     autoPassedPlayerIndexes: [],
     protectTurns,
+    initialPieceId: null,
     lastPlayed: null,
     result: null,
     logs: [],

@@ -10,7 +10,8 @@ alterar qualquer regra. Resumo:
 - 28 peças; o verso de cada peça mostra a soma dos dois lados.
 - De 2 a 4 jogadores, cada um por si (sem duplas).
 - Ninguém começa com peças. O jogador sorteado escolhe qualquer peça do monte
-  como peça inicial e faz o primeiro turno.
+  como peça inicial; ele não compra em seguida, e a vez passa ao próximo
+  jogador, que faz a primeira compra.
 - Turno com monte: compra obrigatória de UMA peça; depois o jogador joga uma
   peça que encaixe (a comprada ou outra da mão) ou fica com a peça comprada.
 - Blefe: ficar com uma peça que encaixa. Não existe ação de duvidar. O sistema

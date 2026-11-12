@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import { DominoPiece } from './DominoPiece';
 import { PieceMotion } from './PieceMotion';
 import type { DominoPiece as DominoPieceType, Table, TableSide } from '../game/state/game-types';
-import { isDouble } from '../game/logic/pieces';
-import { halfForWidth, layoutChain } from './table-layout';
+import { fitSnake } from './table-layout';
 import type { ScatterPoint } from './table-layout';
 import './GameTable.css';
 
 interface GameTableProps {
   table: Table;
+  /** Id da peça inicial: a linha de peças é desenhada a partir dela. */
+  initialPieceId?: string | null;
   canFitLeft?: boolean;
   canFitRight?: boolean;
   onPlayPiece?: (position: TableSide) => void;
@@ -17,6 +18,11 @@ interface GameTableProps {
   lastPlayedId?: string | null;
   /** Peça que chega virada (do monte ou da mão de um adversário) e abre na mesa. */
   flipPieceId?: string | null;
+  /**
+   * A mesa tem altura fixa (telas grandes): as peças diminuem, se preciso,
+   * para a linha caber sem rolagem. Sem isso, a mesa cresce para baixo.
+   */
+  fitHeight?: boolean;
   /**
    * Animação de embaralhar: as peças do monte aparecem espalhadas sobre a
    * mesa, percorrendo os trajetos de `paths` (um por peça, na mesma ordem).
@@ -26,90 +32,92 @@ interface GameTableProps {
 
 const SIDE_LABEL: Record<TableSide, string> = { left: 'esquerda', right: 'direita' };
 
-/** Largura usada antes da primeira medição (e nos testes, que não medem layout). */
-const FALLBACK_WIDTH = 300;
+/** Tamanho usado antes da primeira medição (e nos testes, que não medem layout). */
+const FALLBACK_SIZE = { width: 300, height: 0 };
 
 /** Duração da mistura das peças, em segundos. */
 export const SHUFFLE_SECONDS = 1.4;
 
 export function GameTable({
   table,
+  initialPieceId = null,
   canFitLeft = false,
   canFitRight = false,
   onPlayPiece,
   lastPlayedId = null,
   flipPieceId = null,
+  fitHeight = false,
   shuffle = null,
 }: GameTableProps) {
-  const chainRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(FALLBACK_WIDTH);
+  const areaRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState(FALLBACK_SIZE);
 
-  // Acompanha a largura real da mesa para dobrar a linha de peças em fileiras.
+  // Acompanha o tamanho real da área da mesa para posicionar a linha de peças.
   useEffect(() => {
-    const element = chainRef.current;
+    const element = areaRef.current;
     if (!element || typeof ResizeObserver === 'undefined') return;
 
     const observer = new ResizeObserver((entries) => {
-      const measured = entries[0]?.contentRect.width;
-      if (measured && measured > 0) setWidth(measured);
+      const rect = entries[0]?.contentRect;
+      if (rect && rect.width > 0) {
+        setSize({ width: Math.floor(rect.width), height: Math.floor(rect.height) });
+      }
     });
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
 
-  const half = halfForWidth(width);
   const hasPieces = table.pieces.length > 0;
-  const rows = layoutChain(table.pieces, {
-    maxWidth: width,
-    half,
+  const layout = fitSnake(table.pieces, initialPieceId, {
+    width: size.width,
+    maxHeight: fitHeight && size.height > 0 ? size.height : undefined,
     leftSlot: hasPieces && canFitLeft,
     rightSlot: hasPieces && canFitRight,
   });
 
   return (
     <section className="game-table" aria-label="Mesa">
-      <div
-        className={`game-table__chain ${rows.length <= 1 ? 'game-table__chain--single' : ''}`}
-        ref={chainRef}
-      >
-        {hasPieces
-          ? rows.map((row, rowIndex) => (
-              <div
-                key={rowIndex}
-                className={`game-table__row ${row.reversed ? 'game-table__row--reversed' : ''}`}
-              >
-                {row.items.map((item) =>
-                  item.kind === 'slot' ? (
-                    <button
-                      key={`slot-${item.side}`}
-                      type="button"
-                      className="game-table__slot"
-                      style={{ width: Math.max(44, half * 2) }}
-                      aria-label={`Jogar na ponta ${SIDE_LABEL[item.side]}`}
-                      onClick={() => onPlayPiece?.(item.side)}
-                    >
-                      Jogar
-                    </button>
-                  ) : (
-                    <PieceMotion
-                      key={item.piece.id}
-                      pieceId={item.piece.id}
-                      flip={item.piece.id === flipPieceId}
-                      className={item.piece.id === lastPlayedId ? 'game-table__last' : undefined}
-                    >
-                      <DominoPiece
-                        piece={item.piece}
-                        isFaceUp
-                        half={half}
-                        orientation={isDouble(item.piece) ? 'vertical' : 'horizontal'}
-                        flipped={row.reversed}
-                      />
-                    </PieceMotion>
-                  )
-                )}
-              </div>
-            ))
-          : !shuffle && <p className="game-table__empty">Nenhuma peça na mesa ainda</p>}
+      <div className="game-table__area" ref={areaRef}>
+        {hasPieces ? (
+          <div className="game-table__snake" style={{ height: layout.height }}>
+            {layout.items.map((item) =>
+              item.kind === 'slot' ? (
+                <button
+                  key={item.key}
+                  type="button"
+                  className="game-table__slot"
+                  style={{ left: item.x, top: item.y, width: item.w, height: item.h }}
+                  aria-label={`Jogar na ponta ${SIDE_LABEL[item.side ?? 'left']}`}
+                  onClick={() => item.side && onPlayPiece?.(item.side)}
+                >
+                  Jogar
+                </button>
+              ) : (
+                item.piece && (
+                  <PieceMotion
+                    key={item.key}
+                    pieceId={item.key}
+                    flip={item.key === flipPieceId}
+                    className={`game-table__piece ${
+                      item.key === lastPlayedId ? 'game-table__last' : ''
+                    }`}
+                    style={{ left: item.x, top: item.y }}
+                  >
+                    <DominoPiece
+                      piece={item.piece}
+                      isFaceUp
+                      half={layout.half}
+                      orientation={item.orientation}
+                      flipped={item.flipped}
+                    />
+                  </PieceMotion>
+                )
+              )
+            )}
+          </div>
+        ) : (
+          !shuffle && <p className="game-table__empty">Nenhuma peça na mesa ainda</p>
+        )}
       </div>
 
       {shuffle && (

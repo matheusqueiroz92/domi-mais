@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 interface PieceMotionProps {
   /** Id da peça: o mesmo id em outro lugar da tela faz a peça "viajar" até aqui. */
@@ -7,6 +7,7 @@ interface PieceMotionProps {
   /** Vira a peça ao chegar (usado quando ela sai do monte e é aberta). */
   flip?: boolean;
   className?: string;
+  style?: CSSProperties;
   children: ReactNode;
 }
 
@@ -15,13 +16,19 @@ interface PieceMotionProps {
  * lugar (monte, mão) e aparece em outro (mão, mesa) com o mesmo `pieceId`,
  * ela desliza da posição antiga para a nova.
  */
-export function PieceMotion({ pieceId, flip = false, className, children }: PieceMotionProps) {
+export function PieceMotion({
+  pieceId,
+  flip = false,
+  className,
+  style,
+  children,
+}: PieceMotionProps) {
   return (
     <motion.div
       layout
       layoutId={pieceId}
       className={className}
-      style={{ display: 'flex' }}
+      style={{ display: 'flex', ...style }}
       initial={flip ? { rotateY: 180 } : false}
       animate={{ rotateY: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}

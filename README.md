@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -32,7 +32,8 @@ em [domimais.com.br](https://domimais.com.br).
 ## 🎯 Como jogar
 
 1. As 28 peças ficam no monte, viradas, mostrando só a soma.
-2. Um jogador é sorteado e escolhe no monte a peça inicial da mesa.
+2. Um jogador é sorteado e escolhe no monte a peça inicial da mesa; a vez
+   passa ao próximo jogador.
 3. Em cada turno, o jogador **compra uma peça** do monte e depois **joga** uma
    peça que encaixe em uma das pontas ou **fica com a peça** comprada.
 4. **Blefe:** mesmo quando a peça comprada encaixa, o jogador pode ficar com

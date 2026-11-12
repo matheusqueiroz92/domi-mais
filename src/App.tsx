@@ -28,6 +28,7 @@ import { ExitIcon, HelpIcon } from "./components/icons";
 import { createScatter, seatOpponents } from "./components/table-layout";
 import type { ScatterPoint } from "./components/table-layout";
 import { useSound } from "./sound/useSound";
+import { useMediaQuery } from "./components/useMediaQuery";
 import { useTheme } from "./theme/useTheme";
 import "./App.css";
 
@@ -98,10 +99,14 @@ function getStatusMessage(state: GameState, viewerIndex: number): string | null 
   return `${passNotice}Monte vazio: ${player.name}, jogue uma peça que encaixe`;
 }
 
+/** Telas grandes: a partida ocupa a janela inteira, sem rolagem. */
+const WIDE_SCREEN = "(min-width: 1024px) and (min-height: 640px)";
+
 function GameContent() {
   const { state, dispatch, initializeGame } = useGame();
   const { theme, toggleTheme } = useTheme();
   const { soundOn, toggleSound, play } = useSound();
+  const isWide = useMediaQuery(WIDE_SCREEN);
   // Trajetos da animação de embaralhar; `null` quando ela não está em andamento.
   const [shuffle, setShuffle] = useState<ScatterPoint[][] | null>(null);
   const [showHomeScreen, setShowHomeScreen] = useState(true);
@@ -227,7 +232,7 @@ function GameContent() {
   }
 
   return (
-    <main className="game">
+    <main className={`game ${isFinished ? "game--finished" : ""}`}>
       <header className="game__header">
         <span className="wordmark">DomiMais</span>
         <div className="game__actions">
@@ -270,6 +275,8 @@ function GameContent() {
           })}
         <GameTable
           table={state.table}
+          initialPieceId={state.initialPieceId}
+          fitHeight={isWide && !isFinished}
           shuffle={shuffle ? { pieces: state.drawPile, paths: shuffle } : null}
           lastPlayedId={lastPlayed?.pieceId ?? null}
           flipPieceId={flipPieceId}
@@ -279,57 +286,67 @@ function GameContent() {
         />
       </div>
 
-      {/* Orientação para o jogador da vez */}
-      {statusMessage && (
-        <p className="game__status" role="status">
-          {statusMessage}
-        </p>
-      )}
-
-      {/* Contra o computador: o espaço fica reservado para a tela não pular. */}
-      {hasBots && !isFinished && (
-        <p className="game__last-action">
-          {lastOpponentAction && `Última jogada: ${lastOpponentAction}`}
-        </p>
-      )}
-
-      {isShuffling && (
-        <button type="button" className="btn btn--block" onClick={() => setShuffle(null)}>
-          Pular animação
-        </button>
-      )}
-
+      {/* Parte de baixo. No celular os itens ficam empilhados; em telas
+          grandes, o monte fica à esquerda e a mão do jogador à direita. */}
       {!isFinished && (
-        <DrawPile
-          order={state.initialPileOrder}
-          pieces={state.drawPile}
-          mode={isShuffling ? "idle" : pileMode}
-          hideTiles={isShuffling}
-          onSelectPiece={handlePilePiece}
-        />
-      )}
+        <div className="game__bottom">
+          <div className="game__pile-col">
+            {isShuffling && (
+              <button type="button" className="btn btn--block game__skip" onClick={() => setShuffle(null)}>
+                Pular animação
+              </button>
+            )}
+            <DrawPile
+              order={state.initialPileOrder}
+              pieces={state.drawPile}
+              mode={isShuffling ? "idle" : pileMode}
+              hideTiles={isShuffling}
+              onSelectPiece={handlePilePiece}
+            />
+          </div>
 
-      {showHands && !isShuffling && (
-        <PlayerHand
-          player={viewer}
-          selectedPieceId={isViewerTurn ? state.selectedPieceId : null}
-          drawnPieceId={isViewerTurn ? state.drawnPieceId : null}
-          canSelect={isViewerTurn && isPlaying && state.turnStep === "play"}
-          onSelectPiece={(pieceId) => dispatch({ type: "SELECT_PIECE", pieceId })}
-        />
-      )}
+          <div className="game__me-col">
+            {/* Orientação para o jogador da vez */}
+            {statusMessage && (
+              <p className="game__status" role="status">
+                {statusMessage}
+              </p>
+            )}
 
-      {/* Encerrar o turno sem jogar. Para o motor é sempre a mesma ação
-          (KEEP_PIECE); o texto muda só na tela do próprio jogador: "Passar a
-          vez" quando nada encaixa, "Ficar com a peça" quando ele poderia jogar. */}
-      {canKeep && (
-        <button
-          type="button"
-          className="btn btn--block"
-          onClick={() => dispatch({ type: "KEEP_PIECE" })}
-        >
-          {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
-        </button>
+            {/* Contra o computador: o espaço fica reservado para a tela não pular. */}
+            {hasBots && (
+              <p className="game__last-action">
+                {lastOpponentAction && `Última jogada: ${lastOpponentAction}`}
+              </p>
+            )}
+
+            {showHands && !isShuffling && (
+              <PlayerHand
+                player={viewer}
+                selectedPieceId={isViewerTurn ? state.selectedPieceId : null}
+                drawnPieceId={isViewerTurn ? state.drawnPieceId : null}
+                canSelect={isViewerTurn && isPlaying && state.turnStep === "play"}
+                onSelectPiece={(pieceId) => dispatch({ type: "SELECT_PIECE", pieceId })}
+              />
+            )}
+
+            {/* Encerrar o turno sem jogar. Para o motor é sempre a mesma ação
+                (KEEP_PIECE); o texto muda só na tela do próprio jogador: "Passar a
+                vez" quando nada encaixa, "Ficar com a peça" quando ele poderia jogar.
+                O espaço do botão fica reservado em telas grandes. */}
+            <div className="game__keep">
+              {canKeep && (
+                <button
+                  type="button"
+                  className="btn btn--block"
+                  onClick={() => dispatch({ type: "KEEP_PIECE" })}
+                >
+                  {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Fim de jogo: todas as mãos abertas, com a soma de cada jogador */}

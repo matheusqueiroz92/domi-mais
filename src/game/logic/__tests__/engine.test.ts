@@ -31,7 +31,7 @@ describe('início da partida', () => {
   it('guarda a ordem inicial do monte, que não muda durante a partida', () => {
     expect(setup.initialPileOrder).toEqual(setup.drawPile.map((p) => p.id));
     const started = startGame(setup);
-    const afterInitial = chooseInitialPiece(started, started.drawPile[3].id);
+    const afterInitial = confirmReady(chooseInitialPiece(started, started.drawPile[3].id));
     const afterDraw = drawPiece(afterInitial, afterInitial.drawPile[0].id);
     expect(afterDraw.drawPile).toHaveLength(26);
     expect(afterDraw.initialPileOrder).toEqual(setup.initialPileOrder);
@@ -49,19 +49,46 @@ describe('início da partida', () => {
     const chosen = started.drawPile.find((p) => p.left === 2 && p.right === 5)!;
     const state = chooseInitialPiece(started, chosen.id);
 
-    expect(state.phase).toBe('playing');
     expect(state.table).toMatchObject({ leftEnd: 2, rightEnd: 5 });
+    expect(state.initialPieceId).toBe(chosen.id);
+    expect(state.lastPlayed).toEqual({ playerIndex: 1, pieceId: chosen.id });
     expect(state.table.pieces).toHaveLength(1);
     expect(state.table.pieces[0].isFaceUp).toBe(true);
     expect(state.drawPile).toHaveLength(27);
     expect(state.drawPile.some((p) => p.id === chosen.id)).toBe(false);
   });
 
-  it('quem escolheu a peça inicial faz o primeiro turno, começando pela compra', () => {
+  it('depois da peça inicial a vez passa ao próximo jogador, que faz a primeira compra', () => {
     const started = startGame(setup);
+    expect(started.currentPlayerIndex).toBe(1);
+
     const state = chooseInitialPiece(started, started.drawPile[0].id);
-    expect(state.currentPlayerIndex).toBe(1);
-    expect(mustDraw(state)).toBe(true);
+    // Quem escolheu a peça inicial não compra em seguida: a vez é do outro.
+    expect(state.currentPlayerIndex).toBe(0);
+    expect(state.phase).toBe('transition');
+    expect(state.players.map((p) => p.hand.length)).toEqual([0, 0]);
+
+    const ready = confirmReady(state);
+    expect(mustDraw(ready)).toBe(true);
+    const drawn = drawPiece(ready, ready.drawPile[0].id);
+    expect(drawn.players.map((p) => p.hand.length)).toEqual([1, 0]);
+  });
+
+  it('com 3 ou 4 jogadores a primeira compra é de quem vem depois de quem começou', () => {
+    for (const [count, starter, next] of [
+      [3, 2, 0],
+      [4, 1, 2],
+      [4, 3, 0],
+    ]) {
+      const names = ['Ana', 'Beto', 'Caio', 'Dani'].slice(0, count);
+      const start = startGame(
+        createInitialGameState(names, { startingPlayerIndex: starter, protectTurns: false })
+      );
+      const state = chooseInitialPiece(start, start.drawPile[0].id);
+      expect(state.phase).toBe('playing');
+      expect(state.currentPlayerIndex).toBe(next);
+      expect(mustDraw(state)).toBe(true);
+    }
   });
 
   it('ignora peça inexistente e escolha fora da fase certa', () => {

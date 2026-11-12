@@ -42,6 +42,47 @@
   grid-area: table;
 }
 
+/* Parte de baixo. No celular os dois grupos se desfazem e os itens ficam
+   empilhados nesta ordem: aviso, última jogada, monte, mão e botão. */
+.game__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game__pile-col,
+.game__me-col {
+  display: contents;
+}
+
+.game__status {
+  order: 1;
+}
+
+.game__last-action {
+  order: 2;
+}
+
+.game__skip {
+  order: 3;
+}
+
+.pile {
+  order: 4;
+}
+
+.hand {
+  order: 5;
+}
+
+.game__keep {
+  order: 6;
+}
+
+.game__keep:empty {
+  display: none;
+}
+
 /* Alturas mínimas de duas linhas: a tela não pula quando o texto muda. */
 .game__status {
   display: flex;
@@ -126,15 +167,72 @@
   font-weight: 600;
 }
 
-/* Computador */
-@media (min-width: 900px) {
+/* Tablets */
+@media (min-width: 700px) {
   .game {
-    max-width: 1040px;
-    gap: 14px;
-    padding: 20px 32px 32px;
+    max-width: 760px;
+    gap: 12px;
+    padding: 16px 24px 24px;
+  }
+}
+
+/* Telas grandes: a partida ocupa a janela inteira, sem rolagem.
+   Em cima a mesa com os adversários; embaixo, monte à esquerda e mão à direita. */
+@media (min-width: 1024px) and (min-height: 640px) {
+  .game {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    max-width: 1680px;
+    height: 100dvh;
+    min-height: 0;
+    gap: 12px;
+    padding: 14px 28px 18px;
+  }
+
+  /* No fim da partida o resultado pode ser mais alto que a janela. */
+  .game--finished {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-rows: auto minmax(320px, 1fr) auto;
   }
 
   .board {
-    gap: 12px;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .game__bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .game__pile-col,
+  .game__me-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .game__status,
+  .game__last-action {
+    min-height: 1.5em;
+  }
+
+  /* O espaço do botão fica reservado: a tela não muda de altura quando ele aparece. */
+  .game__keep,
+  .game__keep:empty {
+    display: block;
+    min-height: 48px;
+  }
+
+  .final {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
   }
 }
