@@ -55,7 +55,7 @@ export function Modal({
             {title && <h2 className="modal__title">{title}</h2>}
             <div className="modal__content">{children}</div>
             {showCloseButton && onClose && (
-              <button className="modal__close" onClick={onClose}>
+              <button type="button" className="modal__close" onClick={onClose}>
                 Fechar
               </button>
             )}

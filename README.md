@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -42,6 +42,9 @@ em [domimais.com.br](https://domimais.com.br).
    peças da mão; quem empatar na menor soma divide a vitória.
 
 As regras completas estão em [docs/REGRAS.md](docs/REGRAS.md).
+
+O jogo tem tema escuro e claro: o botão de sol/lua alterna, e a escolha fica
+salva no navegador.
 
 ## 🛠️ Tecnologias
 
@@ -89,7 +92,8 @@ domi-mais/
 │   ├── game/
 │   │   ├── logic/         Motor de regras (funções puras) e seus testes
 │   │   └── state/         Tipos, reducer e contexto React
-│   ├── components/        Componentes visuais
+│   ├── components/        Componentes visuais e cálculo do layout da mesa
+│   ├── theme/             Tema escuro/claro
 │   ├── test/              Configuração dos testes
 │   ├── App.tsx            Tela da partida
 │   └── main.tsx           Ponto de entrada
@@ -103,7 +107,7 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 
 ## 🔮 Próximos passos
 
-- [ ] Nova tela inicial e novo layout da mesa
+- [x] Nova tela inicial, novo layout da mesa e temas escuro/claro
 - [ ] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [ ] Tutorial interativo e modo "dica"
 - [ ] PWA com partida salva para uso offline

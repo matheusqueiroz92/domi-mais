@@ -1,13 +1,66 @@
-:root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/*
+ * Tokens de tema do DomiMais.
+ * O tema é escolhido pelo atributo data-theme em <html> (ver src/theme).
+ * Escuro é o padrão; claro é a alternativa.
+ */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #12141c;
+  --panel: #1c2030;
+  --line: #2e3448;
+  --line-strong: #4a5273;
+  --text: #f2f3f7;
+  --muted: #a9b0c3;
+  --table: #0f4a3e;
+  --table-line: #2c6e5f;
+  --table-text: #d5e9e3;
+  --piece: #fafaf7;
+  --piece-line: transparent;
+  --pip: #14161d;
+  --back: #2b3147;
+  --back-text: #f2f3f7;
+  --back-line: #4a5273;
+  --accent: #ffb627;
+  --on-accent: #14161d;
+  --select: #ffb627;
+  --overlay: rgba(5, 6, 10, 0.74);
+  --cover: #0b0d13;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
 
+:root[data-theme='light'] {
   color-scheme: light;
-  color: #213547;
-  background-color: #ffffff;
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --line: #c9d6f2;
+  --line-strong: #8c9bc0;
+  --text: #1c2333;
+  --muted: #55607a;
+  --table: #e4ecfa;
+  --table-line: #c9d6f2;
+  --table-text: #3d4966;
+  --piece: #ffffff;
+  --piece-line: #1c2333;
+  --pip: #1c2333;
+  --back: #1c2333;
+  --back-text: #ffffff;
+  --back-line: #1c2333;
+  --accent: #2452d6;
+  --on-accent: #ffffff;
+  --select: #c2410c;
+  --overlay: rgba(28, 35, 51, 0.6);
+  --cover: #1c2333;
+  --shadow: 0 1px 2px rgba(28, 35, 51, 0.25);
+}
 
+:root {
+  --font-head: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --danger: #c62828;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.35;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -24,8 +77,87 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Botões */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--danger {
+  border-color: transparent;
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.wordmark {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

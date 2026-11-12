@@ -1,0 +1,24 @@
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 14px;
+}
+
+.rules h3 {
+  margin-bottom: 4px;
+  font-family: var(--font-head);
+  font-size: 16px;
+}
+
+.rules p,
+.rules li {
+  color: var(--muted);
+}
+
+.rules ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+}

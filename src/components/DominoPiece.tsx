@@ -1,84 +1,44 @@
-import { motion } from "framer-motion";
-import type { KeyboardEvent } from "react";
-import type { DominoPiece as DominoPieceType } from "../game/state/game-types";
-import clsx from "clsx";
-import "./DominoPiece.css";
+import type { CSSProperties } from 'react';
+import type { DominoPiece as DominoPieceType } from '../game/state/game-types';
+import clsx from 'clsx';
+import './DominoPiece.css';
 
 interface DominoPieceProps {
   piece: DominoPieceType;
   isSelected?: boolean;
+  /** Aberta mostra os pontos; virada mostra só a soma no verso. */
   isFaceUp?: boolean;
   onClick?: () => void;
-  size?: "small" | "medium" | "large";
-  animated?: boolean;
-  orientation?: "horizontal" | "vertical";
+  /** Lado de cada metade da peça aberta, em px. */
+  half?: number;
+  /** Tamanho do verso (peça virada). */
+  back?: 'sm' | 'md' | 'lg';
+  orientation?: 'horizontal' | 'vertical';
+  /** Desenha a peça invertida (usado nas fileiras da mesa que correm para a esquerda). */
+  flipped?: boolean;
 }
 
-// Função para renderizar os pontos (pips) de um dominó
-// Padrões baseados em peças de dominó reais
-function renderPips(value: number, size: "small" | "medium" | "large") {
-  // Tamanho dos pontos baseado no tamanho da peça
-  const pipSize = size === "small" ? 6 : size === "medium" ? 8 : 10;
+// Posições dos pontos em uma grade 3x3 (células 0 a 8), para peça em pé e deitada.
+const PIPS_VERTICAL: Record<number, number[]> = {
+  0: [],
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+const PIPS_HORIZONTAL: Record<number, number[]> = { ...PIPS_VERTICAL, 6: [0, 1, 2, 6, 7, 8] };
+const CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-  // Espaçamento dos pontos (margem das bordas) - reduzido para pips mais espaçados
-  const margin = size === "small" ? 0.15 : size === "medium" ? 0.12 : 0.1;
-
-  // Padrões de pontos para cada valor (0-6) - posições em porcentagem
-  // Baseado em peças de dominó reais
-  const patterns: { [key: number]: Array<[number, number]> } = {
-    0: [], // Sem pontos
-    1: [[0.5, 0.5]], // Centro
-    2: [
-      [0.35, 0.35], // Canto superior esquerdo
-      [0.65, 0.65], // Canto inferior direito (diagonal transversal)
-    ],
-    3: [
-      [0.35, 0.35], // Canto superior esquerdo
-      [0.5, 0.5], // Centro
-      [0.65, 0.65], // Canto inferior direito (diagonal transversal)
-    ],
-    4: [
-      [0.35, 0.35], // Canto superior esquerdo
-      [0.65, 0.35], // Canto superior direito
-      [0.35, 0.65], // Canto inferior esquerdo
-      [0.65, 0.65], // Canto inferior direito
-    ],
-    5: [
-      [0.35, 0.3], // Canto superior esquerdo
-      [0.65, 0.3], // Canto superior direito
-      [0.5, 0.5], // Centro
-      [0.35, 0.7], // Canto inferior esquerdo
-      [0.65, 0.7], // Canto inferior direito
-    ],
-    6: [
-      [0.3, 0.3], // Fileira superior - esquerda
-      [0.5, 0.3], // Fileira superior - centro
-      [0.7, 0.3], // Fileira superior - direita
-      [0.3, 0.7], // Fileira inferior - esquerda
-      [0.5, 0.7], // Fileira inferior - centro
-      [0.7, 0.7], // Fileira inferior - direita
-    ],
-  };
-
-  const positions = patterns[value] || [];
-
+function Half({ value, horizontal }: { value: number; horizontal: boolean }) {
+  const pips = (horizontal ? PIPS_HORIZONTAL : PIPS_VERTICAL)[value] ?? [];
   return (
-    <div className="domino-piece__pips">
-      {positions.map(([x, y], index) => (
-        <div
-          key={index}
-          className="domino-piece__pip"
-          style={{
-            position: "absolute",
-            left: `${(margin + x * (1 - 2 * margin)) * 100}%`,
-            top: `${(margin + y * (1 - 2 * margin)) * 100}%`,
-            transform: "translate(-50%, -50%)",
-            width: `${pipSize}px`,
-            height: `${pipSize}px`,
-          }}
-        />
+    <span className="domino-piece__half">
+      {CELLS.map((cell) => (
+        <span key={cell} className={pips.includes(cell) ? 'domino-piece__pip' : undefined} />
       ))}
-    </div>
+    </span>
   );
 }
 
@@ -87,68 +47,50 @@ export function DominoPiece({
   isSelected = false,
   isFaceUp = piece.isFaceUp,
   onClick,
-  size = "medium",
-  animated = false,
-  orientation = "horizontal",
+  half = 28,
+  back = 'md',
+  orientation = 'horizontal',
+  flipped = false,
 }: DominoPieceProps) {
-  const isBucha = piece.left === piece.right;
+  const label = isFaceUp ? `Peça ${piece.left}|${piece.right}` : `Peça virada, soma ${piece.sum}`;
+  const horizontal = orientation === 'horizontal';
 
-  // Se não especificou orientação, buchas ficam verticais, outras horizontais
-  const finalOrientation = orientation || (isBucha ? "vertical" : "horizontal");
+  const className = isFaceUp
+    ? clsx('domino-piece', `domino-piece--${orientation}`, {
+        'domino-piece--selected': isSelected,
+      })
+    : clsx('domino-back', `domino-back--${back}`);
 
-  const label = isFaceUp
-    ? `Peça ${piece.left}|${piece.right}`
-    : `Peça virada, soma ${piece.sum}`;
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (onClick && (event.key === "Enter" || event.key === " ")) {
-      event.preventDefault();
-      onClick();
-    }
-  };
-
-  const pieceContent = (
-    <div
-      role={onClick ? "button" : "img"}
-      aria-label={label}
-      aria-pressed={onClick ? isSelected : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? handleKeyDown : undefined}
-      className={clsx("domino-piece", `domino-piece--${size}`, {
-        "domino-piece--selected": isSelected,
-        "domino-piece--face-down": !isFaceUp,
-        "domino-piece--clickable": onClick !== undefined,
-        "domino-piece--vertical": finalOrientation === "vertical",
-        "domino-piece--horizontal": finalOrientation === "horizontal",
-      })}
-      onClick={onClick}
-    >
-      <div className="domino-piece__left">
-        {isFaceUp ? renderPips(piece.left, size) : null}
-      </div>
-      <div className="domino-piece__divider"></div>
-      <div className="domino-piece__right">
-        {isFaceUp ? renderPips(piece.right, size) : null}
-      </div>
-      {!isFaceUp && (
-        <div className="domino-piece__sum domino-piece__sum--face-down">
-          {piece.sum}
-        </div>
-      )}
-    </div>
+  const content = isFaceUp ? (
+    <>
+      <Half value={flipped ? piece.right : piece.left} horizontal={horizontal} />
+      <span className="domino-piece__divider" />
+      <Half value={flipped ? piece.left : piece.right} horizontal={horizontal} />
+    </>
+  ) : (
+    piece.sum
   );
 
-  if (animated) {
+  const style = isFaceUp ? ({ '--half': `${half}px` } as CSSProperties) : undefined;
+
+  if (onClick) {
     return (
-      <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ duration: 0.5, type: "spring" }}
+      <button
+        type="button"
+        className={className}
+        style={style}
+        aria-label={label}
+        aria-pressed={isFaceUp ? isSelected : undefined}
+        onClick={onClick}
       >
-        {pieceContent}
-      </motion.div>
+        {content}
+      </button>
     );
   }
 
-  return pieceContent;
+  return (
+    <span className={className} style={style} role="img" aria-label={label}>
+      {content}
+    </span>
+  );
 }

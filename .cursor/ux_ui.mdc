@@ -2,53 +2,27 @@
 alwaysApply: true
 ---
 
-# DomiMais — UX/UI e Experiência do Usuário
+# DomiMais — UX/UI
 
-Este documento define o padrão visual e interativo do jogo.
+A interface está descrita em `docs/ARQUITETURA.md` (seção Interface).
 
-## Estilo Visual
+## Visual
 
-- Design moderno e limpo.
-- Inspirado em jogos mobile atuais.
-- Mesa estilizada.
-- Peças com aparência levemente 3D.
+- Tema escuro (padrão) e tema claro. Toda cor vem dos tokens CSS de
+  `src/index.css`; nunca usar cor fixa em componente.
+- Fontes: Space Grotesk (títulos) e Inter (texto).
+- Ícones em SVG de traço (`src/components/icons.tsx`); não usar emoji.
+- Pensar primeiro no celular; também funcionar em computador, sem rolagem
+  horizontal.
 
-## Animações
+## Regras de experiência
 
-OBRIGATÓRIO:
-
-- Animação ao comprar peça.
-- Animação ao virar peça.
-- Animação ao encaixar peça.
-- Transições suaves entre turnos.
-
-Tecnologias permitidas:
-
-- Framer Motion
-- CSS Animations
-- Three.js (uso opcional e leve)
-
-## UX Obrigatória
-
-- Interface clara.
-- Feedback visual constante.
-- Pop-ups informativos obrigatórios.
-
-### Pop-ups Necessários
-
-- “Sua vez”
-- “Peça encaixa”
-- “Peça não encaixa”
-- “Blefe realizado”
-- “Passe o dispositivo para o próximo jogador”
-- “Fim de jogo”
-
-## Responsividade
-
-- Funcionar bem em desktop e mobile.
-- Interface touch-friendly.
-
-## MVP
-
-- UX simples, porém polida.
-- Sem excesso visual.
+- Nada na tela pode denunciar o blefe: não mostrar avisos de "peça encaixa" ou
+  "peça não encaixa", e o botão "Ficar com a peça" é sempre o mesmo.
+- O jogador da vez fica embaixo; adversários em volta da mesa, só com os versos.
+- A linha de peças dobra em fileiras ("cobrinha"); não encolher peças até
+  ficarem ilegíveis.
+- Troca de turno no mesmo aparelho sempre passa pela tela "Passe o dispositivo".
+- Alvos de toque com pelo menos 44 px; controles são `<button>`, `<a>` ou
+  `<input>` de verdade, com rótulo acessível.
+- Animações discretas; respeitar `prefers-reduced-motion`.

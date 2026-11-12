@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.0 — 11/11/2026
+
+### Interface
+
+- Nova identidade visual, com **tema escuro** (padrão) e **tema claro**. Um
+  botão alterna o tema na tela inicial e durante a partida, e a escolha fica
+  salva no navegador.
+- **Nova tela inicial:** modos de jogo em cartões ("Mesmo aparelho" disponível;
+  "Contra o computador" e "Online com amigos" marcados como "Em breve"),
+  exemplo da soma no verso e as regras em "Como jogar".
+- **Nova mesa:** adversários em volta da mesa mostrando só os versos, mão do
+  jogador da vez embaixo, monte dentro da mesa e linha de peças em "cobrinha"
+  (dobra em fileiras em vez de encolher).
+- Alvos "Jogar" nas pontas quando a peça selecionada encaixa.
+- Monte em destaque, com peças grandes, na compra e na escolha da peça inicial.
+- Painel de resultado com todas as mãos abertas e a soma de cada jogador.
+- Regras acessíveis durante a partida.
+- Layout para celular e computador, sem rolagem horizontal.
+
+### Técnico
+
+- Cores centralizadas em tokens CSS (`src/index.css`); CSS reescrito.
+- Novos componentes `OpponentSeat`, `PlayerHand`, `ThemeToggle`,
+  `RulesContent` e cálculo de layout em `table-layout.ts`.
+- Peças e botões passaram a ser elementos `<button>` nativos.
+- Novo favicon, descrição da página e fontes Space Grotesk e Inter.
+- Framer Motion ficou restrito às janelas (modais).
+- Testes novos para tema, layout da mesa e assentos (143 testes no total).
+
 ## 0.3.0 — 11/11/2026
 
 - Partidas com **2, 3 ou 4 jogadores**, cada um por si. A tela de início pede a

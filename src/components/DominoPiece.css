@@ -1,250 +1,100 @@
+/* Peça aberta: duas metades com pontos em grade 3x3. O tamanho vem de --half. */
 .domino-piece {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border-radius: 6px;
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 2px rgba(255, 255, 255, 0.9),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.1);
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid #e0e0e0;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  /* Textura sutil de marfim/ossos */
-  background-image: 
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.8) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.6) 0%, transparent 50%);
+  --half: 28px;
+  display: inline-flex;
+  flex: none;
+  padding: 0;
+  background: var(--piece);
+  border: 1.5px solid var(--piece-line);
+  border-radius: calc(var(--half) * 0.16);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease;
 }
 
-/* Orientação vertical (buchas) */
 .domino-piece--vertical {
-  flex-direction: row;
-}
-
-.domino-piece--vertical.domino-piece--small {
-  width: 85px;
-  height: 45px;
-}
-
-.domino-piece--vertical.domino-piece--medium {
-  width: 120px;
-  height: 65px;
-}
-
-.domino-piece--vertical.domino-piece--large {
-  width: 160px;
-  height: 85px;
-}
-
-.domino-piece--vertical .domino-piece__left,
-.domino-piece--vertical .domino-piece__right {
   flex-direction: column;
-  width: auto;
-  height: 100%;
 }
 
-/* Efeito 3D com sombras mais realistas */
-.domino-piece::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
-  border-radius: 4px;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.domino-piece::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 6px;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.domino-piece--small {
-  width: 45px;
-  height: 85px;
-  font-size: 13px;
-}
-
-.domino-piece--small .domino-piece__sum--face-down {
-  font-size: 14px;
-  padding: 4px 6px;
-  min-width: 25px;
-}
-
-.domino-piece--medium {
-  width: 65px;
-  height: 120px;
-  font-size: 18px;
-}
-
-@media (max-width: 1400px) {
-  .domino-piece--medium {
-    width: 60px;
-    height: 110px;
-    font-size: 16px;
-  }
-}
-
-.domino-piece--large {
-  width: 85px;
-  height: 160px;
-  font-size: 28px;
-}
-
-
-.domino-piece--clickable {
-  cursor: pointer;
-}
-
-.domino-piece--clickable:hover {
-  transform: translateY(-6px) rotateX(5deg);
-  box-shadow: 
-    0 10px 20px rgba(0, 0, 0, 0.3),
-    inset 0 2px 4px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-.domino-piece--selected {
-  border-color: #4a90e2;
-  box-shadow: 
-    0 0 0 4px rgba(74, 144, 226, 0.4),
-    0 8px 16px rgba(0, 0, 0, 0.3),
-    inset 0 2px 4px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
-  transform: translateY(-6px) scale(1.05);
-  z-index: 100;
-}
-
-.domino-piece--face-down {
-  background: linear-gradient(145deg, #2c3e50 0%, #34495e 50%, #1a252f 100%);
-  color: #ecf0f1;
-  border-color: #1a252f;
-}
-
-.domino-piece--face-down::before {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
-}
-
-.domino-piece--face-down::after {
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
-}
-
-.domino-piece__left,
-.domino-piece__right {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  position: relative;
-  z-index: 3;
-  /* Garantir que os pontos fiquem visíveis */
-  overflow: visible;
-}
-
-.domino-piece__pips {
-  position: relative;
-  width: 100%;
-  height: 100%;
+.domino-piece__half {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  place-items: center;
+  width: var(--half);
+  height: var(--half);
+  padding: calc(var(--half) * 0.14);
 }
 
 .domino-piece__pip {
-  position: absolute;
-  background: #000000;
+  width: calc(var(--half) * 0.17);
+  height: calc(var(--half) * 0.17);
+  min-width: 3px;
+  min-height: 3px;
   border-radius: 50%;
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.5),
-    inset 0 1px 2px rgba(0, 0, 0, 0.3),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.1);
-  /* Efeito de profundidade nos pontos */
-  border: 0.5px solid rgba(0, 0, 0, 0.3);
+  background: var(--pip);
 }
 
 .domino-piece__divider {
-  width: 90%;
-  height: 2px;
-  background: #1a1a1a;
-  margin: 4px 0;
-  position: relative;
-  z-index: 3;
-  border-radius: 1px;
+  align-self: stretch;
+  flex: none;
+  background: var(--pip);
+  opacity: 0.4;
 }
 
-.domino-piece--vertical .domino-piece__divider {
+.domino-piece--horizontal > .domino-piece__divider {
   width: 1px;
-  height: 90%;
-  margin: 0 4px;
 }
 
-.domino-piece--face-down .domino-piece__divider {
-  background: rgba(255, 255, 255, 0.3);
+.domino-piece--vertical > .domino-piece__divider {
+  height: 1px;
 }
 
-.domino-piece__sum {
-  display: none;
+button.domino-piece,
+button.domino-back {
+  cursor: pointer;
 }
 
-.domino-piece--face-down .domino-piece__sum--face-down {
-  display: block !important;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 20px;
-  color: #ecf0f1;
-  font-weight: bold;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-  z-index: 10;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 6px 10px;
-  border-radius: 6px;
-  min-width: 35px;
-  text-align: center;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+.domino-piece--selected {
+  outline: 3px solid var(--select);
+  outline-offset: 2px;
+  transform: translateY(-8px);
 }
 
-/* Animação de encaixe */
-@keyframes slideIn {
-  from {
-    transform: translateX(-100px) rotateY(-90deg);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0) rotateY(0);
-    opacity: 1;
-  }
+/* Peça virada: o verso mostra só a soma. */
+.domino-back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 5px;
+  border: 1px solid var(--back-line);
+  background: var(--back);
+  color: var(--back-text);
+  font-family: var(--font-body);
+  font-weight: 700;
+  box-shadow: var(--shadow);
 }
 
-.domino-piece--sliding {
-  animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+.domino-back--sm {
+  width: 24px;
+  height: 32px;
+  font-size: 12px;
 }
 
-@media (max-width: 768px) {
-  .domino-piece--medium {
-    width: 55px;
-    height: 100px;
-    font-size: 18px;
-  }
+.domino-back--md {
+  width: 30px;
+  height: 38px;
+  font-size: 14px;
+}
 
-  .domino-piece--large {
-    width: 70px;
-    height: 130px;
-    font-size: 24px;
-  }
+.domino-back--lg {
+  width: 44px;
+  height: 52px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+button.domino-back:hover {
+  border-color: var(--accent);
 }

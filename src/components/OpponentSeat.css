@@ -1,0 +1,66 @@
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.seat__name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.seat__count {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.seat__tiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Em cima: faixa horizontal centralizada. */
+.seat--top {
+  grid-area: top;
+  justify-self: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 10px;
+  max-width: 100%;
+  padding: 8px 14px;
+}
+
+/* Laterais: coluna estreita, com os versos empilhados. */
+.seat--left,
+.seat--right {
+  flex-direction: column;
+  align-self: stretch;
+  width: 64px;
+  padding: 10px 4px;
+}
+
+.seat--left {
+  grid-area: left;
+}
+
+.seat--right {
+  grid-area: right;
+}
+
+@media (min-width: 900px) {
+  .seat--left,
+  .seat--right {
+    width: 96px;
+  }
+}

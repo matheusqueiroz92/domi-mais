@@ -28,7 +28,7 @@ export function TurnTransition({ playerName, onReady }: TurnTransitionProps) {
         <p className="turn-transition__text">
           {playerName}, toque no botão quando só você estiver vendo a tela.
         </p>
-        <button className="btn btn--primary btn--large" onClick={onReady} autoFocus>
+        <button type="button" className="btn btn--primary" onClick={onReady} autoFocus>
           Estou pronto
         </button>
       </div>

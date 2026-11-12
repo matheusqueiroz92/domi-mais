@@ -1,0 +1,33 @@
+.hand {
+  padding: 10px 12px 12px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.hand__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hand__drawn {
+  color: var(--select);
+}
+
+.hand__pieces {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.hand__empty {
+  padding-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}

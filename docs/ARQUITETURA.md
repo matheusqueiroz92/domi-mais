@@ -18,6 +18,15 @@ src/
 │       ├── game-context.tsx       GameProvider (useReducer)
 │       └── use-game.ts            Contexto e hook useGame
 ├── components/         Componentes visuais (sem regras de jogo)
+│   ├── HomeScreen          Tela inicial: modos de jogo, jogadores, regras
+│   ├── GameTable           Mesa: monte, linha de peças em cobrinha, pontas
+│   ├── OpponentSeat        Adversário em volta da mesa (versos com as somas)
+│   ├── PlayerHand          Mão aberta do jogador da vez
+│   ├── DrawPile            Monte em destaque para compra / peça inicial
+│   ├── TurnTransition      Tela "Passe o dispositivo"
+│   ├── DominoPiece         Peça aberta (pontos) ou virada (soma)
+│   └── table-layout.ts     Cálculo das fileiras da mesa e dos assentos
+├── theme/              Tema escuro/claro (leitura, gravação e aplicação)
 ├── test/setup.ts       Configuração dos testes
 └── App.tsx             Tela da partida
 ```
@@ -99,6 +108,45 @@ cliques; o motor é o mesmo.
 peça encaixava. Há um teste que compara o estado resultante de um blefe com o
 de uma peça que realmente não encaixava e exige que sejam indistinguíveis.
 
+## Interface
+
+### Temas
+
+O jogo tem tema **escuro** (padrão) e **claro**. Todas as cores são tokens CSS
+definidos em `src/index.css` (`--bg`, `--panel`, `--table`, `--piece`,
+`--accent` etc.), em dois blocos: `:root[data-theme='dark']` e
+`:root[data-theme='light']`. Nenhum componente usa cor fixa.
+
+- `src/theme/theme.ts` lê e grava a preferência em `localStorage`
+  (chave `domimais:theme`) e aplica o atributo `data-theme` em `<html>`.
+  Se o armazenamento falhar, o tema padrão é usado e nada quebra.
+- `useTheme` expõe `theme` e `toggleTheme`; o botão é o `ThemeToggle`.
+- Um script curto no `index.html` aplica o tema salvo antes de a página
+  aparecer, para não piscar.
+
+Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
+
+### Tela da partida
+
+- O **jogador da vez** fica embaixo, com a mão aberta (`PlayerHand`).
+- Os **adversários** ficam em volta da mesa, na ordem dos turnos em sentido
+  horário (`seatOpponents`): com 2 jogadores, em cima; com 3, à esquerda e à
+  direita; com 4, à esquerda, em cima e à direita. Deles só aparecem os versos,
+  com as somas.
+- A **mesa** (`GameTable`) mostra o monte (somas), a linha de peças e os
+  valores das pontas. A linha dobra em fileiras que alternam o sentido
+  ("cobrinha"), calculadas por `layoutChain` a partir da largura medida; as
+  peças não encolhem até ficarem ilegíveis.
+- Quando a peça selecionada encaixa, aparecem os alvos tracejados **"Jogar"**
+  nas pontas.
+- Na compra e na escolha da peça inicial, o monte aparece em destaque
+  (`DrawPile`), com peças grandes para o toque.
+- Na troca de turno (`transition`) as mãos não são renderizadas.
+- No fim, o painel **Resultado** abre todas as mãos, com a soma de cada jogador.
+
+O layout é pensado primeiro para celular (coluna única, até 560 px) e se
+alarga em telas a partir de 900 px.
+
 ## Testes
 
 ```bash
@@ -115,7 +163,9 @@ npm run test:watch # modo interativo
 | `logic/__tests__/simulation.test.ts` | 1.200 partidas aleatórias completas (2, 3 e 4 jogadores) com invariantes |
 | `state/__tests__/game-reducer.test.ts` | Reducer e sorteio |
 | `components/__tests__/components.test.tsx` | Peça, mesa, modal, troca de turno |
-| `App.test.tsx` | Fluxo pela interface, inclusive partidas inteiras com 2, 3 e 4 jogadores |
+| `components/__tests__/table-layout.test.ts` | Fileiras da mesa (cobrinha) e assentos dos adversários |
+| `theme/__tests__/theme.test.ts` | Tema: padrão, gravação, falha de armazenamento |
+| `App.test.tsx` | Tela inicial, tema, fluxo da partida e partidas inteiras com 2, 3 e 4 jogadores |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças
 únicas somando monte, mesa e mãos; as peças da mesa formam uma corrente válida;

@@ -1,16 +1,34 @@
-import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Modal } from './Modal';
+import { DominoPiece } from './DominoPiece';
+import { RulesContent } from './RulesContent';
+import { ThemeToggle } from './ThemeToggle';
+import { ChevronIcon, CpuIcon, GlobeIcon, UsersIcon } from './icons';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../game/logic/rules';
+import type { DominoPiece as DominoPieceType } from '../game/state/game-types';
+import type { Theme } from '../theme/theme';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
   /** Recebe os nomes dos jogadores (de 2 a 4), na ordem dos turnos. */
   onStartGame: (playerNames: string[]) => void;
+  theme: Theme;
+  onToggleTheme: () => void;
 }
 
-export function HomeScreen({ onStartGame }: HomeScreenProps) {
+// Peças do exemplo "soma 7 pode ser...", só ilustrativas.
+const example = (left: number, right: number): DominoPieceType => ({
+  id: `exemplo-${left}-${right}`,
+  left,
+  right,
+  sum: left + right,
+  isFaceUp: true,
+});
+const EXAMPLE_PIECES = [example(1, 6), example(2, 5), example(3, 4)];
+
+export function HomeScreen({ onStartGame, theme, onToggleTheme }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
   const [names, setNames] = useState<string[]>(() => Array(MAX_PLAYERS).fill(''));
 
@@ -20,10 +38,6 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
     { length: MAX_PLAYERS - MIN_PLAYERS + 1 },
     (_, index) => MIN_PLAYERS + index
   );
-
-  const handlePlayClick = () => {
-    setShowPlayerModal(true);
-  };
 
   const handleNameChange = (index: number, value: string) => {
     setNames((current) => current.map((name, i) => (i === index ? value : name)));
@@ -36,119 +50,87 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
   };
 
   return (
-    <>
-      <div className="home-screen">
-        <motion.div
-          className="home-screen__content"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <motion.h1
-            className="home-screen__title"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            <img src="/logo-domi-mais.jpeg" alt="DomiMais" className="home-screen__logo" width={700} height={350} />
-          </motion.h1>
-
-          <motion.div
-            className="home-screen__rules"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-          >
-            <h2 className="home-screen__section-title">📋 Como Jogar</h2>
-
-            <div className="home-screen__rule-section">
-              <h3 className="home-screen__rule-title">🎯 Objetivo</h3>
-              <p className="home-screen__rule-text">
-                Vence quem ficar sem peças na mão. Se o jogo fechar (nenhuma
-                peça encaixa), vence quem tiver a menor soma das peças da mão;
-                quem empatar na menor soma divide a vitória.
-              </p>
-            </div>
-
-            <div className="home-screen__rule-section">
-              <h3 className="home-screen__rule-title">🎮 Funcionamento</h3>
-              <p className="home-screen__rule-text">
-                - Ninguém começa com peças: as 28 ficam no monte, viradas
-              </p>
-              <p className="home-screen__rule-text">
-                - O verso de cada peça mostra a soma dos seus dois lados
-              </p>
-              <p className="home-screen__rule-text">
-                - O jogador sorteado escolhe no monte a peça inicial da mesa
-              </p>
-              <p className="home-screen__rule-text">
-                - Em cada turno você compra uma peça do monte e pode jogar uma
-                peça que encaixe em uma das pontas, ou ficar com a peça
-                comprada
-              </p>
-              <p className="home-screen__rule-text">
-                - Quando o monte acaba, o jogo continua com as peças das mãos:
-                quem tem peça que encaixa é obrigado a jogar, e quem não tem
-                passa a vez automaticamente
-              </p>
-            </div>
-
-            <div className="home-screen__rule-section">
-              <h3 className="home-screen__rule-title">🎭 Blefe</h3>
-              <p className="home-screen__rule-text">
-                Mesmo quando a peça comprada encaixa, você pode ficar com ela e
-                fingir que não encaixava. O jogo nunca revela o blefe: use a
-                soma do verso para deduzir o que o adversário guardou!
-              </p>
-            </div>
-
-            <div className="home-screen__rule-section">
-              <h3 className="home-screen__rule-title">✨ Características</h3>
-              <p className="home-screen__rule-text">
-                - 28 peças de dominó (todas as combinações de 0-0 até 6-6)
-              </p>
-              <p className="home-screen__rule-text">
-                - De 2 a 4 jogadores no mesmo dispositivo, cada um por si
-              </p>
-              <p className="home-screen__rule-text">
-                - Interface moderna com animações suaves
-              </p>
-              <p className="home-screen__rule-text">
-                - Mesa realista com visualização 3D
-              </p>
-              <p className="home-screen__rule-text">
-                - Sistema de turnos protegidos
-              </p>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
-          >
-            <motion.button
-              className="btn btn--primary btn--large home-screen__play-button"
-              onClick={handlePlayClick}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Jogar
-            </motion.button>
-          </motion.div>
-        </motion.div>
+    <main className="home">
+      <div className="home__topbar">
+        <span className="wordmark">DomiMais</span>
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
+
+      <div className="home__layout">
+        <img
+          className="home__logo"
+          src="/logo-domi-mais.jpeg"
+          alt="DomiMais: o nome do jogo montado com peças de dominó sobre feltro verde"
+          width={1280}
+          height={853}
+        />
+
+        <div className="home__content">
+          <div className="home__intro">
+            <h1 className="home__title">Blefe. Deduza. Vença.</h1>
+            <p className="home__subtitle">
+              O verso de cada peça entrega só a soma. O resto é com você.
+            </p>
+          </div>
+
+          <div className="home__example" aria-label="Exemplo: uma peça de soma 7 pode ser 1|6, 2|5 ou 3|4">
+            <DominoPiece piece={{ ...EXAMPLE_PIECES[0], isFaceUp: false }} isFaceUp={false} back="md" />
+            <span className="home__example-text">pode ser</span>
+            {EXAMPLE_PIECES.map((piece) => (
+              <DominoPiece key={piece.id} piece={piece} isFaceUp half={19} orientation="vertical" />
+            ))}
+          </div>
+
+          <div className="home__modes">
+            <button
+              type="button"
+              className="mode mode--primary"
+              onClick={() => setShowPlayerModal(true)}
+            >
+              <UsersIcon size={28} />
+              <span className="mode__text">
+                <span className="mode__title">Mesmo aparelho</span>
+                <span className="mode__desc">De 2 a 4 jogadores, cada um por si</span>
+              </span>
+              <ChevronIcon />
+            </button>
+            <div className="mode">
+              <CpuIcon size={28} />
+              <span className="mode__text">
+                <span className="mode__title">Contra o computador</span>
+                <span className="mode__desc">Jogue sozinho, com 1 a 3 adversários</span>
+              </span>
+              <span className="mode__soon">Em breve</span>
+            </div>
+            <div className="mode">
+              <GlobeIcon size={28} />
+              <span className="mode__text">
+                <span className="mode__title">Online com amigos</span>
+                <span className="mode__desc">Sala por código, sem cadastro</span>
+              </span>
+              <span className="mode__soon">Em breve</span>
+            </div>
+          </div>
+
+          <button type="button" className="btn btn--block" onClick={() => setShowRules(true)}>
+            Como jogar
+          </button>
+        </div>
+      </div>
+
+      <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
+        <RulesContent />
+      </Modal>
 
       <Modal
         isOpen={showPlayerModal}
         onClose={() => setShowPlayerModal(false)}
-        title="Configurar Jogadores"
-        type="info"
+        title="Quem vai jogar?"
         showCloseButton={false}
       >
-        <div className="player-names-form">
-          <fieldset className="player-names-form__field player-count">
-            <legend className="player-names-form__label">Quantos jogadores?</legend>
+        <div className="player-form">
+          <fieldset className="player-count">
+            <legend className="player-form__label">Quantos jogadores?</legend>
             <div className="player-count__options">
               {countOptions.map((count) => (
                 <label
@@ -171,39 +153,38 @@ export function HomeScreen({ onStartGame }: HomeScreenProps) {
           </fieldset>
 
           {Array.from({ length: playerCount }, (_, index) => (
-            <div className="player-names-form__field" key={index}>
-              <label htmlFor={`player${index + 1}`} className="player-names-form__label">
+            <div className="player-form__field" key={index}>
+              <label htmlFor={`player${index + 1}`} className="player-form__label">
                 Nome do Jogador {index + 1}
               </label>
               <input
                 id={`player${index + 1}`}
                 type="text"
-                className="player-names-form__input"
+                className="player-form__input"
                 placeholder={`Digite o nome do jogador ${index + 1}`}
                 value={names[index]}
+                maxLength={16}
                 onChange={(e) => handleNameChange(index, e.target.value)}
                 autoFocus={index === 0}
               />
             </div>
           ))}
 
-          <div className="player-names-form__actions">
+          <div className="modal__actions">
+            <button type="button" className="btn" onClick={() => setShowPlayerModal(false)}>
+              Cancelar
+            </button>
             <button
+              type="button"
               className="btn btn--primary"
               onClick={handleStartGame}
               disabled={!canStart}
             >
               Iniciar Jogo
             </button>
-            <button
-              className="btn btn--secondary"
-              onClick={() => setShowPlayerModal(false)}
-            >
-              Cancelar
-            </button>
           </div>
         </div>
       </Modal>
-    </>
+    </main>
   );
 }
