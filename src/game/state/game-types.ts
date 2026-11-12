@@ -12,9 +12,14 @@ export interface DominoPiece {
   isFaceUp: boolean;
 }
 
+/** Nível de dificuldade de um jogador controlado pelo computador. */
+export type BotLevel = 'easy' | 'medium' | 'hard';
+
 export interface Player {
   id: string;
   name: string;
+  /** Nível do computador que controla este jogador; `null` para uma pessoa. */
+  botLevel: BotLevel | null;
   hand: DominoPiece[];
   /** Soma das peças da mão ao fim da partida (0 durante o jogo). */
   score: number;
@@ -97,6 +102,11 @@ export interface GameState {
    * usam `false`.
    */
   protectTurns: boolean;
+  /**
+   * Última peça colocada na mesa e quem a colocou (inclui a peça inicial).
+   * A interface usa para destacar a jogada mais recente.
+   */
+  lastPlayed: { playerIndex: number; pieceId: string } | null;
   /** Preenchido quando `phase === 'finished'`. */
   result: GameResult | null;
   logs: string[];
@@ -112,6 +122,8 @@ export type GameAction =
       /** Índice do jogador que começa (sorteado fora do reducer). */
       startingPlayerIndex: number;
       protectTurns?: boolean;
+      /** Nível do computador para cada jogador (`null` = pessoa). Padrão: todos pessoas. */
+      botLevels?: (BotLevel | null)[];
     }
   | { type: 'START_GAME' }
   | { type: 'CHOOSE_INITIAL_PIECE'; pieceId: string }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import { GameProvider } from "./game/state/game-context";
 import { useGame } from "./game/state/use-game";
@@ -11,7 +11,8 @@ import {
   getWinners,
   mustDraw,
 } from "./game/logic/selectors";
-import type { GameState } from "./game/state/game-types";
+import type { BotLevel, GameAction, GameState } from "./game/state/game-types";
+import { useBotTurns } from "./game/ai/useBotTurns";
 import { DominoPiece } from "./components/DominoPiece";
 import { GameTable, SHUFFLE_SECONDS } from "./components/GameTable";
 import { DrawPile } from "./components/DrawPile";
@@ -30,12 +31,41 @@ import { useSound } from "./sound/useSound";
 import { useTheme } from "./theme/useTheme";
 import "./App.css";
 
+/**
+ * Índice de quem está olhando para a tela. Com uma única pessoa na partida
+ * (contra o computador) é sempre ela; no mesmo aparelho é o jogador da vez.
+ */
+function getViewerIndex(state: GameState): number {
+  const humans = state.players
+    .map((player, index) => (player.botLevel === null ? index : -1))
+    .filter((index) => index !== -1);
+  return humans.length === 1 ? humans[0] : state.currentPlayerIndex;
+}
+
+/**
+ * Ação mais recente de outro jogador, para a pessoa acompanhar o que o
+ * computador fez. O registro é neutro: nunca diz se a peça encaixava.
+ */
+function getLastOpponentAction(state: GameState, viewerIndex: number): string | null {
+  const ownPrefix = `${state.players[viewerIndex].name} `;
+  for (let i = state.logs.length - 1; i >= 0; i--) {
+    const log = state.logs[i];
+    if (log.startsWith("Vez de ") || log.startsWith("Jogo iniciado")) continue;
+    if (log.startsWith(ownPrefix)) continue;
+    return log;
+  }
+  return null;
+}
+
 /** Mensagem que orienta o jogador da vez sobre o que fazer agora. */
-function getStatusMessage(state: GameState): string | null {
+function getStatusMessage(state: GameState, viewerIndex: number): string | null {
   const player = getCurrentPlayer(state);
+  const isViewerTurn = state.currentPlayerIndex === viewerIndex;
 
   if (state.phase === "choosing-initial") {
-    return `${player.name}, escolha a peça inicial do monte`;
+    return isViewerTurn
+      ? `${player.name}, escolha a peça inicial do monte`
+      : `${player.name} está escolhendo a peça inicial…`;
   }
   if (state.phase !== "playing") return null;
 
@@ -48,6 +78,13 @@ function getStatusMessage(state: GameState): string | null {
         passedCount > 1 ? "passaram" : "passou"
       } a vez. `
     : "";
+
+  if (!isViewerTurn) {
+    // Vez do computador: nada aqui revela se a peça dele encaixa.
+    return mustDraw(state)
+      ? `${passNotice}${player.name} está comprando uma peça…`
+      : `${passNotice}${player.name} está decidindo a jogada…`;
+  }
 
   if (mustDraw(state)) {
     return `${passNotice}${player.name}, compre uma peça do monte`;
@@ -73,18 +110,43 @@ function GameContent() {
   const [resultDismissed, setResultDismissed] = useState(false);
 
   const currentPlayer = getCurrentPlayer(state);
-  const selectedPiece = getSelectedPiece(state);
-  const playableSides = getSelectedPlayableSides(state);
+  const viewerIndex = getViewerIndex(state);
+  const viewer = state.players[viewerIndex];
+  const isViewerTurn = state.currentPlayerIndex === viewerIndex;
+  const hasBots = state.players.some((player) => player.botLevel !== null);
+  // Seleção e pontas jogáveis só valem na vez de quem está olhando: durante a
+  // vez do computador a tela não pode mostrar se a peça dele encaixa.
+  const selectedPiece = isViewerTurn ? getSelectedPiece(state) : null;
+  const playableSides = isViewerTurn
+    ? getSelectedPlayableSides(state)
+    : { left: false, right: false };
   const isPlaying = state.phase === "playing";
   const isFinished = state.phase === "finished";
   const inTransition = state.phase === "transition";
   const isShuffling = shuffle !== null;
-  const pileMode =
-    state.phase === "choosing-initial" ? "choose-initial" : mustDraw(state) ? "draw" : "idle";
+  const pileMode = !isViewerTurn
+    ? "idle"
+    : state.phase === "choosing-initial"
+      ? "choose-initial"
+      : mustDraw(state)
+        ? "draw"
+        : "idle";
   // As mãos só aparecem durante o turno. Na troca de turno ninguém vê nada.
   const showHands = isPlaying || state.phase === "choosing-initial";
-  const statusMessage = isShuffling ? "Embaralhando as peças…" : getStatusMessage(state);
-  const canKeep = canKeepPiece(state);
+  const statusMessage = isShuffling
+    ? "Embaralhando as peças…"
+    : getStatusMessage(state, viewerIndex);
+  const lastOpponentAction =
+    hasBots && isPlaying && !isShuffling ? getLastOpponentAction(state, viewerIndex) : null;
+  const canKeep = isViewerTurn && canKeepPiece(state);
+  const lastPlayed = state.lastPlayed;
+  // A peça abre ao chegar à mesa quando vem virada: do monte (peça inicial)
+  // ou da mão de um jogador do computador.
+  const flipPieceId =
+    lastPlayed &&
+    (state.table.pieces.length === 1 || state.players[lastPlayed.playerIndex].botLevel !== null)
+      ? lastPlayed.pieceId
+      : null;
   const hasPlayablePiece = currentPlayerCanPlay(state);
 
   // A mistura dura pouco: depois dela as peças se enfileiram no monte.
@@ -96,12 +158,27 @@ function GameContent() {
   const winners = getWinners(state);
   const winner = winners.length === 1 ? winners[0] : null;
   const tiedNames = winners.map((player) => player.name).join(" e ");
-  // Quem está com o aparelho (o jogador da vez) fica embaixo; os outros, em volta da mesa.
-  const seats = seatOpponents(state.players.length, state.currentPlayerIndex);
+  // Quem está olhando para a tela fica embaixo; os outros, em volta da mesa.
+  const seats = seatOpponents(state.players.length, viewerIndex);
+
+  // Som das ações do computador.
+  const handleBotAction = useCallback(
+    (action: GameAction) => {
+      if (action.type === "DRAW_PIECE") play("draw");
+      if (action.type === "PLAY_PIECE" || action.type === "CHOOSE_INITIAL_PIECE") play("place");
+    },
+    [play]
+  );
+
+  // O computador joga sozinho na vez dele; espera o embaralhar e as janelas abertas.
+  useBotTurns(state, dispatch, {
+    paused: showHomeScreen || isShuffling || showRules || showExitModal,
+    onAction: handleBotAction,
+  });
   const hasSideSeats = seats.left !== null || seats.right !== null;
 
-  const handleStartGame = (playerNames: string[]) => {
-    initializeGame(playerNames);
+  const handleStartGame = (playerNames: string[], botLevels?: (BotLevel | null)[]) => {
+    initializeGame(playerNames, botLevels);
     dispatch({ type: "START_GAME" });
     setResultDismissed(false);
     setShowHomeScreen(false);
@@ -186,6 +263,7 @@ function GameContent() {
                 key={position}
                 player={state.players[index]}
                 position={position}
+                active={isPlaying && !isShuffling && index === state.currentPlayerIndex}
                 testId={`seat-${index}`}
               />
             );
@@ -193,6 +271,8 @@ function GameContent() {
         <GameTable
           table={state.table}
           shuffle={shuffle ? { pieces: state.drawPile, paths: shuffle } : null}
+          lastPlayedId={lastPlayed?.pieceId ?? null}
+          flipPieceId={flipPieceId}
           canFitLeft={playableSides.left}
           canFitRight={playableSides.right}
           onPlayPiece={handlePlayPiece}
@@ -203,6 +283,13 @@ function GameContent() {
       {statusMessage && (
         <p className="game__status" role="status">
           {statusMessage}
+        </p>
+      )}
+
+      {/* Contra o computador: o espaço fica reservado para a tela não pular. */}
+      {hasBots && !isFinished && (
+        <p className="game__last-action">
+          {lastOpponentAction && `Última jogada: ${lastOpponentAction}`}
         </p>
       )}
 
@@ -224,10 +311,10 @@ function GameContent() {
 
       {showHands && !isShuffling && (
         <PlayerHand
-          player={currentPlayer}
-          selectedPieceId={state.selectedPieceId}
-          drawnPieceId={state.drawnPieceId}
-          canSelect={isPlaying && state.turnStep === "play"}
+          player={viewer}
+          selectedPieceId={isViewerTurn ? state.selectedPieceId : null}
+          drawnPieceId={isViewerTurn ? state.drawnPieceId : null}
+          canSelect={isViewerTurn && isPlaying && state.turnStep === "play"}
           onSelectPiece={(pieceId) => dispatch({ type: "SELECT_PIECE", pieceId })}
         />
       )}

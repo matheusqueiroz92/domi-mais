@@ -8,6 +8,18 @@
   border: 1px solid var(--line);
 }
 
+.seat--active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.seat__bot {
+  display: inline-flex;
+  margin-right: 3px;
+  vertical-align: -2px;
+  color: var(--muted);
+}
+
 .seat__name {
   font-size: 13px;
   font-weight: 600;

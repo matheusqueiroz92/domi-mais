@@ -30,6 +30,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         pieces: action.shuffledPieces,
         startingPlayerIndex: action.startingPlayerIndex,
         protectTurns: action.protectTurns,
+        botLevels: action.botLevels,
       });
 
     case 'START_GAME':

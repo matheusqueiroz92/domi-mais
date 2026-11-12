@@ -1,4 +1,4 @@
-import type { DominoPiece, GameState } from './game-types';
+import type { BotLevel, DominoPiece, GameState } from './game-types';
 import { generateDominoPieces, shufflePieces } from '../logic/pieces';
 import type { RandomFn } from '../logic/pieces';
 import { MAX_PLAYERS, MIN_PLAYERS, isValidPlayerCount } from '../logic/rules';
@@ -10,6 +10,8 @@ export interface InitialGameOptions {
   startingPlayerIndex?: number;
   /** Troca de turno protegida (jogo no mesmo dispositivo). Padrão: `true`. */
   protectTurns?: boolean;
+  /** Nível do computador para cada jogador (`null` = pessoa). Padrão: todos pessoas. */
+  botLevels?: readonly (BotLevel | null)[];
 }
 
 /** Nomes usados antes de a partida ser configurada na tela inicial. */
@@ -32,7 +34,12 @@ export function createInitialGameState(
     );
   }
 
-  const { pieces = generateDominoPieces(), startingPlayerIndex = 0, protectTurns = true } = options;
+  const {
+    pieces = generateDominoPieces(),
+    startingPlayerIndex = 0,
+    protectTurns = true,
+    botLevels = [],
+  } = options;
 
   if (
     !Number.isInteger(startingPlayerIndex) ||
@@ -47,6 +54,7 @@ export function createInitialGameState(
     players: playerNames.map((name, index) => ({
       id: `player-${index + 1}`,
       name,
+      botLevel: botLevels[index] ?? null,
       hand: [],
       score: 0,
     })),
@@ -59,6 +67,7 @@ export function createInitialGameState(
     selectedPieceId: null,
     autoPassedPlayerIndexes: [],
     protectTurns,
+    lastPlayed: null,
     result: null,
     logs: [],
   };

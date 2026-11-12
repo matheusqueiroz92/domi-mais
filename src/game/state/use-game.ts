@@ -1,12 +1,16 @@
 import { createContext, useContext } from 'react';
 import type { Dispatch } from 'react';
-import type { GameAction, GameState } from './game-types';
+import type { BotLevel, GameAction, GameState } from './game-types';
 
 export interface GameContextType {
   state: GameState;
   dispatch: Dispatch<GameAction>;
-  /** Sorteia o monte e quem começa, e inicia uma partida nova na fase `setup`. */
-  initializeGame: (playerNames: string[]) => void;
+  /**
+   * Sorteia o monte e quem começa, e inicia uma partida nova na fase `setup`.
+   * `botLevels` indica quais jogadores são do computador (`null` = pessoa).
+   * Com computador na partida não há troca de turno protegida.
+   */
+  initializeGame: (playerNames: string[], botLevels?: (BotLevel | null)[]) => void;
 }
 
 export const GameContext = createContext<GameContextType | undefined>(undefined);

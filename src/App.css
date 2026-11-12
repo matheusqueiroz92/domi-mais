@@ -42,9 +42,24 @@
   grid-area: table;
 }
 
+/* Alturas mínimas de duas linhas: a tela não pula quando o texto muda. */
 .game__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7em;
   text-align: center;
   font-weight: 500;
+}
+
+.game__last-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7em;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 /* Resultado final */

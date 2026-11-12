@@ -4,10 +4,12 @@ import App from './App';
 import { seededRandom } from './game/logic/__tests__/helpers';
 import { THEME_STORAGE_KEY } from './theme/theme';
 import { SOUND_STORAGE_KEY } from './sound/sound';
+import { BOT_DELAY_MS } from './game/ai/useBotTurns';
 
 const FACE_UP = /^Peça \d\|\d$/;
 const FACE_DOWN = /^Peça virada, soma \d+$/;
 const SAME_DEVICE = /Mesmo aparelho/;
+const VS_COMPUTER = /Contra o computador/;
 /** Botão de encerrar o turno sem jogar: o texto depende de alguma peça encaixar. */
 const KEEP = /^(Ficar com a peça|Passar a vez)$/;
 
@@ -25,6 +27,36 @@ function startMatch(names: string[] = ['Ana', 'Beto'], skipShuffle = true) {
   fireEvent.click(screen.getByRole('button', { name: 'Iniciar Jogo' }));
   // A partida começa com a animação de embaralhar; os testes pulam direto ao jogo.
   if (skipShuffle) fireEvent.click(screen.getByRole('button', { name: 'Pular animação' }));
+}
+
+/** Inicia uma partida contra o computador, já pulando a animação de embaralhar. */
+function startSolo(opponents = 1, level = 'Médio') {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: VS_COMPUTER }));
+  fireEvent.change(screen.getByLabelText('Seu nome'), { target: { value: 'Ana' } });
+  if (opponents !== 1) {
+    fireEvent.click(screen.getByRole('radio', { name: `${opponents} adversários` }));
+  }
+  fireEvent.click(screen.getByRole('radio', { name: level }));
+  fireEvent.click(screen.getByRole('button', { name: 'Jogar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Pular animação' }));
+}
+
+/** Avança o relógio para o computador fazer a próxima ação. */
+function letComputerAct() {
+  act(() => {
+    vi.advanceTimersByTime(BOT_DELAY_MS + 50);
+  });
+}
+
+/** É a vez da pessoa quando ela pode comprar, escolher a peça inicial ou encerrar o turno. */
+function isHumanTurn() {
+  return (
+    pileButtons().length > 0 ||
+    screen.queryByRole('button', { name: KEEP }) !== null ||
+    screen.queryAllByRole('button', { name: /Jogar na ponta/ }).length > 0 ||
+    /Ana, |Monte vazio: Ana/.test(screen.getByRole('status').textContent ?? '')
+  );
 }
 
 /** Peças do monte em destaque: são as únicas peças viradas que funcionam como botão. */
@@ -52,13 +84,13 @@ describe('App (jogo no mesmo dispositivo)', () => {
   });
 
   describe('tela inicial', () => {
-    it('mostra os modos de jogo: só "Mesmo aparelho" está disponível', () => {
+    it('mostra os modos de jogo: "Mesmo aparelho" e "Contra o computador" disponíveis; online em breve', () => {
       render(<App />);
       expect(screen.getByRole('button', { name: SAME_DEVICE })).toBeEnabled();
-      expect(screen.getByText('Contra o computador')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: VS_COMPUTER })).toBeEnabled();
       expect(screen.getByText('Online com amigos')).toBeInTheDocument();
-      expect(screen.getAllByText('Em breve')).toHaveLength(2);
-      expect(screen.queryByRole('button', { name: /Contra o computador|Online/ })).toBeNull();
+      expect(screen.getAllByText('Em breve')).toHaveLength(1);
+      expect(screen.queryByRole('button', { name: /Online/ })).toBeNull();
     });
 
     it('"Como jogar" abre as regras', () => {
@@ -401,6 +433,167 @@ describe('App (jogo no mesmo dispositivo)', () => {
 
       fireEvent.click(within(final).getByRole('button', { name: 'Nova partida' }));
       expect(screen.getByRole('button', { name: SAME_DEVICE })).toBeInTheDocument();
+    });
+  });
+
+  describe('contra o computador', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('a configuração pede o nome, a quantidade de adversários e a dificuldade', () => {
+      render(<App />);
+      fireEvent.click(screen.getByRole('button', { name: VS_COMPUTER }));
+
+      expect(screen.getByRole('button', { name: 'Jogar' })).toBeDisabled();
+      expect(screen.getByRole('radio', { name: '1 adversário' })).toBeChecked();
+      expect(screen.getByRole('radio', { name: 'Médio' })).toBeChecked();
+      expect(screen.getByRole('radio', { name: 'Fácil' })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: 'Difícil' })).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText('Seu nome'), { target: { value: 'Ana' } });
+      expect(screen.getByRole('button', { name: 'Jogar' })).toBeEnabled();
+    });
+
+    it.each([
+      [1, 1],
+      [2, 2],
+      [3, 3],
+    ])('com %i adversário(s), a pessoa fica embaixo e os %i do computador em volta da mesa', (opponents, seats) => {
+      startSolo(opponents);
+      expect(screen.getAllByTestId(/^seat-/)).toHaveLength(seats);
+      expect(screen.getAllByRole('img', { name: 'Computador' })).toHaveLength(seats);
+      expect(screen.getByRole('region', { name: 'Mão de Ana' })).toBeInTheDocument();
+    });
+
+    it('na vez do computador a pessoa não pode agir, e nada revela a peça dele', () => {
+      startSolo(1, 'Fácil');
+
+      let checked = 0;
+      for (let step = 0; step < 60 && checked < 6; step++) {
+        if (screen.queryByRole('dialog', { name: /Fim de jogo|Empate/ })) break;
+
+        if (isHumanTurn()) {
+          // A pessoa compra e fica com a peça, só para devolver a vez.
+          if (pileButtons().length > 0) fireEvent.click(pileButtons()[0]);
+          const keep = screen.queryByRole('button', { name: KEEP });
+          if (keep) fireEvent.click(keep);
+          continue;
+        }
+
+        // Vez do computador.
+        expect(screen.getByRole('status')).toHaveTextContent(/Bia está/);
+        expect(pileButtons()).toHaveLength(0);
+        expect(screen.queryByRole('button', { name: KEEP })).not.toBeInTheDocument();
+        expect(screen.queryAllByRole('button', { name: /Jogar na ponta/ })).toHaveLength(0);
+        expect(handButtons()).toHaveLength(0);
+        // As peças do computador aparecem sempre viradas.
+        const seat = screen.getByTestId(/^seat-/);
+        expect(within(seat).queryAllByLabelText(FACE_UP)).toHaveLength(0);
+        expect(seat).toHaveAttribute('aria-current', 'true');
+        // Sem troca de turno protegida neste modo.
+        expect(screen.queryByRole('dialog', { name: /Passe o dispositivo/ })).not.toBeInTheDocument();
+        checked++;
+        letComputerAct();
+      }
+
+      expect(checked).toBeGreaterThanOrEqual(6);
+    });
+
+    it('mostra a última jogada do computador, sem dizer se a peça encaixava', () => {
+      startSolo(1, 'Fácil');
+
+      const seen = new Set<string>();
+      for (let step = 0; step < 80 && seen.size < 2; step++) {
+        if (screen.queryByRole('dialog', { name: /Fim de jogo|Empate/ })) break;
+        const last = screen.queryByText(/^Última jogada:/);
+        if (last) {
+          const text = last.textContent ?? '';
+          expect(text).toMatch(/Bia /);
+          expect(text).not.toMatch(/blef|encaix/i);
+          if (/ficou com a peça/.test(text)) seen.add('ficou');
+          if (/jogou/.test(text)) seen.add('jogou');
+        }
+        if (isHumanTurn()) {
+          if (pileButtons().length > 0) fireEvent.click(pileButtons()[0]);
+          const keep = screen.queryByRole('button', { name: KEEP });
+          if (keep) fireEvent.click(keep);
+        } else {
+          letComputerAct();
+        }
+      }
+
+      expect(seen).toEqual(new Set(['ficou', 'jogou']));
+    });
+
+    it('o computador espera enquanto as regras estão abertas', () => {
+      startSolo(1, 'Fácil');
+      // Garante que é a vez do computador.
+      for (let step = 0; step < 6 && isHumanTurn(); step++) {
+        if (pileButtons().length > 0) fireEvent.click(pileButtons()[0]);
+        const keep = screen.queryByRole('button', { name: KEEP });
+        if (keep) fireEvent.click(keep);
+      }
+      expect(isHumanTurn()).toBe(false);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Como jogar' }));
+      const before = screen.getByRole('status').textContent;
+      letComputerAct();
+      letComputerAct();
+      expect(screen.getByRole('status').textContent).toBe(before);
+
+      fireEvent.click(within(screen.getByRole('dialog', { name: 'Como jogar' })).getByRole('button', { name: 'Fechar' }));
+      act(() => {
+        vi.advanceTimersByTime(BOT_DELAY_MS * 4);
+      });
+      expect(screen.getByRole('status').textContent).not.toBe(before);
+    });
+
+    it.each([
+      [1, 'Fácil'],
+      [2, 'Médio'],
+      [3, 'Difícil'],
+    ])('uma partida inteira contra %i computador(es) no nível %s chega ao resultado', (opponents, level) => {
+      startSolo(opponents, level);
+
+      const isOver = () => screen.queryByRole('dialog', { name: /Fim de jogo|Empate/ });
+      let steps = 0;
+
+      while (!isOver()) {
+        expect(++steps).toBeLessThan(600);
+
+        if (!isHumanTurn()) {
+          letComputerAct();
+          continue;
+        }
+
+        const pile = pileButtons();
+        if (pile.length > 0) {
+          fireEvent.click(pile[0]);
+          continue;
+        }
+
+        let played = false;
+        for (const handPiece of handButtons()) {
+          if (handPiece.getAttribute('aria-pressed') !== 'true') fireEvent.click(handPiece);
+          const ends = screen.queryAllByRole('button', { name: /Jogar na ponta/ });
+          if (ends.length > 0) {
+            fireEvent.click(ends[0]);
+            played = true;
+            break;
+          }
+        }
+        if (!played) fireEvent.click(screen.getByRole('button', { name: KEEP }));
+      }
+
+      const result = isOver()!;
+      expect(result).toHaveTextContent(/Ana: \d+ · Bia: \d+/);
+      // Em nenhum momento houve tela de troca de turno.
+      expect(screen.queryByRole('dialog', { name: /Passe o dispositivo/ })).not.toBeInTheDocument();
     });
   });
 });

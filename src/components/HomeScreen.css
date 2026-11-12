@@ -103,6 +103,15 @@
   cursor: pointer;
 }
 
+.mode--button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mode--button:hover {
+  border-color: var(--accent);
+}
+
 .mode__text {
   flex: 1;
   display: flex;

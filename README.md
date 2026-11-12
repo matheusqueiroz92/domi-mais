@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -24,8 +24,9 @@ seus dois lados, o que permite ao adversário deduzir informações sem ver a pe
 (soma 7 pode ser 1|6, 2|5 ou 3|4). O jogo foi criado com intuito educacional,
 para estimular o raciocínio lógico.
 
-A versão atual é jogada por 2, 3 ou 4 jogadores no mesmo dispositivo, cada um
-por si, e está publicada
+A versão atual tem dois modos, sempre com 2, 3 ou 4 jogadores, cada um por si:
+no mesmo dispositivo, ou sozinho contra o computador (níveis Fácil, Médio e
+Difícil). Está publicada
 em [domimais.com.br](https://domimais.com.br).
 
 ## 🎯 Como jogar
@@ -92,6 +93,7 @@ domi-mais/
 ├── src/
 │   ├── game/
 │   │   ├── logic/         Motor de regras (funções puras) e seus testes
+│   │   ├── ai/            Jogador controlado pelo computador
 │   │   └── state/         Tipos, reducer e contexto React
 │   ├── components/        Componentes visuais e cálculo do layout da mesa
 │   ├── theme/             Tema escuro/claro
@@ -110,7 +112,7 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 ## 🔮 Próximos passos
 
 - [x] Nova tela inicial, novo layout da mesa e temas escuro/claro
-- [ ] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
+- [x] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [ ] Tutorial interativo e modo "dica"
 - [ ] PWA com partida salva para uso offline
 - [ ] Multiplayer online por sala com código, com chat

@@ -88,6 +88,19 @@ turno:
 Com mais de 4 jogadores as mãos ficariam pequenas demais para a dedução, por
 isso o limite é 4.
 
+## Contra o computador
+
+- Uma pessoa joga contra 1, 2 ou 3 jogadores controlados pelo computador
+  (partidas de 2, 3 ou 4 jogadores). As regras são exatamente as mesmas.
+- Há três níveis: **Fácil**, **Médio** e **Difícil**.
+- O computador **não trapaceia**: ele só usa o que uma pessoa também veria — a
+  mesa, a própria mão e a soma no verso das peças do monte e dos adversários.
+- O computador **também blefa**, de vez em quando, nos níveis Médio e Difícil.
+- A tela nunca mostra as peças do computador nem indica se a peça dele
+  encaixava. O que aparece é só o registro público: comprou (com a soma),
+  jogou ou ficou com a peça.
+- Não há tela de troca de turno neste modo, porque só uma pessoa vê a tela.
+
 ## Jogo no mesmo dispositivo
 
 Enquanto existir o modo de dois jogadores no mesmo dispositivo, a troca de turno
@@ -108,3 +121,4 @@ tocar em **"Estou pronto"**.
 | 11/11/2026 | O modo contra o computador (etapa futura) deverá aceitar 2, 3 ou 4 jogadores. |
 | 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
 | 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |
+| 12/11/2026 | Modo contra o computador: 1 a 3 adversários, níveis Fácil, Médio e Difícil; o computador joga só com informação pública e também blefa. |

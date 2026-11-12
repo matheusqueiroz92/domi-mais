@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0 — 12/11/2026
+
+- **Modo contra o computador:** uma pessoa contra 1, 2 ou 3 adversários do
+  computador, em três níveis (Fácil, Médio e Difícil).
+- O computador joga só com informação pública (a mesa, a própria mão e as
+  somas no verso) e também blefa nos níveis Médio e Difícil.
+- Na vez do computador a pessoa acompanha a jogada: a peça sai do monte para o
+  assento dele, vai para a mesa e abre; o assento da vez fica destacado e a
+  linha "Última jogada" mostra o que ele fez.
+- A última peça colocada na mesa ganha um destaque, em todos os modos.
+- Sem tela de troca de turno neste modo.
+- Estado do jogo ganhou `botLevel` por jogador e `lastPlayed`.
+- 209 testes no total.
+
 ## 0.5.0 — 12/11/2026
 
 - **Animações das peças:** a peça comprada vira e desliza do monte até a mão;

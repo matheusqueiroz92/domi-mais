@@ -11,6 +11,10 @@ src/
 │   │   ├── engine.ts       Ações do jogo e troca de turno
 │   │   ├── selectors.ts    Leituras derivadas do estado para a interface
 │   │   └── __tests__/      Testes do motor e simulação de partidas
+│   ├── ai/             Jogador controlado pelo computador
+│   │   ├── bot.ts          Decisões do computador (funções puras)
+│   │   ├── useBotTurns.ts  Hook que faz o computador jogar na vez dele
+│   │   └── __tests__/      Testes das decisões e partidas entre computadores
 │   └── state/          Ligação com o React
 │       ├── game-types.ts          Tipos do estado e das ações
 │       ├── game-inicial-state.ts  Estado inicial e sorteio da partida
@@ -43,7 +47,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | Campo | Significado |
 |---|---|
 | `phase` | `setup`, `choosing-initial`, `transition`, `playing` ou `finished` |
-| `players` | De 2 a 4 jogadores, na ordem dos turnos, cada um com `hand` (mão) e `score` (soma final) |
+| `players` | De 2 a 4 jogadores, na ordem dos turnos, cada um com `hand` (mão), `score` (soma final) e `botLevel` (`null` para pessoa; `easy`, `medium` ou `hard` para o computador) |
 | `currentPlayerIndex` | Jogador da vez |
 | `table` | Peças na mesa e valores das pontas (`leftEnd`, `rightEnd`) |
 | `drawPile` | Monte |
@@ -53,6 +57,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | `selectedPieceId` | Peça da mão selecionada para jogar |
 | `autoPassedPlayerIndexes` | Quem passou a vez automaticamente na última troca |
 | `protectTurns` | Liga a troca de turno protegida (mesmo dispositivo) |
+| `lastPlayed` | Última peça colocada na mesa e quem a colocou (a interface destaca essa peça) |
 | `result` | Resultado final: motivo, `winnerIndexes` (um índice = vitória; vários = empate entre eles) e somas |
 | `logs` | Histórico em texto |
 
@@ -70,7 +75,7 @@ playing ──(monte vazio e alguém sem peças, ou jogo fechado)──► finis
 
 | Ação | Função do motor | Válida quando |
 |---|---|---|
-| `INITIALIZE_GAME` | `createInitialGameState` | Recebe de 2 a 4 nomes (`playerNames`); configuração inválida é ignorada |
+| `INITIALIZE_GAME` | `createInitialGameState` | Recebe de 2 a 4 nomes (`playerNames`) e, opcionalmente, `botLevels`; configuração inválida é ignorada |
 | `START_GAME` | `startGame` | `phase = setup` |
 | `CHOOSE_INITIAL_PIECE` | `chooseInitialPiece` | `phase = choosing-initial` |
 | `CONFIRM_READY` | `confirmReady` | `phase = transition` |
@@ -111,6 +116,49 @@ cliques; o motor é o mesmo.
 `keepPiece` é a única ação para "não jogar". O motor não sabe nem registra se a
 peça encaixava. Há um teste que compara o estado resultante de um blefe com o
 de uma peça que realmente não encaixava e exige que sejam indistinguíveis.
+
+## Computador (`src/game/ai`)
+
+O computador é um jogador como outro qualquer: tem `botLevel` no estado e age
+pelas mesmas ações do motor. Nenhuma regra muda por causa dele.
+
+### O que ele pode ver
+
+`getBotView(state, playerIndex)` monta a visão do jogador: a mesa, a própria
+mão e, das peças viradas (monte e mãos dos adversários), **apenas o id e a
+soma**. Todas as decisões partem dessa visão; um teste garante que duas
+situações com a mesma visão levam à mesma decisão, mesmo que as peças viradas
+sejam diferentes.
+
+### Como ele decide (`chooseBotAction`)
+
+| Decisão | Fácil | Médio | Difícil |
+|---|---|---|---|
+| Peça inicial | Sorteia | Maior soma | Maior soma |
+| Compra | Sorteia | Menor soma | Maior chance de encaixar, deduzida pela soma (`fitProbability`); no empate, menor soma |
+| Jogada | Sorteia entre as possíveis | Peça de maior soma | Nota por jogada (`scoreMove`): pontos que saem da mão, buchas primeiro, pontas boas para a própria mão e ruins para os adversários |
+| Blefe | Nunca | 6% das vezes | 10% das vezes, e só com monte grande e peça de soma baixa |
+
+`fitProbability` é a dedução que o jogo ensina: uma peça de soma 7 pode ser
+1|6, 2|5 ou 3|4; descontadas as peças já vistas, calcula-se a chance de ela
+encaixar em uma ponta.
+
+Em 2.000 partidas simuladas de dois jogadores: Difícil vence Fácil em cerca de
+89%, Médio vence Fácil em cerca de 64% e Difícil vence Médio em cerca de 73%.
+
+### Como ele entra na partida
+
+- `useBotTurns` observa o estado: quando é a vez de um jogador com `botLevel`,
+  espera `BOT_DELAY_MS`, pede a ação a `chooseBotAction` e a envia pelo mesmo
+  `dispatch`. Comprar e depois jogar (ou ficar com a peça) são passos
+  separados, para a pessoa acompanhar.
+- O computador fica em pausa durante o embaralhar e com janelas abertas.
+- Com computador na partida, `protectTurns` é `false` (sem tela de troca).
+- Na interface, quem olha a tela (`getViewerIndex`) é a única pessoa da
+  partida: ela fica embaixo o tempo todo. Na vez do computador os controles
+  somem, as pontas "Jogar" não aparecem e a mão dele fica sempre virada.
+- A linha "Última jogada" mostra o registro público da ação mais recente de um
+  adversário.
 
 ## Interface
 
@@ -200,7 +248,8 @@ npm run test:watch # modo interativo
 | `components/__tests__/table-layout.test.ts` | Fileiras da mesa (cobrinha) e assentos dos adversários |
 | `theme/__tests__/theme.test.ts` | Tema: padrão, gravação, falha de armazenamento |
 | `sound/__tests__/sound.test.ts` | Sons: geração, preferência, som desligado, falhas |
-| `App.test.tsx` | Tela inicial, tema, fluxo da partida e partidas inteiras com 2, 3 e 4 jogadores |
+| `ai/__tests__/bot.test.ts` | Visão do computador, dedução pela soma, decisões por nível, blefe, partidas entre computadores e força relativa dos níveis |
+| `App.test.tsx` | Tela inicial, tema, som, embaralhar, fluxo da partida, partidas inteiras com 2, 3 e 4 jogadores e contra o computador |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças
 únicas somando monte, mesa e mãos; as peças da mesa formam uma corrente válida;

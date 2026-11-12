@@ -13,6 +13,10 @@ interface GameTableProps {
   canFitLeft?: boolean;
   canFitRight?: boolean;
   onPlayPiece?: (position: TableSide) => void;
+  /** Última peça colocada na mesa: recebe um destaque. */
+  lastPlayedId?: string | null;
+  /** Peça que chega virada (do monte ou da mão de um adversário) e abre na mesa. */
+  flipPieceId?: string | null;
   /**
    * Animação de embaralhar: as peças do monte aparecem espalhadas sobre a
    * mesa, percorrendo os trajetos de `paths` (um por peça, na mesma ordem).
@@ -33,6 +37,8 @@ export function GameTable({
   canFitLeft = false,
   canFitRight = false,
   onPlayPiece,
+  lastPlayedId = null,
+  flipPieceId = null,
   shuffle = null,
 }: GameTableProps) {
   const chainRef = useRef<HTMLDivElement>(null);
@@ -85,11 +91,11 @@ export function GameTable({
                       Jogar
                     </button>
                   ) : (
-                    // A peça inicial sai virada do monte e abre ao chegar à mesa.
                     <PieceMotion
                       key={item.piece.id}
                       pieceId={item.piece.id}
-                      flip={table.pieces.length === 1}
+                      flip={item.piece.id === flipPieceId}
+                      className={item.piece.id === lastPlayedId ? 'game-table__last' : undefined}
                     >
                       <DominoPiece
                         piece={item.piece}

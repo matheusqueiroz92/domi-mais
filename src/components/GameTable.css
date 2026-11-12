@@ -47,6 +47,13 @@
   flex: 1;
 }
 
+/* Destaque da última peça colocada na mesa. */
+.game-table__last {
+  border-radius: 6px;
+  outline: 2px solid var(--select);
+  outline-offset: 1px;
+}
+
 /* Uma fileira só: centralizada na mesa. */
 .game-table__chain--single {
   align-items: center;

@@ -143,6 +143,7 @@ export function chooseInitialPiece(state: GameState, pieceId: string): GameState
     turnStep: 'draw',
     drawPile: state.drawPile.filter((p) => p.id !== pieceId),
     table,
+    lastPlayed: { playerIndex: state.currentPlayerIndex, pieceId },
     logs: [
       ...state.logs,
       `${player.name} escolheu a peça inicial: [${placed.left}|${placed.right}]`,
@@ -215,6 +216,7 @@ export function playPiece(state: GameState, pieceId: string, side: TableSide): G
       player.hand.filter((p) => p.id !== pieceId)
     ),
     table,
+    lastPlayed: { playerIndex: state.currentPlayerIndex, pieceId },
     logs: [
       ...state.logs,
       `${player.name} jogou [${placed.left}|${placed.right}] na ${sideLabel(side)}`,

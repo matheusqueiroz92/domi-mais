@@ -6,13 +6,17 @@ import { SoundToggle } from './SoundToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { ChevronIcon, CpuIcon, GlobeIcon, UsersIcon } from './icons';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../game/logic/rules';
-import type { DominoPiece as DominoPieceType } from '../game/state/game-types';
+import { BOT_LEVEL_LABELS, BOT_NAMES } from '../game/ai/bot';
+import type { BotLevel, DominoPiece as DominoPieceType } from '../game/state/game-types';
 import type { Theme } from '../theme/theme';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
-  /** Recebe os nomes dos jogadores (de 2 a 4), na ordem dos turnos. */
-  onStartGame: (playerNames: string[]) => void;
+  /**
+   * Recebe os nomes dos jogadores (de 2 a 4), na ordem dos turnos, e, no modo
+   * contra o computador, o nível de cada jogador do computador (`null` = pessoa).
+   */
+  onStartGame: (playerNames: string[], botLevels?: (BotLevel | null)[]) => void;
   theme: Theme;
   onToggleTheme: () => void;
   soundOn: boolean;
@@ -38,6 +42,10 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showBotModal, setShowBotModal] = useState(false);
+  const [soloName, setSoloName] = useState('');
+  const [botCount, setBotCount] = useState(1);
+  const [botLevel, setBotLevel] = useState<BotLevel>('medium');
   const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
   const [names, setNames] = useState<string[]>(() => Array(MAX_PLAYERS).fill(''));
 
@@ -56,6 +64,14 @@ export function HomeScreen({
     if (canStart) {
       onStartGame(playerNames);
     }
+  };
+
+  const canStartSolo = soloName.trim().length > 0;
+
+  const handleStartSolo = () => {
+    if (!canStartSolo) return;
+    const bots = BOT_NAMES.slice(0, botCount);
+    onStartGame([soloName.trim(), ...bots], [null, ...bots.map(() => botLevel)]);
   };
 
   return (
@@ -106,14 +122,14 @@ export function HomeScreen({
               </span>
               <ChevronIcon />
             </button>
-            <div className="mode">
+            <button type="button" className="mode mode--button" onClick={() => setShowBotModal(true)}>
               <CpuIcon size={28} />
               <span className="mode__text">
                 <span className="mode__title">Contra o computador</span>
                 <span className="mode__desc">Jogue sozinho, com 1 a 3 adversários</span>
               </span>
-              <span className="mode__soon">Em breve</span>
-            </div>
+              <ChevronIcon />
+            </button>
             <div className="mode">
               <GlobeIcon size={28} />
               <span className="mode__text">
@@ -132,6 +148,94 @@ export function HomeScreen({
 
       <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
         <RulesContent />
+      </Modal>
+
+      <Modal
+        isOpen={showBotModal}
+        onClose={() => setShowBotModal(false)}
+        title="Contra o computador"
+        showCloseButton={false}
+      >
+        <div className="player-form">
+          <div className="player-form__field">
+            <label htmlFor="solo-name" className="player-form__label">
+              Seu nome
+            </label>
+            <input
+              id="solo-name"
+              type="text"
+              className="player-form__input"
+              placeholder="Digite o seu nome"
+              value={soloName}
+              maxLength={16}
+              onChange={(e) => setSoloName(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <fieldset className="player-count">
+            <legend className="player-form__label">Quantos adversários?</legend>
+            <div className="player-count__options">
+              {BOT_NAMES.map((_, index) => {
+                const count = index + 1;
+                return (
+                  <label
+                    key={count}
+                    className={`player-count__option ${
+                      botCount === count ? 'player-count__option--active' : ''
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="bot-count"
+                      value={count}
+                      checked={botCount === count}
+                      onChange={() => setBotCount(count)}
+                    />
+                    {count} {count === 1 ? 'adversário' : 'adversários'}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset className="player-count">
+            <legend className="player-form__label">Dificuldade</legend>
+            <div className="player-count__options">
+              {(Object.keys(BOT_LEVEL_LABELS) as BotLevel[]).map((level) => (
+                <label
+                  key={level}
+                  className={`player-count__option ${
+                    botLevel === level ? 'player-count__option--active' : ''
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="bot-level"
+                    value={level}
+                    checked={botLevel === level}
+                    onChange={() => setBotLevel(level)}
+                  />
+                  {BOT_LEVEL_LABELS[level]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="modal__actions">
+            <button type="button" className="btn" onClick={() => setShowBotModal(false)}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={handleStartSolo}
+              disabled={!canStartSolo}
+            >
+              Jogar
+            </button>
+          </div>
+        </div>
       </Modal>
 
       <Modal
