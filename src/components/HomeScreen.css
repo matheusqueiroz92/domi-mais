@@ -15,6 +15,11 @@
   align-items: center;
 }
 
+.home__actions {
+  display: flex;
+  gap: 8px;
+}
+
 .home__layout,
 .home__content {
   display: flex;

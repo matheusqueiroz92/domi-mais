@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — 12/11/2026
+
+- **Animações das peças:** a peça comprada vira e desliza do monte até a mão;
+  a peça inicial vai do monte até a mesa; a peça jogada vai da mão até a mesa.
+- **Embaralhar:** a partida começa com as peças se misturando sobre a mesa e
+  depois se enfileirando no monte. Pode ser pulada, e não aparece para quem
+  ativa "reduzir movimento" no sistema.
+- **Monte em duas fileiras de 14:** fica sempre visível abaixo da mesa; cada
+  peça mantém o seu lugar e deixa o espaço vazio quando é comprada.
+- **Sons:** peça na mesa, compra e embaralhar, gerados pelo navegador (sem
+  arquivos de áudio). Botão para ligar e desligar, com a escolha salva.
+- **"Passar a vez":** quando nenhuma peça da mão encaixa, a mensagem avisa e o
+  botão muda de "Ficar com a peça" para "Passar a vez". Para os adversários
+  nada muda: a ação e o registro continuam os mesmos.
+- Estado do jogo ganhou `initialPileOrder`; novo seletor
+  `currentPlayerCanPlay`.
+- 167 testes no total.
+
 ## 0.4.0 — 11/11/2026
 
 ### Interface

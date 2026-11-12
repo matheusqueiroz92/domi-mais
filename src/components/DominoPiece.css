@@ -95,6 +95,12 @@ button.domino-back {
   font-size: 18px;
 }
 
+.domino-back--fill {
+  width: 100%;
+  height: 100%;
+  font-size: clamp(10px, 3.2vw, 18px);
+}
+
 button.domino-back:hover {
   border-color: var(--accent);
 }

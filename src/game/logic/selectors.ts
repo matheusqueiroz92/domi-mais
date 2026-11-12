@@ -1,6 +1,6 @@
 /** Leituras derivadas do estado, usadas pela interface. */
 import type { DominoPiece, GameState, Player, TableSide } from '../state/game-types';
-import { getPlayableSides } from './rules';
+import { getPlayableSides, hasPlayablePiece } from './rules';
 
 export function getCurrentPlayer(state: GameState): Player {
   return state.players[state.currentPlayerIndex];
@@ -15,6 +15,14 @@ export function getSelectedPiece(state: GameState): DominoPiece | null {
 /** O jogador da vez precisa comprar uma peça do monte agora? */
 export function mustDraw(state: GameState): boolean {
   return state.phase === 'playing' && state.turnStep === 'draw';
+}
+
+/**
+ * O jogador da vez tem alguma peça na mão que encaixa na mesa?
+ * A resposta só deve ser mostrada ao próprio jogador (nunca aos adversários).
+ */
+export function currentPlayerCanPlay(state: GameState): boolean {
+  return hasPlayablePiece(getCurrentPlayer(state).hand, state.table);
 }
 
 /** Pontas em que a peça selecionada pode ser jogada agora. */

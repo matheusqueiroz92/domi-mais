@@ -17,12 +17,19 @@ A interface está descrita em `docs/ARQUITETURA.md` (seção Interface).
 
 ## Regras de experiência
 
-- Nada na tela pode denunciar o blefe: não mostrar avisos de "peça encaixa" ou
-  "peça não encaixa", e o botão "Ficar com a peça" é sempre o mesmo.
+- Os adversários nunca podem saber se a peça de alguém encaixava. Só a tela do
+  próprio jogador informa: "Passar a vez" quando nenhuma peça da mão encaixa,
+  "Ficar com a peça" quando alguma encaixa. A ação (`KEEP_PIECE`) e o registro
+  são sempre os mesmos.
+- O monte fica em duas fileiras de 14 lugares; cada peça mantém o seu lugar.
 - O jogador da vez fica embaixo; adversários em volta da mesa, só com os versos.
 - A linha de peças dobra em fileiras ("cobrinha"); não encolher peças até
   ficarem ilegíveis.
 - Troca de turno no mesmo aparelho sempre passa pela tela "Passe o dispositivo".
 - Alvos de toque com pelo menos 44 px; controles são `<button>`, `<a>` ou
   `<input>` de verdade, com rótulo acessível.
-- Animações discretas; respeitar `prefers-reduced-motion`.
+- Peças se movem com `PieceMotion` (monte → mão, monte → mesa, mão → mesa) e a
+  partida começa com a animação de embaralhar; respeitar
+  `prefers-reduced-motion`.
+- Sons gerados por código em `src/sound` (sem arquivos de áudio), sempre com
+  opção de desligar.

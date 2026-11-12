@@ -4,6 +4,10 @@ import { DominoPiece } from '../DominoPiece';
 import { Modal } from '../Modal';
 import { TurnTransition } from '../TurnTransition';
 import { GameTable } from '../GameTable';
+import { DrawPile } from '../DrawPile';
+import { SoundToggle } from '../SoundToggle';
+import { createScatter } from '../table-layout';
+import { generateDominoPieces } from '../../game/logic/pieces';
 import { piece, tableWith } from '../../game/logic/__tests__/helpers';
 
 describe('DominoPiece', () => {
@@ -58,17 +62,22 @@ describe('GameTable', () => {
     expect(screen.queryByRole('button', { name: 'Jogar na ponta direita' })).not.toBeInTheDocument();
   });
 
-  it('mostra os valores das pontas e o tamanho do monte', () => {
-    render(<GameTable table={tableWith(3, 5)} drawPile={[piece(1, 2), piece(0, 0)]} />);
+  it('mostra os valores das pontas', () => {
+    render(<GameTable table={tableWith(3, 5)} />);
     expect(screen.getByText('Pontas da mesa: 3 e 5')).toBeInTheDocument();
-    expect(screen.getByText('Monte · 2 peças')).toBeInTheDocument();
-    expect(screen.getByLabelText('Peça virada, soma 3')).toBeInTheDocument();
   });
 
-  it('pode esconder as peças do monte (quando elas estão em destaque para compra)', () => {
-    render(<GameTable table={tableWith(3, 5)} drawPile={[piece(1, 2)]} hidePileTiles />);
-    expect(screen.getByText('Monte · 1 peças')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Peça virada, soma 3')).not.toBeInTheDocument();
+  it('durante o embaralhar, mostra as peças viradas espalhadas sobre a mesa', () => {
+    const pieces = [piece(1, 2), piece(0, 0), piece(6, 6)];
+    const { container } = render(
+      <GameTable
+        table={{ leftEnd: null, rightEnd: null, pieces: [] }}
+        shuffle={{ pieces, paths: createScatter(3, () => 0.5) }}
+      />
+    );
+    expect(screen.getByText('Embaralhando as peças…')).toBeInTheDocument();
+    expect(container.querySelectorAll('.game-table__scatter-tile')).toHaveLength(3);
+    expect(screen.queryByText('Nenhuma peça na mesa ainda')).not.toBeInTheDocument();
   });
 
   it('com a mesa vazia não oferece pontas para jogar', () => {
@@ -77,6 +86,67 @@ describe('GameTable', () => {
     );
     expect(screen.getByText('Nenhuma peça na mesa ainda')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Jogar na ponta/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('DrawPile (monte)', () => {
+  const all = generateDominoPieces();
+  const order = all.map((p) => p.id);
+
+  it('tem sempre 28 lugares, em duas fileiras de 14', () => {
+    const { container } = render(<DrawPile order={order} pieces={all} />);
+    expect(container.querySelectorAll('.pile__slot')).toHaveLength(28);
+    expect(screen.getByText('Monte · 28 peças')).toBeInTheDocument();
+    expect(screen.getAllByRole('img', { name: /^Peça virada, soma \d+$/ })).toHaveLength(28);
+  });
+
+  it('a peça comprada deixa o lugar vazio, sem mover as outras', () => {
+    const remaining = all.filter((p) => p.id !== order[3]);
+    const { container } = render(<DrawPile order={order} pieces={remaining} />);
+    const slots = container.querySelectorAll('.pile__slot');
+    expect(slots).toHaveLength(28);
+    expect(slots[3].children).toHaveLength(0);
+    expect(slots[2].children).toHaveLength(1);
+    expect(slots[4].children).toHaveLength(1);
+    expect(screen.getByText('Monte · 27 peças')).toBeInTheDocument();
+  });
+
+  it('parado, as peças não são clicáveis', () => {
+    render(<DrawPile order={order} pieces={all} mode="idle" onSelectPiece={() => {}} />);
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it.each([
+    ['draw', 'Toque em uma peça para comprar'],
+    ['choose-initial', 'Toque na peça inicial da mesa'],
+  ] as const)('no modo %s as peças são botões e avisam qual foi escolhida', (mode, hint) => {
+    const onSelectPiece = vi.fn();
+    render(<DrawPile order={order} pieces={all} mode={mode} onSelectPiece={onSelectPiece} />);
+    expect(screen.getByText(hint)).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button', { name: /^Peça virada, soma/ });
+    expect(buttons).toHaveLength(28);
+    fireEvent.click(buttons[5]);
+    expect(onSelectPiece).toHaveBeenCalledWith(order[5]);
+  });
+
+  it('durante o embaralhar mostra só os lugares vazios', () => {
+    const { container } = render(<DrawPile order={order} pieces={all} mode="draw" hideTiles />);
+    expect(container.querySelectorAll('.pile__slot')).toHaveLength(28);
+    expect(screen.queryAllByLabelText(/^Peça virada/)).toHaveLength(0);
+  });
+});
+
+describe('SoundToggle', () => {
+  it('mostra o estado e avisa ao ser clicado', () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(<SoundToggle soundOn onToggle={onToggle} />);
+    const on = screen.getByRole('button', { name: 'Desligar o som' });
+    expect(on).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(on);
+    expect(onToggle).toHaveBeenCalledOnce();
+
+    rerender(<SoundToggle soundOn={false} onToggle={onToggle} />);
+    expect(screen.getByRole('button', { name: 'Ligar o som' })).toHaveAttribute('aria-pressed', 'false');
   });
 });
 

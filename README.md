@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -43,8 +43,9 @@ em [domimais.com.br](https://domimais.com.br).
 
 As regras completas estão em [docs/REGRAS.md](docs/REGRAS.md).
 
-O jogo tem tema escuro e claro: o botão de sol/lua alterna, e a escolha fica
-salva no navegador.
+O jogo tem tema escuro e claro e sons de peças: os botões no topo da tela
+alternam o tema e ligam ou desligam o som, e as escolhas ficam salvas no
+navegador.
 
 ## 🛠️ Tecnologias
 
@@ -94,6 +95,7 @@ domi-mais/
 │   │   └── state/         Tipos, reducer e contexto React
 │   ├── components/        Componentes visuais e cálculo do layout da mesa
 │   ├── theme/             Tema escuro/claro
+│   ├── sound/             Sons do jogo
 │   ├── test/              Configuração dos testes
 │   ├── App.tsx            Tela da partida
 │   └── main.tsx           Ponto de entrada

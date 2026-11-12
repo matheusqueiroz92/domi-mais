@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { MotionConfig } from "framer-motion";
 import { GameProvider } from "./game/state/game-context";
 import { useGame } from "./game/state/use-game";
 import { canKeepPiece } from "./game/logic/engine";
 import {
+  currentPlayerCanPlay,
   getCurrentPlayer,
   getSelectedPiece,
   getSelectedPlayableSides,
@@ -11,17 +13,20 @@ import {
 } from "./game/logic/selectors";
 import type { GameState } from "./game/state/game-types";
 import { DominoPiece } from "./components/DominoPiece";
-import { GameTable } from "./components/GameTable";
+import { GameTable, SHUFFLE_SECONDS } from "./components/GameTable";
 import { DrawPile } from "./components/DrawPile";
 import { HomeScreen } from "./components/HomeScreen";
 import { Modal } from "./components/Modal";
 import { OpponentSeat } from "./components/OpponentSeat";
 import { PlayerHand } from "./components/PlayerHand";
 import { RulesContent } from "./components/RulesContent";
+import { SoundToggle } from "./components/SoundToggle";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TurnTransition } from "./components/TurnTransition";
 import { ExitIcon, HelpIcon } from "./components/icons";
-import { seatOpponents } from "./components/table-layout";
+import { createScatter, seatOpponents } from "./components/table-layout";
+import type { ScatterPoint } from "./components/table-layout";
+import { useSound } from "./sound/useSound";
 import { useTheme } from "./theme/useTheme";
 import "./App.css";
 
@@ -48,7 +53,10 @@ function getStatusMessage(state: GameState): string | null {
     return `${passNotice}${player.name}, compre uma peça do monte`;
   }
   if (canKeepPiece(state)) {
-    return `${player.name}, jogue uma peça em uma das pontas ou fique com a peça comprada`;
+    // Só o próprio jogador vê esta mensagem: ela não é registrada no histórico.
+    return currentPlayerCanPlay(state)
+      ? `${player.name}, jogue uma peça em uma das pontas ou fique com a peça comprada`
+      : `${player.name}, nenhuma peça da sua mão encaixa na mesa`;
   }
   return `${passNotice}Monte vazio: ${player.name}, jogue uma peça que encaixe`;
 }
@@ -56,6 +64,9 @@ function getStatusMessage(state: GameState): string | null {
 function GameContent() {
   const { state, dispatch, initializeGame } = useGame();
   const { theme, toggleTheme } = useTheme();
+  const { soundOn, toggleSound, play } = useSound();
+  // Trajetos da animação de embaralhar; `null` quando ela não está em andamento.
+  const [shuffle, setShuffle] = useState<ScatterPoint[][] | null>(null);
   const [showHomeScreen, setShowHomeScreen] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -67,10 +78,21 @@ function GameContent() {
   const isPlaying = state.phase === "playing";
   const isFinished = state.phase === "finished";
   const inTransition = state.phase === "transition";
-  const showDrawPile = state.phase === "choosing-initial" || mustDraw(state);
+  const isShuffling = shuffle !== null;
+  const pileMode =
+    state.phase === "choosing-initial" ? "choose-initial" : mustDraw(state) ? "draw" : "idle";
   // As mãos só aparecem durante o turno. Na troca de turno ninguém vê nada.
   const showHands = isPlaying || state.phase === "choosing-initial";
-  const statusMessage = getStatusMessage(state);
+  const statusMessage = isShuffling ? "Embaralhando as peças…" : getStatusMessage(state);
+  const canKeep = canKeepPiece(state);
+  const hasPlayablePiece = currentPlayerCanPlay(state);
+
+  // A mistura dura pouco: depois dela as peças se enfileiram no monte.
+  useEffect(() => {
+    if (!isShuffling) return;
+    const timer = window.setTimeout(() => setShuffle(null), SHUFFLE_SECONDS * 1000 + 100);
+    return () => window.clearTimeout(timer);
+  }, [isShuffling]);
   const winners = getWinners(state);
   const winner = winners.length === 1 ? winners[0] : null;
   const tiedNames = winners.map((player) => player.name).join(" e ");
@@ -83,9 +105,17 @@ function GameContent() {
     dispatch({ type: "START_GAME" });
     setResultDismissed(false);
     setShowHomeScreen(false);
+
+    // Quem pede menos movimento no sistema pula a animação de embaralhar.
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    if (!reduceMotion) {
+      setShuffle(createScatter(28));
+      play("shuffle");
+    }
   };
 
   const handlePilePiece = (pieceId: string) => {
+    play(state.phase === "choosing-initial" ? "place" : "draw");
     dispatch({
       type: state.phase === "choosing-initial" ? "CHOOSE_INITIAL_PIECE" : "DRAW_PIECE",
       pieceId,
@@ -94,19 +124,29 @@ function GameContent() {
 
   const handlePlayPiece = (position: "left" | "right") => {
     if (selectedPiece) {
+      play("place");
       dispatch({ type: "PLAY_PIECE", pieceId: selectedPiece.id, position });
     }
   };
 
   const backToHome = () => {
     dispatch({ type: "RESET_GAME" });
+    setShuffle(null);
     setShowHomeScreen(true);
     setShowExitModal(false);
   };
 
   // Mostra a tela inicial se ainda não iniciou o jogo
   if (showHomeScreen || state.phase === "setup") {
-    return <HomeScreen onStartGame={handleStartGame} theme={theme} onToggleTheme={toggleTheme} />;
+    return (
+      <HomeScreen
+        onStartGame={handleStartGame}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        soundOn={soundOn}
+        onToggleSound={toggleSound}
+      />
+    );
   }
 
   return (
@@ -114,6 +154,7 @@ function GameContent() {
       <header className="game__header">
         <span className="wordmark">DomiMais</span>
         <div className="game__actions">
+          <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <button
             type="button"
@@ -151,8 +192,7 @@ function GameContent() {
           })}
         <GameTable
           table={state.table}
-          drawPile={state.drawPile}
-          hidePileTiles={showDrawPile}
+          shuffle={shuffle ? { pieces: state.drawPile, paths: shuffle } : null}
           canFitLeft={playableSides.left}
           canFitRight={playableSides.right}
           onPlayPiece={handlePlayPiece}
@@ -166,15 +206,23 @@ function GameContent() {
         </p>
       )}
 
-      {showDrawPile && (
+      {isShuffling && (
+        <button type="button" className="btn btn--block" onClick={() => setShuffle(null)}>
+          Pular animação
+        </button>
+      )}
+
+      {!isFinished && (
         <DrawPile
+          order={state.initialPileOrder}
           pieces={state.drawPile}
+          mode={isShuffling ? "idle" : pileMode}
+          hideTiles={isShuffling}
           onSelectPiece={handlePilePiece}
-          isChoosingInitial={state.phase === "choosing-initial"}
         />
       )}
 
-      {showHands && (
+      {showHands && !isShuffling && (
         <PlayerHand
           player={currentPlayer}
           selectedPieceId={state.selectedPieceId}
@@ -184,15 +232,16 @@ function GameContent() {
         />
       )}
 
-      {/* Encerrar o turno sem jogar. O botão é o mesmo quando a peça não
-          encaixa e quando o jogador está blefando: nada na tela denuncia o blefe. */}
-      {canKeepPiece(state) && (
+      {/* Encerrar o turno sem jogar. Para o motor é sempre a mesma ação
+          (KEEP_PIECE); o texto muda só na tela do próprio jogador: "Passar a
+          vez" quando nada encaixa, "Ficar com a peça" quando ele poderia jogar. */}
+      {canKeep && (
         <button
           type="button"
           className="btn btn--block"
           onClick={() => dispatch({ type: "KEEP_PIECE" })}
         >
-          Ficar com a peça
+          {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
         </button>
       )}
 
@@ -296,9 +345,12 @@ function GameContent() {
 
 function App() {
   return (
-    <GameProvider>
-      <GameContent />
-    </GameProvider>
+    // reducedMotion="user": respeita quem pede menos movimento no sistema.
+    <MotionConfig reducedMotion="user">
+      <GameProvider>
+        <GameContent />
+      </GameProvider>
+    </MotionConfig>
   );
 }
 

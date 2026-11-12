@@ -22,11 +22,14 @@ src/
 │   ├── GameTable           Mesa: monte, linha de peças em cobrinha, pontas
 │   ├── OpponentSeat        Adversário em volta da mesa (versos com as somas)
 │   ├── PlayerHand          Mão aberta do jogador da vez
-│   ├── DrawPile            Monte em destaque para compra / peça inicial
+│   ├── DrawPile            Monte: duas fileiras de 14 lugares
+│   ├── PieceMotion         Animação de movimento das peças
+│   ├── SoundToggle         Botão de ligar/desligar o som
 │   ├── TurnTransition      Tela "Passe o dispositivo"
 │   ├── DominoPiece         Peça aberta (pontos) ou virada (soma)
 │   └── table-layout.ts     Cálculo das fileiras da mesa e dos assentos
 ├── theme/              Tema escuro/claro (leitura, gravação e aplicação)
+├── sound/              Sons gerados pelo navegador e preferência de som
 ├── test/setup.ts       Configuração dos testes
 └── App.tsx             Tela da partida
 ```
@@ -44,6 +47,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | `currentPlayerIndex` | Jogador da vez |
 | `table` | Peças na mesa e valores das pontas (`leftEnd`, `rightEnd`) |
 | `drawPile` | Monte |
+| `initialPileOrder` | Ids das 28 peças na ordem inicial do monte (não muda); a interface usa para manter cada peça no seu lugar |
 | `turnStep` | `draw` (precisa comprar) ou `play` (jogar ou ficar com a peça) |
 | `drawnPieceId` | Peça comprada neste turno (ela já está na mão) |
 | `selectedPieceId` | Peça da mão selecionada para jogar |
@@ -133,16 +137,46 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
   horário (`seatOpponents`): com 2 jogadores, em cima; com 3, à esquerda e à
   direita; com 4, à esquerda, em cima e à direita. Deles só aparecem os versos,
   com as somas.
-- A **mesa** (`GameTable`) mostra o monte (somas), a linha de peças e os
-  valores das pontas. A linha dobra em fileiras que alternam o sentido
+- A **mesa** (`GameTable`) mostra a linha de peças e os valores das pontas.
+  A linha dobra em fileiras que alternam o sentido
   ("cobrinha"), calculadas por `layoutChain` a partir da largura medida; as
   peças não encolhem até ficarem ilegíveis.
 - Quando a peça selecionada encaixa, aparecem os alvos tracejados **"Jogar"**
   nas pontas.
-- Na compra e na escolha da peça inicial, o monte aparece em destaque
-  (`DrawPile`), com peças grandes para o toque.
+- O **monte** (`DrawPile`) fica sempre visível, abaixo da mesa, em duas
+  fileiras de 14 lugares. Cada peça ocupa sempre o mesmo lugar
+  (`initialPileOrder`); quando é comprada, o lugar fica vazio. As peças só são
+  clicáveis na compra e na escolha da peça inicial.
+- Para encerrar o turno sem jogar há um único botão, ligado à ação
+  `KEEP_PIECE`. O texto muda só na tela do próprio jogador: "Passar a vez"
+  quando nenhuma peça da mão encaixa (`currentPlayerCanPlay`), "Ficar com a
+  peça" quando alguma encaixa.
 - Na troca de turno (`transition`) as mãos não são renderizadas.
 - No fim, o painel **Resultado** abre todas as mãos, com a soma de cada jogador.
+
+### Animações
+
+- `PieceMotion` envolve cada peça no monte, na mão e na mesa com o mesmo
+  identificador (`layoutId` do Framer Motion). Quando a peça some de um lugar
+  e aparece em outro, ela desliza da posição antiga para a nova: do monte para
+  a mão (compra), do monte para a mesa (peça inicial) e da mão para a mesa
+  (jogada). A peça que sai do monte vira ao chegar.
+- **Embaralhar:** ao iniciar a partida, as 28 peças aparecem espalhadas sobre
+  a mesa e se movem por trajetos sorteados (`createScatter`) durante
+  `SHUFFLE_SECONDS`; depois voam para os seus lugares no monte. O botão
+  "Pular animação" encerra na hora. É só interface: o motor não sabe da
+  animação.
+- Quem ativa "reduzir movimento" no sistema não vê o embaralhar, e as demais
+  animações são reduzidas (`MotionConfig reducedMotion="user"`).
+
+### Sons
+
+- `src/sound/sound.ts` gera os sons com a Web Audio API, sem arquivos de
+  áudio: `place` (peça na mesa), `draw` (compra) e `shuffle` (embaralhar).
+- `useSound` guarda a preferência em `localStorage` (chave `domimais:sound`,
+  ligado por padrão) e só toca quando o som está ligado. O botão é o
+  `SoundToggle`, na tela inicial e na partida.
+- Falhas de áudio (navegador sem suporte, bloqueio) são ignoradas.
 
 O layout é pensado primeiro para celular (coluna única, até 560 px) e se
 alarga em telas a partir de 900 px.
@@ -165,6 +199,7 @@ npm run test:watch # modo interativo
 | `components/__tests__/components.test.tsx` | Peça, mesa, modal, troca de turno |
 | `components/__tests__/table-layout.test.ts` | Fileiras da mesa (cobrinha) e assentos dos adversários |
 | `theme/__tests__/theme.test.ts` | Tema: padrão, gravação, falha de armazenamento |
+| `sound/__tests__/sound.test.ts` | Sons: geração, preferência, som desligado, falhas |
 | `App.test.tsx` | Tela inicial, tema, fluxo da partida e partidas inteiras com 2, 3 e 4 jogadores |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças

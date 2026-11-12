@@ -75,6 +75,12 @@ export interface GameState {
   currentPlayerIndex: number;
   table: Table;
   drawPile: DominoPiece[];
+  /**
+   * Ids das 28 peças na ordem em que foram dispostas no monte no início.
+   * Não muda durante a partida: serve para a interface manter cada peça no
+   * mesmo lugar do monte (e deixar o espaço vazio quando ela é comprada).
+   */
+  initialPileOrder: string[];
   turnStep: TurnStep;
   /** Peça comprada do monte neste turno (ela já está na mão do jogador). */
   drawnPieceId: string | null;

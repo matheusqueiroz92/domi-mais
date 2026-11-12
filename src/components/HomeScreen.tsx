@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from './Modal';
 import { DominoPiece } from './DominoPiece';
 import { RulesContent } from './RulesContent';
+import { SoundToggle } from './SoundToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { ChevronIcon, CpuIcon, GlobeIcon, UsersIcon } from './icons';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../game/logic/rules';
@@ -14,6 +15,8 @@ interface HomeScreenProps {
   onStartGame: (playerNames: string[]) => void;
   theme: Theme;
   onToggleTheme: () => void;
+  soundOn: boolean;
+  onToggleSound: () => void;
 }
 
 // Peças do exemplo "soma 7 pode ser...", só ilustrativas.
@@ -26,7 +29,13 @@ const example = (left: number, right: number): DominoPieceType => ({
 });
 const EXAMPLE_PIECES = [example(1, 6), example(2, 5), example(3, 4)];
 
-export function HomeScreen({ onStartGame, theme, onToggleTheme }: HomeScreenProps) {
+export function HomeScreen({
+  onStartGame,
+  theme,
+  onToggleTheme,
+  soundOn,
+  onToggleSound,
+}: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
@@ -53,7 +62,10 @@ export function HomeScreen({ onStartGame, theme, onToggleTheme }: HomeScreenProp
     <main className="home">
       <div className="home__topbar">
         <span className="wordmark">DomiMais</span>
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        <div className="home__actions">
+          <SoundToggle soundOn={soundOn} onToggle={onToggleSound} />
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </div>
       </div>
 
       <div className="home__layout">

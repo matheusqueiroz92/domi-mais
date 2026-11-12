@@ -1,33 +1,66 @@
 import { DominoPiece } from './DominoPiece';
+import { PieceMotion } from './PieceMotion';
 import type { DominoPiece as DominoPieceType } from '../game/state/game-types';
 import './DrawPile.css';
 
+export type PileMode = 'idle' | 'draw' | 'choose-initial';
+
 interface DrawPileProps {
+  /** Ids das 28 peças na ordem em que foram dispostas no monte. */
+  order: string[];
+  /** Peças que ainda estão no monte. */
   pieces: DominoPieceType[];
-  onSelectPiece: (pieceId: string) => void;
-  isChoosingInitial?: boolean;
+  /** `draw` e `choose-initial` deixam as peças clicáveis. */
+  mode?: PileMode;
+  /** Mostra só os espaços vazios (durante a animação de embaralhar). */
+  hideTiles?: boolean;
+  onSelectPiece?: (pieceId: string) => void;
 }
 
-/** Monte em destaque para o jogador escolher uma peça (compra ou peça inicial). */
-export function DrawPile({ pieces, onSelectPiece, isChoosingInitial = false }: DrawPileProps) {
-  if (pieces.length === 0) return null;
+const HINTS: Record<PileMode, string> = {
+  idle: 'O número é a soma dos dois lados',
+  draw: 'Toque em uma peça para comprar',
+  'choose-initial': 'Toque na peça inicial da mesa',
+};
+
+/**
+ * Monte: duas fileiras de 14 peças viradas, mostrando só a soma.
+ * Cada peça fica sempre no mesmo lugar; quando é comprada, o lugar fica vazio.
+ */
+export function DrawPile({
+  order,
+  pieces,
+  mode = 'idle',
+  hideTiles = false,
+  onSelectPiece,
+}: DrawPileProps) {
+  const byId = new Map(pieces.map((piece) => [piece.id, piece]));
+  const interactive = mode !== 'idle' && !hideTiles;
 
   return (
-    <section className="draw-pile" aria-label="Monte">
-      <h2 className="draw-pile__title">
-        {isChoosingInitial ? 'Escolha a peça inicial' : 'Compre uma peça do monte'}
-      </h2>
-      <p className="draw-pile__hint">O número é a soma dos dois lados da peça.</p>
-      <div className="draw-pile__tiles">
-        {pieces.map((piece) => (
-          <DominoPiece
-            key={piece.id}
-            piece={piece}
-            isFaceUp={false}
-            back="lg"
-            onClick={() => onSelectPiece(piece.id)}
-          />
-        ))}
+    <section className={`pile ${interactive ? 'pile--active' : ''}`} aria-label="Monte">
+      <div className="pile__header">
+        <h2 className="pile__title">Monte · {pieces.length} peças</h2>
+        <span className="pile__hint">{HINTS[mode]}</span>
+      </div>
+      <div className="pile__grid">
+        {order.map((id) => {
+          const piece = byId.get(id);
+          return (
+            <div className="pile__slot" key={id}>
+              {piece && !hideTiles && (
+                <PieceMotion pieceId={piece.id} className="pile__tile">
+                  <DominoPiece
+                    piece={piece}
+                    isFaceUp={false}
+                    back="fill"
+                    onClick={interactive && onSelectPiece ? () => onSelectPiece(piece.id) : undefined}
+                  />
+                </PieceMotion>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

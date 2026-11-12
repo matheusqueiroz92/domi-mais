@@ -84,6 +84,31 @@ export function layoutChain(pieces: readonly DominoPiece[], options: ChainLayout
   return rows;
 }
 
+/** Posição de uma peça espalhada na mesa, em % da área da mesa, e seu giro em graus. */
+export interface ScatterPoint {
+  x: number;
+  y: number;
+  rotate: number;
+}
+
+/**
+ * Trajeto de cada peça na animação de embaralhar: uma sequência de posições
+ * sorteadas sobre a mesa. Recebe o gerador aleatório para ser testável.
+ */
+export function createScatter(
+  count: number,
+  rng: () => number = Math.random,
+  stops = 4
+): ScatterPoint[][] {
+  return Array.from({ length: count }, () =>
+    Array.from({ length: stops }, () => ({
+      x: 4 + rng() * 80,
+      y: 6 + rng() * 66,
+      rotate: Math.round(rng() * 360 - 180),
+    }))
+  );
+}
+
 export interface Seats {
   top: number | null;
   left: number | null;

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { halfForWidth, layoutChain, pieceWidth, seatOpponents, slotWidth } from '../table-layout';
+import {
+  createScatter,
+  halfForWidth,
+  layoutChain,
+  pieceWidth,
+  seatOpponents,
+  slotWidth,
+} from '../table-layout';
+import { seededRandom } from '../../game/logic/__tests__/helpers';
 import { piece } from '../../game/logic/__tests__/helpers';
 
 const ids = (rows: ReturnType<typeof layoutChain>) =>
@@ -87,5 +95,26 @@ describe('seatOpponents (adversários em volta da mesa)', () => {
         expect(new Set(seats).size).toBe(count - 1);
       }
     }
+  });
+});
+
+describe('createScatter (animação de embaralhar)', () => {
+  it('gera um trajeto por peça, com todas as posições dentro da mesa', () => {
+    const paths = createScatter(28, seededRandom(3));
+    expect(paths).toHaveLength(28);
+    for (const path of paths) {
+      expect(path).toHaveLength(4);
+      for (const point of path) {
+        expect(point.x).toBeGreaterThanOrEqual(4);
+        expect(point.x).toBeLessThanOrEqual(84);
+        expect(point.y).toBeGreaterThanOrEqual(6);
+        expect(point.y).toBeLessThanOrEqual(72);
+        expect(Math.abs(point.rotate)).toBeLessThanOrEqual(180);
+      }
+    }
+  });
+
+  it('é reproduzível com a mesma semente', () => {
+    expect(createScatter(5, seededRandom(9))).toEqual(createScatter(5, seededRandom(9)));
   });
 });

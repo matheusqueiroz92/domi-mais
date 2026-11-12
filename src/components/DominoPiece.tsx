@@ -11,8 +11,8 @@ interface DominoPieceProps {
   onClick?: () => void;
   /** Lado de cada metade da peça aberta, em px. */
   half?: number;
-  /** Tamanho do verso (peça virada). */
-  back?: 'sm' | 'md' | 'lg';
+  /** Tamanho do verso (peça virada). `fill` ocupa todo o espaço disponível. */
+  back?: 'sm' | 'md' | 'lg' | 'fill';
   orientation?: 'horizontal' | 'vertical';
   /** Desenha a peça invertida (usado nas fileiras da mesa que correm para a esquerda). */
   flipped?: boolean;

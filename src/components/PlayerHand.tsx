@@ -1,4 +1,5 @@
 import { DominoPiece } from './DominoPiece';
+import { PieceMotion } from './PieceMotion';
 import type { Player } from '../game/state/game-types';
 import './PlayerHand.css';
 
@@ -40,15 +41,17 @@ export function PlayerHand({
       {count > 0 ? (
         <div className="hand__pieces">
           {player.hand.map((piece) => (
-            <DominoPiece
-              key={piece.id}
-              piece={piece}
-              isFaceUp
-              half={half}
-              orientation="vertical"
-              isSelected={selectedPieceId === piece.id}
-              onClick={canSelect ? () => onSelectPiece(piece.id) : undefined}
-            />
+            // A peça comprada sai virada do monte e abre ao chegar à mão.
+            <PieceMotion key={piece.id} pieceId={piece.id} flip={piece.id === drawnPieceId}>
+              <DominoPiece
+                piece={piece}
+                isFaceUp
+                half={half}
+                orientation="vertical"
+                isSelected={selectedPieceId === piece.id}
+                onClick={canSelect ? () => onSelectPiece(piece.id) : undefined}
+              />
+            </PieceMotion>
           ))}
         </div>
       ) : (

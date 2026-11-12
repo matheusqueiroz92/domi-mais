@@ -1,4 +1,5 @@
 import { DominoPiece } from './DominoPiece';
+import { PieceMotion } from './PieceMotion';
 import type { Player } from '../game/state/game-types';
 import './OpponentSeat.css';
 
@@ -21,7 +22,9 @@ export function OpponentSeat({ player, position, testId }: OpponentSeatProps) {
       {count > 0 && (
         <div className="seat__tiles">
           {player.hand.map((piece) => (
-            <DominoPiece key={piece.id} piece={piece} isFaceUp={false} back="sm" />
+            <PieceMotion key={piece.id} pieceId={piece.id}>
+              <DominoPiece piece={piece} isFaceUp={false} back="sm" />
+            </PieceMotion>
           ))}
         </div>
       )}

@@ -40,7 +40,11 @@ ponta. Só se joga uma peça por turno.
 - O blefe serve apenas para confundir o adversário. **Não existe ação de
   duvidar** nem penalidade.
 - O jogo **nunca valida, registra ou expõe o blefe**: "ficar com a peça" é a
-  mesma ação, com a mesma tela e o mesmo registro, encaixando ou não.
+  mesma ação e gera o mesmo registro, encaixando ou não. Os adversários nunca
+  recebem nenhuma indicação de que a peça encaixava.
+- Só a tela do **próprio jogador** informa se ele tem jogada: quando nenhuma
+  peça da mão encaixa, aparece "nenhuma peça da sua mão encaixa na mesa" e o
+  botão "Passar a vez"; quando alguma encaixa, o botão é "Ficar com a peça".
 
 ## Quando o monte acaba
 
@@ -102,3 +106,5 @@ tocar em **"Estou pronto"**.
 | 11/11/2026 | De 2 a 4 jogadores, cada um por si, sem duplas. |
 | 11/11/2026 | No empate, só os jogadores empatados na condição de vitória dividem o resultado. |
 | 11/11/2026 | O modo contra o computador (etapa futura) deverá aceitar 2, 3 ou 4 jogadores. |
+| 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
+| 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |

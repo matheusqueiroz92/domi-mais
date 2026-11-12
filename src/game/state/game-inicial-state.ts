@@ -53,6 +53,7 @@ export function createInitialGameState(
     currentPlayerIndex: startingPlayerIndex,
     table: { leftEnd: null, rightEnd: null, pieces: [] },
     drawPile: pieces.map((piece) => ({ ...piece, isFaceUp: false })),
+    initialPileOrder: pieces.map((piece) => piece.id),
     turnStep: 'draw',
     drawnPieceId: null,
     selectedPieceId: null,

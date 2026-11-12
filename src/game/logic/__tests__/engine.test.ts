@@ -9,7 +9,13 @@ import {
   selectPiece,
   startGame,
 } from '../engine';
-import { getSelectedPiece, getSelectedPlayableSides, getWinners, mustDraw } from '../selectors';
+import {
+  currentPlayerCanPlay,
+  getSelectedPiece,
+  getSelectedPlayableSides,
+  getWinners,
+  mustDraw,
+} from '../selectors';
 import { createInitialGameState } from '../../state/game-inicial-state';
 import { piece, scenario } from './helpers';
 
@@ -20,6 +26,16 @@ describe('início da partida', () => {
     expect(setup.phase).toBe('setup');
     expect(setup.players.map((p) => p.hand.length)).toEqual([0, 0]);
     expect(setup.drawPile).toHaveLength(28);
+  });
+
+  it('guarda a ordem inicial do monte, que não muda durante a partida', () => {
+    expect(setup.initialPileOrder).toEqual(setup.drawPile.map((p) => p.id));
+    const started = startGame(setup);
+    const afterInitial = chooseInitialPiece(started, started.drawPile[3].id);
+    const afterDraw = drawPiece(afterInitial, afterInitial.drawPile[0].id);
+    expect(afterDraw.drawPile).toHaveLength(26);
+    expect(afterDraw.initialPileOrder).toEqual(setup.initialPileOrder);
+    expect(afterDraw.initialPileOrder).toHaveLength(28);
   });
 
   it('startGame leva para a escolha da peça inicial', () => {
@@ -140,6 +156,13 @@ describe('ficar com a peça (inclui o blefe)', () => {
     expect(state.currentPlayerIndex).toBe(1);
     expect(state.drawnPieceId).toBeNull();
     expect(state.selectedPieceId).toBeNull();
+  });
+
+  it('currentPlayerCanPlay diz se alguma peça da mão do jogador da vez encaixa', () => {
+    expect(currentPlayerCanPlay(drawPiece(scenario({ pile }), '1-2'))).toBe(false);
+    expect(currentPlayerCanPlay(drawPiece(scenario({ pile }), '5-6'))).toBe(true);
+    // A peça comprada não encaixa, mas outra da mão sim.
+    expect(currentPlayerCanPlay(drawPiece(scenario({ handA: [piece(3, 4)], pile }), '1-2'))).toBe(true);
   });
 
   it('blefe: pode ficar com uma peça que encaixa', () => {

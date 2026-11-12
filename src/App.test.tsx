@@ -1,14 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
 import { seededRandom } from './game/logic/__tests__/helpers';
 import { THEME_STORAGE_KEY } from './theme/theme';
+import { SOUND_STORAGE_KEY } from './sound/sound';
 
 const FACE_UP = /^Peça \d\|\d$/;
 const FACE_DOWN = /^Peça virada, soma \d+$/;
 const SAME_DEVICE = /Mesmo aparelho/;
+/** Botão de encerrar o turno sem jogar: o texto depende de alguma peça encaixar. */
+const KEEP = /^(Ficar com a peça|Passar a vez)$/;
 
-function startMatch(names: string[] = ['Ana', 'Beto']) {
+function startMatch(names: string[] = ['Ana', 'Beto'], skipShuffle = true) {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: SAME_DEVICE }));
   if (names.length !== 2) {
@@ -20,6 +23,8 @@ function startMatch(names: string[] = ['Ana', 'Beto']) {
     });
   });
   fireEvent.click(screen.getByRole('button', { name: 'Iniciar Jogo' }));
+  // A partida começa com a animação de embaralhar; os testes pulam direto ao jogo.
+  if (skipShuffle) fireEvent.click(screen.getByRole('button', { name: 'Pular animação' }));
 }
 
 /** Peças do monte em destaque: são as únicas peças viradas que funcionam como botão. */
@@ -123,6 +128,73 @@ describe('App (jogo no mesmo dispositivo)', () => {
     });
   });
 
+  describe('som', () => {
+    it('começa ligado e pode ser desligado; a escolha fica salva', () => {
+      render(<App />);
+      const toggle = screen.getByRole('button', { name: 'Desligar o som' });
+      expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+      fireEvent.click(toggle);
+      expect(screen.getByRole('button', { name: 'Ligar o som' })).toHaveAttribute('aria-pressed', 'false');
+      expect(window.localStorage.getItem(SOUND_STORAGE_KEY)).toBe('off');
+    });
+
+    it('abre com o som desligado quando essa foi a última escolha, também na partida', () => {
+      window.localStorage.setItem(SOUND_STORAGE_KEY, 'off');
+      startMatch();
+      expect(screen.getByRole('button', { name: 'Ligar o som' })).toBeInTheDocument();
+    });
+  });
+
+  describe('embaralhar', () => {
+    it('a partida começa misturando as peças; o monte fica vazio e nada é clicável', () => {
+      startMatch(['Ana', 'Beto'], false);
+
+      expect(screen.getByRole('status')).toHaveTextContent('Embaralhando as peças…');
+      const pile = screen.getByRole('region', { name: 'Monte' });
+      expect(pile.querySelectorAll('.pile__slot')).toHaveLength(28);
+      expect(within(pile).queryAllByLabelText(FACE_DOWN)).toHaveLength(0);
+      expect(pileButtons()).toHaveLength(0);
+      expect(screen.queryByTestId('hand')).not.toBeInTheDocument();
+      expect(document.querySelectorAll('.game-table__scatter-tile')).toHaveLength(28);
+    });
+
+    it('"Pular animação" leva direto à escolha da peça inicial', () => {
+      startMatch(['Ana', 'Beto'], false);
+      fireEvent.click(screen.getByRole('button', { name: 'Pular animação' }));
+
+      expect(screen.getByRole('status')).toHaveTextContent(/escolha a peça inicial do monte/);
+      expect(pileButtons()).toHaveLength(28);
+      expect(document.querySelectorAll('.game-table__scatter-tile')).toHaveLength(0);
+    });
+
+    it('termina sozinha depois de pouco tempo', () => {
+      vi.useFakeTimers();
+      try {
+        startMatch(['Ana', 'Beto'], false);
+        expect(pileButtons()).toHaveLength(0);
+        act(() => {
+          vi.advanceTimersByTime(2000);
+        });
+        expect(pileButtons()).toHaveLength(28);
+        expect(screen.queryByRole('button', { name: 'Pular animação' })).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('não acontece para quem pede menos movimento no sistema', () => {
+      vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('reduce') }));
+      try {
+        startMatch(['Ana', 'Beto'], false);
+        expect(screen.queryByRole('button', { name: 'Pular animação' })).not.toBeInTheDocument();
+        expect(pileButtons()).toHaveLength(28);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+  });
+
   describe('partida', () => {
     it('começa pela escolha da peça inicial, com as 28 peças no monte', () => {
       startMatch();
@@ -137,7 +209,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
 
       expect(screen.getByRole('status')).toHaveTextContent(/compre uma peça do monte/);
       expect(pileButtons()).toHaveLength(27);
-      expect(screen.queryByRole('button', { name: 'Ficar com a peça' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: KEEP })).not.toBeInTheDocument();
 
       fireEvent.click(pileButtons()[0]);
 
@@ -149,32 +221,57 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(screen.getByText(/comprada agora/)).toBeInTheDocument();
     });
 
-    it('fora da compra, o monte aparece na mesa só com as somas, sem ser clicável', () => {
+    it('fora da compra, o monte mostra só as somas, sem ser clicável, e mantém os 28 lugares', () => {
       startMatch();
       chooseInitialPiece();
       fireEvent.click(pileButtons()[0]);
 
-      const table = screen.getByRole('region', { name: 'Mesa' });
-      expect(within(table).getAllByRole('img', { name: FACE_DOWN })).toHaveLength(26);
-      expect(within(table).queryAllByRole('button', { name: FACE_DOWN })).toHaveLength(0);
+      const pile = screen.getByRole('region', { name: 'Monte' });
+      expect(within(pile).getAllByRole('img', { name: FACE_DOWN })).toHaveLength(26);
+      expect(within(pile).queryAllByRole('button', { name: FACE_DOWN })).toHaveLength(0);
+      expect(pile.querySelectorAll('.pile__slot')).toHaveLength(28);
     });
 
-    it('o botão "Ficar com a peça" aparece sempre após a compra e nada na tela fala em blefe ou encaixe', () => {
+    it('após a compra: "Passar a vez" quando nenhuma peça encaixa, "Ficar com a peça" quando alguma encaixa', () => {
       startMatch();
       chooseInitialPiece();
-      fireEvent.click(pileButtons()[0]);
 
-      expect(screen.getByRole('button', { name: 'Ficar com a peça' })).toBeInTheDocument();
-      expect(screen.queryByText(/blef/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/não encaixa/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/Peça encaixa/i)).not.toBeInTheDocument();
+      const seen = new Set<string>();
+      for (let turn = 0; turn < 12 && seen.size < 2; turn++) {
+        fireEvent.click(pileButtons()[0]);
+
+        // Alguma peça da mão abre um alvo "Jogar" em uma ponta?
+        let anyFits = false;
+        for (const handPiece of handButtons()) {
+          if (handPiece.getAttribute('aria-pressed') !== 'true') fireEvent.click(handPiece);
+          if (screen.queryAllByRole('button', { name: /Jogar na ponta/ }).length > 0) anyFits = true;
+        }
+
+        const keep = screen.getByRole('button', { name: /^(Ficar com a peça|Passar a vez)$/ });
+        if (anyFits) {
+          expect(keep).toHaveTextContent('Ficar com a peça');
+          expect(screen.getByRole('status')).toHaveTextContent(/jogue uma peça em uma das pontas/);
+        } else {
+          expect(keep).toHaveTextContent('Passar a vez');
+          expect(screen.getByRole('status')).toHaveTextContent(/nenhuma peça da sua mão encaixa/);
+        }
+        seen.add(keep.textContent ?? '');
+        // A palavra "blefe" nunca aparece durante a partida.
+        expect(screen.queryByText(/blef/i)).not.toBeInTheDocument();
+
+        fireEvent.click(keep);
+        fireEvent.click(screen.getByRole('button', { name: 'Estou pronto' }));
+      }
+
+      // Os dois casos aconteceram nesta partida.
+      expect(seen).toEqual(new Set(['Ficar com a peça', 'Passar a vez']));
     });
 
     it('troca de turno protegida: esconde as mãos até o próximo jogador tocar em "Estou pronto"', () => {
       startMatch();
       chooseInitialPiece();
       fireEvent.click(pileButtons()[0]);
-      fireEvent.click(screen.getByRole('button', { name: 'Ficar com a peça' }));
+      fireEvent.click(screen.getByRole('button', { name: KEEP }));
 
       const cover = screen.getByRole('dialog', { name: /Passe o dispositivo para/ });
       expect(cover).toBeInTheDocument();
@@ -182,7 +279,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(screen.queryByTestId('hand')).not.toBeInTheDocument();
       expect(screen.queryAllByTestId(/^seat-/)).toHaveLength(0);
       expect(pileButtons()).toHaveLength(0);
-      expect(screen.queryByRole('button', { name: 'Ficar com a peça' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: KEEP })).not.toBeInTheDocument();
 
       fireEvent.click(within(cover).getByRole('button', { name: 'Estou pronto' }));
 
@@ -231,7 +328,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       const seen: string[] = [];
       for (let turn = 0; turn < 3; turn++) {
         fireEvent.click(pileButtons()[0]);
-        fireEvent.click(screen.getByRole('button', { name: 'Ficar com a peça' }));
+        fireEvent.click(screen.getByRole('button', { name: KEEP }));
         const cover = screen.getByRole('dialog', { name: /Passe o dispositivo para/ });
         seen.push(cover.textContent ?? '');
         fireEvent.click(screen.getByRole('button', { name: 'Estou pronto' }));
@@ -283,7 +380,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
           }
         }
         if (!played) {
-          fireEvent.click(screen.getByRole('button', { name: 'Ficar com a peça' }));
+          fireEvent.click(screen.getByRole('button', { name: KEEP }));
         }
       }
 
@@ -291,7 +388,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(result).toHaveTextContent(
         new RegExp(names.map((name) => `${name}: \\d+`).join(' · '))
       );
-      expect(screen.getByText('Monte · 0 peças')).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Monte' })).not.toBeInTheDocument();
 
       // Depois do fim, todas as mãos ficam abertas no painel de resultado.
       fireEvent.click(within(result).getByRole('button', { name: 'Ver a mesa' }));
