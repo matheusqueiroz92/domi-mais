@@ -85,7 +85,57 @@ describe('layoutSnake (cobrinha com curvas em ângulo reto)', () => {
     expect(centers.size).toBe(1);
   });
 
-  it('buchas ficam em pé; as demais peças, deitadas (fora dos cantos)', () => {
+  it('bucha logo depois da curva fica deitada sobre a peça de canto, e a fileira segue por um lado dela', () => {
+    let found = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      for (const [width, half] of [
+        [220, 20],
+        [300, 20],
+        [340, 24],
+      ]) {
+        const { table, initialPieceId } = buildTable(28, seed);
+        const layout = layoutSnake(table.pieces, initialPieceId, { width, half });
+        const byId = new Map(layout.items.map((item) => [item.key, item]));
+        const anchorIndex = table.pieces.findIndex((p) => p.id === initialPieceId);
+        const arms = [
+          table.pieces.slice(anchorIndex + 1),
+          table.pieces.slice(0, anchorIndex).reverse(),
+        ].map((arm) => arm.map((p) => byId.get(p.id)!));
+
+        for (const arm of arms) {
+          for (let i = 0; i + 1 < arm.length; i++) {
+            const corner = arm[i];
+            const double = arm[i + 1];
+            if (!corner.corner || double.piece!.left !== double.piece!.right) continue;
+            found++;
+
+            // Deitada e centralizada sobre a ponta da peça de canto (não ao lado dela).
+            expect(double.orientation).toBe('horizontal');
+            expect(double.x + double.w / 2).toBeCloseTo(corner.x + corner.w / 2);
+            const above = double.y + double.h <= corner.y + 0.01;
+            const below = double.y >= corner.y + corner.h - 0.01;
+            expect(above || below).toBe(true);
+            expect(boxGap(corner, double)).toBeLessThanOrEqual(3);
+            expect(double.x).toBeGreaterThanOrEqual(0);
+            expect(double.x + double.w).toBeLessThanOrEqual(width);
+
+            // A peça seguinte encosta em um dos lados da bucha, na mesma linha.
+            const next = arm[i + 2];
+            if (next && !next.corner) {
+              expect(boxGap(double, next)).toBeLessThanOrEqual(3);
+              expect(next.y + next.h / 2).toBeCloseTo(double.y + double.h / 2);
+              const beside = next.x + next.w <= double.x + 0.01 || next.x >= double.x + double.w - 0.01;
+              expect(beside).toBe(true);
+            }
+          }
+        }
+      }
+    }
+    // O caso aparece várias vezes na amostra.
+    expect(found).toBeGreaterThan(5);
+  });
+
+  it('no meio de uma fileira a bucha fica em pé, atravessada; as demais peças, deitadas', () => {
     const { table, initialPieceId } = buildTable(12, 3);
     for (const item of pieceItems(layoutSnake(table.pieces, initialPieceId, { width: 1400, half: 28 }))) {
       const double = item.piece!.left === item.piece!.right;

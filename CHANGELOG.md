@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 — 12/11/2026
+
+- **Bucha na curva:** quando a bucha vem logo depois da peça de canto, ela
+  fica deitada, atravessada sobre a ponta dessa peça, e a peça seguinte se
+  liga a um dos seus lados (antes ela ficava em pé, ao lado da peça de canto).
+
 ## 0.7.0 — 12/11/2026
 
 - **Regra da peça inicial:** quem escolhe a peça inicial não compra em seguida;

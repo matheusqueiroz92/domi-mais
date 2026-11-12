@@ -206,8 +206,10 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
   no centro; o que foi jogado à direita cresce para a direita e, na borda, faz
   a curva para cima; o que foi jogado à esquerda cresce para a esquerda e faz
   a curva para baixo. Em cada curva a peça de canto fica em pé, perpendicular
-  à anterior, e a fileira seguinte volta no sentido contrário. Buchas ficam
-  atravessadas e nunca fazem a curva. Como cada braço só cresce pela ponta,
+  à anterior, e a fileira seguinte volta no sentido contrário. A bucha fica
+  sempre atravessada na linha: em pé no meio de uma fileira e, quando vem logo
+  depois da peça de canto, deitada sobre a ponta dela, com a peça seguinte
+  ligada a um dos seus lados. A bucha nunca é a peça de canto. Como cada braço só cresce pela ponta,
   as peças já colocadas não saem do lugar.
 - O tamanho das peças da mesa é o maior que cabe (`fitSnake`): depende da
   largura e, em telas grandes, também da altura disponível.

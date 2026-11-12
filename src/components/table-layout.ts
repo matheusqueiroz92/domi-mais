@@ -66,6 +66,9 @@ interface ArmItem {
  * peça de canto fica em pé (perpendicular à anterior) e a fileira seguinte
  * volta no sentido contrário.
  *
+ * A bucha fica sempre atravessada na linha: em pé no meio de uma fileira e
+ * deitada sobre a ponta da peça de canto quando vem logo depois da curva.
+ *
  * Como cada braço só cresce pela ponta, as peças já colocadas não mudam de
  * lugar quando outra é jogada.
  */
@@ -112,12 +115,38 @@ export function layoutSnake(
     let cursor = arm === 'right' ? anchorX + anchorW + gap : anchorX - gap;
     let line = 0;
     let prevDouble = anchorDouble;
+    // Peça de canto recém-colocada: se a próxima for uma bucha, ela fica
+    // atravessada na ponta dessa peça, e não ao lado.
+    let pendingCorner: { x: number; y: number } | null = null;
     // Lado da peça que encosta na anterior é o "de dentro": no braço direito é `left`.
     const innerIsLeft = arm === 'right';
 
     for (const item of list) {
       const double = item.piece ? isDouble(item.piece) : false;
       const base = { key: item.key, kind: item.piece ? 'piece' : 'slot', piece: item.piece, side: item.side } as const;
+
+      if (double && pendingCorner) {
+        // Bucha logo depois da curva: deitada, atravessada na ponta da peça
+        // de canto. A fileira continua a partir de um dos lados dela.
+        const x = pendingCorner.x + short / 2 - long / 2;
+        const y = vdir > 0 ? pendingCorner.y + long + gap : pendingCorner.y - gap - short;
+        items.push({
+          ...base,
+          x,
+          y,
+          w: long,
+          h: short,
+          orientation: 'horizontal',
+          flipped: false,
+          corner: false,
+        });
+        line = y + short / 2;
+        cursor = dir > 0 ? x + long + gap : x - gap;
+        prevDouble = false;
+        pendingCorner = null;
+        continue;
+      }
+      pendingCorner = null;
 
       if (double) {
         // Bucha: em pé, atravessada na fileira.
@@ -136,9 +165,10 @@ export function layoutSnake(
         continue;
       }
 
-      // Cabe deitada nesta fileira? Reserva o espaço de uma bucha na borda.
-      const fits =
-        dir > 0 ? cursor + long <= width - short - gap : cursor - long >= short + gap;
+      // Cabe deitada nesta fileira? Reserva na borda o espaço de uma bucha em
+      // pé e a sobra de uma bucha deitada sobre a peça de canto.
+      const reserve = short + gap + Math.ceil(half / 2);
+      const fits = dir > 0 ? cursor + long <= width - reserve : cursor - long >= reserve;
 
       if (fits) {
         items.push({
@@ -178,6 +208,7 @@ export function layoutSnake(
       dir = -dir;
       cursor = dir > 0 ? columnX + short + gap : columnX - gap;
       prevDouble = false;
+      pendingCorner = { x: columnX, y };
     }
   };
 
