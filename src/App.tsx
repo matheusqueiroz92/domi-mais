@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
+import clsx from "clsx";
 import { GameProvider } from "./game/state/game-context";
 import { useGame } from "./game/state/use-game";
 import { canKeepPiece } from "./game/logic/engine";
@@ -16,6 +17,8 @@ import { useBotTurns } from "./game/ai/useBotTurns";
 import { DominoPiece } from "./components/DominoPiece";
 import { GameTable, SHUFFLE_SECONDS } from "./components/GameTable";
 import { DrawPile } from "./components/DrawPile";
+import { HintPanel } from "./components/HintPanel";
+import { HintToggle } from "./components/HintToggle";
 import { HomeScreen } from "./components/HomeScreen";
 import { Modal } from "./components/Modal";
 import { OpponentSeat } from "./components/OpponentSeat";
@@ -24,12 +27,16 @@ import { RulesContent } from "./components/RulesContent";
 import { SoundToggle } from "./components/SoundToggle";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TurnTransition } from "./components/TurnTransition";
+import { TutorialCoach } from "./components/TutorialCoach";
 import { ExitIcon, HelpIcon } from "./components/icons";
 import { createScatter, seatOpponents } from "./components/table-layout";
 import type { ScatterPoint } from "./components/table-layout";
 import { useSound } from "./sound/useSound";
 import { useMediaQuery } from "./components/useMediaQuery";
 import { useTheme } from "./theme/useTheme";
+import { usePersistentFlag } from "./hooks/usePersistentFlag";
+import { TUTORIAL_PLAYERS, createTutorialSetup } from "./tutorial/script";
+import { useTutorial } from "./tutorial/useTutorial";
 import "./App.css";
 
 /**
@@ -99,6 +106,9 @@ function getStatusMessage(state: GameState, viewerIndex: number): string | null 
   return `${passNotice}Monte vazio: ${player.name}, jogue uma peça que encaixe`;
 }
 
+/** Chave da preferência do modo "dica" no navegador. */
+export const HINTS_STORAGE_KEY = "domimais:hints";
+
 /** Telas grandes: a partida ocupa a janela inteira, sem rolagem. */
 const WIDE_SCREEN = "(min-width: 1024px) and (min-height: 640px)";
 
@@ -113,6 +123,9 @@ function GameContent() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [resultDismissed, setResultDismissed] = useState(false);
+  const [hintsOn, toggleHints] = usePersistentFlag(HINTS_STORAGE_KEY, false);
+  // Vindo do fim do tutorial: a tela inicial já abre na partida contra o computador.
+  const [openBotSetup, setOpenBotSetup] = useState(false);
 
   const currentPlayer = getCurrentPlayer(state);
   const viewerIndex = getViewerIndex(state);
@@ -175,14 +188,47 @@ function GameContent() {
     [play]
   );
 
+  // Partida guiada: a adversária segue o roteiro e a pessoa só faz a ação pedida.
+  const tutorial = useTutorial(dispatch, { onBotAction: handleBotAction });
+  const inTutorial = tutorial.active;
+  const expected = tutorial.expected;
+  /** Ação da pessoa: no tutorial passa pelo roteiro; fora dele vai direto ao jogo. */
+  const act = (action: GameAction) => (inTutorial ? tutorial.perform(action) : dispatch(action));
+
+  // No celular a tela rola: a cada passo do tutorial, o que deve ser tocado
+  // (peça do monte ou botão) é trazido para a área visível.
+  const tutorialStepIndex = inTutorial ? tutorial.stepIndex : null;
+  useEffect(() => {
+    if (tutorialStepIndex === null) return;
+    const target = document.querySelector(".pile__tile--target, .btn--target");
+    target?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [tutorialStepIndex]);
+
   // O computador joga sozinho na vez dele; espera o embaralhar e as janelas abertas.
   useBotTurns(state, dispatch, {
-    paused: showHomeScreen || isShuffling || showRules || showExitModal,
+    paused: showHomeScreen || isShuffling || showRules || showExitModal || inTutorial,
     onAction: handleBotAction,
   });
+  const tutorialAllowsSide = (side: "left" | "right") =>
+    !inTutorial || (expected?.type === "PLAY_PIECE" && expected.position === side);
+  // Guia: cartão do tutorial ou, com as dicas ligadas, o painel de dicas.
+  const hasGuide = !isFinished && (inTutorial || hintsOn);
   const hasSideSeats = seats.left !== null || seats.right !== null;
 
+  const handleStartTutorial = () => {
+    // Monte em ordem fixa e sem animação de embaralhar: o roteiro começa na hora.
+    initializeGame(TUTORIAL_PLAYERS, [null, "easy"], createTutorialSetup());
+    dispatch({ type: "START_GAME" });
+    setResultDismissed(false);
+    setShuffle(null);
+    setOpenBotSetup(false);
+    setShowHomeScreen(false);
+    tutorial.start();
+  };
+
   const handleStartGame = (playerNames: string[], botLevels?: (BotLevel | null)[]) => {
+    tutorial.stop();
+    setOpenBotSetup(false);
     initializeGame(playerNames, botLevels);
     dispatch({ type: "START_GAME" });
     setResultDismissed(false);
@@ -198,7 +244,7 @@ function GameContent() {
 
   const handlePilePiece = (pieceId: string) => {
     play(state.phase === "choosing-initial" ? "place" : "draw");
-    dispatch({
+    act({
       type: state.phase === "choosing-initial" ? "CHOOSE_INITIAL_PIECE" : "DRAW_PIECE",
       pieceId,
     });
@@ -207,11 +253,13 @@ function GameContent() {
   const handlePlayPiece = (position: "left" | "right") => {
     if (selectedPiece) {
       play("place");
-      dispatch({ type: "PLAY_PIECE", pieceId: selectedPiece.id, position });
+      act({ type: "PLAY_PIECE", pieceId: selectedPiece.id, position });
     }
   };
 
-  const backToHome = () => {
+  const backToHome = (botSetup = false) => {
+    tutorial.stop();
+    setOpenBotSetup(botSetup);
     dispatch({ type: "RESET_GAME" });
     setShuffle(null);
     setShowHomeScreen(true);
@@ -227,15 +275,25 @@ function GameContent() {
         onToggleTheme={toggleTheme}
         soundOn={soundOn}
         onToggleSound={toggleSound}
+        onStartTutorial={handleStartTutorial}
+        openBotSetup={openBotSetup}
       />
     );
   }
 
   return (
-    <main className={`game ${isFinished ? "game--finished" : ""}`}>
+    <main
+      className={clsx(
+        "game",
+        isFinished && "game--finished",
+        hasGuide && "game--guided",
+        inTutorial && "game--tutorial"
+      )}
+    >
       <header className="game__header">
         <span className="wordmark">DomiMais</span>
         <div className="game__actions">
+          {!inTutorial && <HintToggle hintsOn={hintsOn} onToggle={toggleHints} />}
           <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <button
@@ -252,7 +310,7 @@ function GameContent() {
             className="icon-btn"
             aria-label="Sair da partida"
             title="Sair da partida"
-            onClick={isFinished ? backToHome : () => setShowExitModal(true)}
+            onClick={isFinished ? () => backToHome() : () => setShowExitModal(true)}
           >
             <ExitIcon />
           </button>
@@ -280,11 +338,37 @@ function GameContent() {
           shuffle={shuffle ? { pieces: state.drawPile, paths: shuffle } : null}
           lastPlayedId={lastPlayed?.pieceId ?? null}
           flipPieceId={flipPieceId}
-          canFitLeft={playableSides.left}
-          canFitRight={playableSides.right}
+          canFitLeft={playableSides.left && tutorialAllowsSide("left")}
+          canFitRight={playableSides.right && tutorialAllowsSide("right")}
           onPlayPiece={handlePlayPiece}
         />
       </div>
+
+      {/* Guia ao lado da mesa (embaixo dela no celular): cartão do tutorial ou
+          painel de dicas. O lugar fica reservado para a mesa não mudar de tamanho. */}
+      {hasGuide && (
+        <aside className="game__guide">
+          {inTutorial && tutorial.step ? (
+            <TutorialCoach
+              step={tutorial.step}
+              stepIndex={tutorial.stepIndex}
+              totalSteps={tutorial.totalSteps}
+              botBusy={tutorial.botBusy}
+              isLastStep={tutorial.isLastStep}
+              onNext={tutorial.next}
+              onExit={() => backToHome()}
+              onPlayComputer={() => backToHome(true)}
+            />
+          ) : (
+            <HintPanel
+              key={`${state.currentPlayerIndex}-${state.turnStep}-${state.drawPile.length}`}
+              state={state}
+              playerIndex={viewerIndex}
+              hidden={!isViewerTurn || isShuffling || inTransition}
+            />
+          )}
+        </aside>
+      )}
 
       {/* Parte de baixo. No celular os itens ficam empilhados; em telas
           grandes, o monte fica à esquerda e a mão do jogador à direita. */}
@@ -299,7 +383,8 @@ function GameContent() {
             <DrawPile
               order={state.initialPileOrder}
               pieces={state.drawPile}
-              mode={isShuffling ? "idle" : pileMode}
+              mode={isShuffling || (inTutorial && !tutorial.pilePieceId) ? "idle" : pileMode}
+              onlyPieceId={tutorial.pilePieceId}
               hideTiles={isShuffling}
               onSelectPiece={handlePilePiece}
             />
@@ -307,14 +392,14 @@ function GameContent() {
 
           <div className="game__me-col">
             {/* Orientação para o jogador da vez */}
-            {statusMessage && (
+            {!inTutorial && statusMessage && (
               <p className="game__status" role="status">
                 {statusMessage}
               </p>
             )}
 
             {/* Contra o computador: o espaço fica reservado para a tela não pular. */}
-            {hasBots && (
+            {hasBots && !inTutorial && (
               <p className="game__last-action">
                 {lastOpponentAction && `Última jogada: ${lastOpponentAction}`}
               </p>
@@ -325,8 +410,13 @@ function GameContent() {
                 player={viewer}
                 selectedPieceId={isViewerTurn ? state.selectedPieceId : null}
                 drawnPieceId={isViewerTurn ? state.drawnPieceId : null}
-                canSelect={isViewerTurn && isPlaying && state.turnStep === "play"}
-                onSelectPiece={(pieceId) => dispatch({ type: "SELECT_PIECE", pieceId })}
+                canSelect={
+                  isViewerTurn &&
+                  isPlaying &&
+                  state.turnStep === "play" &&
+                  (!inTutorial || expected?.type === "PLAY_PIECE")
+                }
+                onSelectPiece={(pieceId) => act({ type: "SELECT_PIECE", pieceId })}
               />
             )}
 
@@ -335,11 +425,11 @@ function GameContent() {
                 vez" quando nada encaixa, "Ficar com a peça" quando ele poderia jogar.
                 O espaço do botão fica reservado em telas grandes. */}
             <div className="game__keep">
-              {canKeep && (
+              {canKeep && (!inTutorial || expected?.type === "KEEP_PIECE") && (
                 <button
                   type="button"
-                  className="btn btn--block"
-                  onClick={() => dispatch({ type: "KEEP_PIECE" })}
+                  className={`btn btn--block ${inTutorial ? "btn--target" : ""}`}
+                  onClick={() => act({ type: "KEEP_PIECE" })}
                 >
                   {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
                 </button>
@@ -373,7 +463,7 @@ function GameContent() {
               </div>
             </div>
           ))}
-          <button type="button" className="btn btn--primary btn--block" onClick={backToHome}>
+          <button type="button" className="btn btn--primary btn--block" onClick={() => backToHome()}>
             Nova partida
           </button>
         </section>
@@ -418,7 +508,7 @@ function GameContent() {
               <button type="button" className="btn" onClick={() => setResultDismissed(true)}>
                 Ver a mesa
               </button>
-              <button type="button" className="btn btn--primary" onClick={backToHome}>
+              <button type="button" className="btn btn--primary" onClick={() => backToHome()}>
                 Nova partida
               </button>
             </div>
@@ -438,7 +528,7 @@ function GameContent() {
           <button type="button" className="btn" onClick={() => setShowExitModal(false)}>
             Continuar jogando
           </button>
-          <button type="button" className="btn btn--danger" onClick={backToHome}>
+          <button type="button" className="btn btn--danger" onClick={() => backToHome()}>
             Sim, sair
           </button>
         </div>

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.0 — 13/11/2026
+
+- **Tutorial ("Tutorial" na tela inicial):** partida guiada contra a Bia, em
+  12 passos, com monte em ordem fixa. Ensina a ler as somas, escolher a peça
+  inicial, comprar, jogar, passar a vez e blefar. Em cada passo só a ação
+  pedida fica disponível (a peça do monte e o botão aparecem destacados). No
+  fim, leva direto para uma partida contra o computador.
+- **Modo "dica" (botão da lâmpada na partida):** na sua vez, mostra o que cada
+  soma do monte pode ser e quantas dessas peças encaixam; depois da compra,
+  mostra quais peças da mão encaixam e sugere uma jogada, com o motivo. Usa só
+  o que o jogador pode ver: nunca revela peça virada. Fica desligado por
+  padrão e a escolha é salva no navegador.
+- A dedução pela soma saiu do computador para `src/game/logic/deduction.ts`,
+  usada agora pelo computador e pelas dicas.
+- `initializeGame` aceita um monte fixo (usado pelo tutorial).
+- 264 testes no total.
+
 ## 0.7.1 — 12/11/2026
 
 - **Bucha na curva:** quando a bucha vem logo depois da peça de canto, ela

@@ -21,6 +21,10 @@ interface HomeScreenProps {
   onToggleTheme: () => void;
   soundOn: boolean;
   onToggleSound: () => void;
+  /** Inicia a partida guiada. */
+  onStartTutorial: () => void;
+  /** Abre direto a configuração da partida contra o computador (vindo do tutorial). */
+  openBotSetup?: boolean;
 }
 
 // Peças do exemplo "soma 7 pode ser...", só ilustrativas.
@@ -39,10 +43,12 @@ export function HomeScreen({
   onToggleTheme,
   soundOn,
   onToggleSound,
+  onStartTutorial,
+  openBotSetup = false,
 }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [showBotModal, setShowBotModal] = useState(false);
+  const [showBotModal, setShowBotModal] = useState(openBotSetup);
   const [soloName, setSoloName] = useState('');
   const [botCount, setBotCount] = useState(1);
   const [botLevel, setBotLevel] = useState<BotLevel>('medium');
@@ -140,9 +146,14 @@ export function HomeScreen({
             </div>
           </div>
 
-          <button type="button" className="btn btn--block" onClick={() => setShowRules(true)}>
-            Como jogar
-          </button>
+          <div className="home__learn">
+            <button type="button" className="btn" onClick={onStartTutorial}>
+              Tutorial
+            </button>
+            <button type="button" className="btn" onClick={() => setShowRules(true)}>
+              Como jogar
+            </button>
+          </div>
         </div>
       </div>
 

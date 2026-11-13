@@ -117,3 +117,13 @@ export function SoundOffIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function BulbIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M9 18h6" />
+      <path d="M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+    </Svg>
+  );
+}

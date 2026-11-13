@@ -102,6 +102,24 @@ isso o limite é 4.
   jogou ou ficou com a peça.
 - Não há tela de troca de turno neste modo, porque só uma pessoa vê a tela.
 
+## Tutorial e modo "dica"
+
+- O **tutorial** é uma partida guiada de verdade, contra a Bia, com monte em
+  ordem fixa. As regras são as mesmas; a única diferença é que, em cada passo,
+  só a ação pedida fica disponível. A partida guiada não vai até o fim: ela
+  termina depois do blefe, com a explicação de como o jogo acaba.
+- O **modo "dica"** é opcional (botão da lâmpada, desligado por padrão) e vale
+  nos modos mesmo aparelho e contra o computador. Ele mostra, na vez do
+  jogador:
+  - antes da compra, o que cada soma do monte pode ser e quantas dessas peças
+    encaixam nas pontas;
+  - depois da compra, quais peças da mão encaixam e uma sugestão de jogada.
+- A dica **não trapaceia**: usa só o que o jogador vê (mesa, a própria mão e as
+  somas dos versos). Nunca revela uma peça virada e nunca diz se um adversário
+  blefou.
+- Na troca de turno do mesmo aparelho o painel fica vazio, para um jogador não
+  ver a dica do outro.
+
 ## Jogo no mesmo dispositivo
 
 Enquanto existir o modo de dois jogadores no mesmo dispositivo, a troca de turno
@@ -121,6 +139,7 @@ tocar em **"Estou pronto"**.
 | 11/11/2026 | No empate, só os jogadores empatados na condição de vitória dividem o resultado. |
 | 11/11/2026 | O modo contra o computador (etapa futura) deverá aceitar 2, 3 ou 4 jogadores. |
 | 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
+| 13/11/2026 | O modo "dica" usa só informação pública do jogador e fica desligado por padrão. |
 | 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |
 | 12/11/2026 | Depois da peça inicial a vez passa ao próximo jogador; quem começou não compra em seguida. |
 | 12/11/2026 | Modo contra o computador: 1 a 3 adversários, níveis Fácil, Médio e Difícil; o computador joga só com informação pública e também blefa. |

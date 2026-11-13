@@ -10,7 +10,8 @@ nesta ordem, são:
 1. Nova tela inicial e novo layout da mesa (concluído)
 2. Modo contra o computador em partidas de 2, 3 ou 4 jogadores (concluído; o
    computador só pode usar informação pública, ver `src/game/ai`)
-3. Tutorial interativo e modo "dica"
+3. Tutorial interativo e modo "dica" (concluído; ver `src/tutorial` e
+   `src/game/logic/hints.ts`)
 4. PWA com partida salva em localStorage (uso offline)
 5. Multiplayer online por sala com código, sem login, com chat livre e filtro
    de palavras ofensivas (exige backend WebSocket com estado no servidor)

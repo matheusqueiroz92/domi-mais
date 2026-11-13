@@ -67,6 +67,11 @@
   order: 3;
 }
 
+/* Cartão do tutorial e painel de dicas: no celular ficam entre a mesa e o monte. */
+.game__guide {
+  min-width: 0;
+}
+
 .pile {
   order: 4;
 }
@@ -168,6 +173,11 @@
 }
 
 /* Tablets */
+/* Tutorial no celular: a mesa tem poucas peças e cede espaço ao cartão. */
+.game--tutorial .game-table {
+  min-height: 150px;
+}
+
 @media (min-width: 700px) {
   .game {
     max-width: 760px;
@@ -223,7 +233,24 @@
     min-height: 1.5em;
   }
 
-  /* O espaço do botão fica reservado: a tela não muda de altura quando ele aparece. */
+  /* Com guia (tutorial ou dicas): uma coluna ao lado da mesa. A mesa fica mais
+     estreita, mas a altura da partida não muda. */
+  .game--guided {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .game--guided > .game__header,
+  .game--guided > .game__bottom {
+    grid-column: 1 / -1;
+  }
+
+  .game__guide {
+    min-height: 0;
+    overflow-y: auto;
+    align-self: center;
+    max-height: 100%;
+  }
+
   .game__keep,
   .game__keep:empty {
     display: block;

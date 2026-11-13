@@ -21,6 +21,8 @@ src/
 │       ├── game-reducer.ts        Encaminha cada ação para o motor
 │       ├── game-context.tsx       GameProvider (useReducer)
 │       └── use-game.ts            Contexto e hook useGame
+├── tutorial/           Roteiro da partida guiada e hook que o conduz
+├── hooks/              usePersistentFlag (opção liga/desliga salva no navegador)
 ├── components/         Componentes visuais (sem regras de jogo)
 │   ├── HomeScreen          Tela inicial: modos de jogo, jogadores, regras
 │   ├── GameTable           Mesa: monte, linha de peças em cobrinha, pontas
@@ -29,6 +31,9 @@ src/
 │   ├── DrawPile            Monte: duas fileiras de 14 lugares
 │   ├── PieceMotion         Animação de movimento das peças
 │   ├── SoundToggle         Botão de ligar/desligar o som
+│   ├── HintToggle          Botão de ligar/desligar as dicas
+│   ├── HintPanel           Painel do modo "dica"
+│   ├── TutorialCoach       Cartão que conduz o tutorial
 │   ├── TurnTransition      Tela "Passe o dispositivo"
 │   ├── DominoPiece         Peça aberta (pontos) ou virada (soma)
 │   └── table-layout.ts     Cálculo das fileiras da mesa e dos assentos
@@ -261,6 +266,44 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
   não mudar de altura. Nesse modo a mesa recebe `fitHeight` e as peças diminuem,
   se necessário, para a linha caber.
 
+## Tutorial e modo "dica"
+
+### Dedução pela soma (`logic/deduction.ts`)
+
+`getPlayerView(state, playerIndex)` monta o que um jogador pode ver: a mesa, a
+própria mão e, das peças viradas (monte e mãos dos outros), só a soma.
+`unknownPieces` lista as peças que ele ainda não viu e `fitProbability` calcula
+a chance de uma soma encaixar. O computador (`ai/bot.ts`) e as dicas usam esse
+mesmo módulo; nenhum dos dois lê peças viradas.
+
+### Dicas (`logic/hints.ts`, `HintPanel`)
+
+- `getDrawHints`: uma linha por soma do monte, com as peças possíveis, quantas
+  encaixam e a chance; ordenadas da maior chance para a menor.
+- `getPlayHints`: peças da mão que encaixam e uma sugestão. A sugestão prefere
+  a jogada que deixa mais peças da própria mão encaixando e, no empate, a peça
+  de mais pontos.
+- A preferência fica em `localStorage` (`domimais:hints`), pelo hook
+  `usePersistentFlag`. O painel recebe `hidden` fora da vez do jogador e na
+  troca de turno, e aí mostra só um aviso.
+
+### Tutorial (`src/tutorial`)
+
+- `script.ts` tem o roteiro (`TUTORIAL_STEPS`): cada passo é uma explicação,
+  uma ação esperada da pessoa (`expect`) ou ações da adversária (`bot`).
+  `createTutorialSetup` devolve o monte em ordem fixa.
+- `useTutorial` guarda o passo atual. `perform` só encaminha ao `dispatch` a
+  ação esperada; as ações da adversária são disparadas com uma pausa. O
+  `useBotTurns` fica pausado durante o tutorial.
+- É o mesmo motor de regras: o tutorial não tem regra própria. O teste
+  `tutorial/__tests__/script.test.ts` aplica o roteiro inteiro no reducer e
+  confere que o texto (pontas, somas, quem encaixa) bate com o estado. Ao
+  mudar o roteiro, rode esse teste.
+
+Na tela, o cartão do tutorial e o painel de dicas ocupam o mesmo lugar
+(`.game__guide`): abaixo da mesa no celular e em uma coluna ao lado da mesa em
+telas grandes, para a altura da partida não mudar.
+
 ## Testes
 
 ```bash
@@ -281,6 +324,9 @@ npm run test:watch # modo interativo
 | `theme/__tests__/theme.test.ts` | Tema: padrão, gravação, falha de armazenamento |
 | `sound/__tests__/sound.test.ts` | Sons: geração, preferência, som desligado, falhas |
 | `ai/__tests__/bot.test.ts` | Visão do computador, dedução pela soma, decisões por nível, blefe, final calculado, partidas entre computadores e força relativa dos níveis |
+| `logic/__tests__/hints.test.ts` | Dicas de compra e de jogada, textos, e que a dica depende só do que o jogador vê |
+| `tutorial/__tests__/script.test.ts` | Roteiro do tutorial válido no motor e coerente com o texto |
+| `App.guides.test.tsx` | Tutorial do início ao fim e modo "dica" na tela |
 | `App.test.tsx` | Tela inicial, tema, som, embaralhar, fluxo da partida, partidas inteiras com 2, 3 e 4 jogadores e contra o computador |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças

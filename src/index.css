@@ -126,6 +126,12 @@ input {
   color: var(--on-accent);
 }
 
+/* Tutorial: botão que deve ser tocado agora. */
+.btn--target {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .btn--danger {
   border-color: transparent;
   background: var(--danger);
@@ -147,6 +153,11 @@ input {
   background: transparent;
   color: var(--text);
   cursor: pointer;
+}
+
+.icon-btn--on {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .wordmark {

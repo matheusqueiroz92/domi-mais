@@ -3,13 +3,13 @@
  *
  * O computador joga com as MESMAS informações que uma pessoa teria: as peças
  * da mesa, a própria mão e apenas a SOMA (o verso) das peças do monte e dos
- * adversários. Tudo o que ele usa vem de `getBotView`; ele nunca lê os lados
+ * adversários. Tudo o que ele usa vem de `getPlayerView`; ele nunca lê os lados
  * de uma peça virada.
  *
  * As funções são puras: o sorteio entra por `rng`.
  */
 import type { BotLevel, DominoPiece, GameAction, GameState, Table, TableSide } from '../state/game-types';
-import { generateDominoPieces, isDouble } from '../logic/pieces';
+import { isDouble } from '../logic/pieces';
 import type { RandomFn } from '../logic/pieces';
 import {
   canKeepPiece,
@@ -19,6 +19,8 @@ import {
   playPiece,
 } from '../logic/engine';
 import { getPlayableSides, placePiece } from '../logic/rules';
+import { fitProbability, fitsEnds as fitsAnyEnd, getPlayerView, pairKey, unknownPieces } from '../logic/deduction';
+import type { HiddenPiece, PlayerView } from '../logic/deduction';
 
 /** Nomes dos jogadores controlados pelo computador, na ordem em que entram na partida. */
 export const BOT_NAMES = ['Bia', 'Léo', 'Duda'];
@@ -29,67 +31,12 @@ export const BOT_LEVEL_LABELS: Record<BotLevel, string> = {
   hard: 'Difícil',
 };
 
-/** Peça virada, como o computador a enxerga: só o id e a soma. */
-export interface HiddenPiece {
-  id: string;
-  sum: number;
-}
-
-/** Tudo o que o computador pode saber em um dado momento. */
-export interface BotView {
-  table: Table;
-  hand: DominoPiece[];
-  drawnPieceId: string | null;
-  pile: HiddenPiece[];
-  /** Peças viradas de cada adversário. */
-  opponents: HiddenPiece[][];
-}
-
-const hide = (piece: DominoPiece): HiddenPiece => ({ id: piece.id, sum: piece.sum });
-
-/** Monta a visão do jogador `playerIndex`, escondendo os lados das peças viradas. */
-export function getBotView(state: GameState, playerIndex: number): BotView {
-  return {
-    table: state.table,
-    hand: state.players[playerIndex].hand,
-    drawnPieceId: state.drawnPieceId,
-    pile: state.drawPile.map(hide),
-    opponents: state.players
-      .filter((_, index) => index !== playerIndex)
-      .map((player) => player.hand.map(hide)),
-  };
-}
-
-const pairKey = (a: number, b: number) => (a <= b ? `${a}-${b}` : `${b}-${a}`);
-
-/**
- * Peças cujo paradeiro o computador não conhece (estão viradas no monte ou na
- * mão de alguém): as 28 menos as da mesa e as da própria mão.
- */
-export function unknownPieces(view: BotView): Array<{ left: number; right: number; sum: number }> {
-  const seen = new Set(
-    [...view.table.pieces, ...view.hand].map((piece) => pairKey(piece.left, piece.right))
-  );
-  return generateDominoPieces().filter((piece) => !seen.has(pairKey(piece.left, piece.right)));
-}
-
-/**
- * Probabilidade de uma peça virada de soma `sum` encaixar em uma das pontas
- * `ends`, considerando só as peças que ainda podem ter essa soma.
- * É a dedução que o jogo ensina: soma 7 pode ser 1|6, 2|5 ou 3|4.
- */
-export function fitProbability(
-  sum: number,
-  ends: readonly (number | null)[],
-  unknown: ReadonlyArray<{ left: number; right: number; sum: number }>
-): number {
-  const candidates = unknown.filter((piece) => piece.sum === sum);
-  if (candidates.length === 0) return 0;
-  const fitting = candidates.filter((piece) =>
-    ends.some((end) => end === null || piece.left === end || piece.right === end)
-  );
-  return fitting.length / candidates.length;
-}
+// A visão do jogador e a dedução pela soma ficam em logic/deduction.ts, porque
+// o modo "dica" usa exatamente as mesmas contas. Os nomes antigos continuam valendo.
+export { fitProbability, unknownPieces };
+export type { HiddenPiece };
+export type BotView = PlayerView;
+export const getBotView = getPlayerView;
 
 function pickRandom<T>(items: readonly T[], rng: RandomFn): T {
   return items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
@@ -117,8 +64,7 @@ export const BLUFF_CHANCE: Record<BotLevel, number> = { easy: 0, medium: 0.06, h
 type Hidden = { left: number; right: number; sum: number };
 type Ends = readonly [number | null, number | null];
 
-const fitsEnds = (piece: { left: number; right: number }, ends: Ends) =>
-  ends.some((end) => end === null || piece.left === end || piece.right === end);
+const fitsEnds = (piece: { left: number; right: number }, ends: Ends) => fitsAnyEnd(piece, ends);
 
 interface Move {
   piece: DominoPiece;

@@ -23,3 +23,12 @@ A arquitetura está descrita em `docs/ARQUITETURA.md`. Regras obrigatórias:
 - TypeScript, React, Vite
 - Estado global com useReducer + Context API
 - Testes com Vitest e Testing Library
+
+## Dedução, dicas e tutorial
+
+- `src/game/logic/deduction.ts`: o que um jogador pode ver (`getPlayerView`) e
+  a dedução pela soma. O computador e as dicas usam só este módulo; nunca leia
+  peças viradas direto do estado para decidir ou sugerir algo.
+- `src/game/logic/hints.ts`: dicas do modo "dica" (`getDrawHints`, `getPlayHints`).
+- `src/tutorial`: roteiro da partida guiada. Não tem regra própria; ao mudar o
+  roteiro, rode `src/tutorial/__tests__/script.test.ts`.

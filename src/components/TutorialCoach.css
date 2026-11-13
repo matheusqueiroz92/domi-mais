@@ -1,0 +1,55 @@
+.coach {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  font-size: 14px;
+}
+
+.coach__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.coach__exit {
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.coach__title {
+  font-family: var(--font-head);
+  font-size: 17px;
+}
+
+.coach__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coach__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.coach__cue {
+  margin-top: 2px;
+  font-weight: 600;
+  color: var(--accent);
+}

@@ -39,6 +39,14 @@ export function RulesContent() {
           guardou.
         </p>
       </section>
+      <section>
+        <h3>Para aprender</h3>
+        <p>
+          O tutorial, na tela inicial, ensina o jogo em uma partida guiada. Durante as partidas, o
+          botão da lâmpada liga as dicas: elas mostram o que cada soma pode ser e sugerem uma
+          jogada.
+        </p>
+      </section>
     </div>
   );
 }

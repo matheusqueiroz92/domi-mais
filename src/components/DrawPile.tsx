@@ -15,6 +15,8 @@ interface DrawPileProps {
   /** Mostra só os espaços vazios (durante a animação de embaralhar). */
   hideTiles?: boolean;
   onSelectPiece?: (pieceId: string) => void;
+  /** Tutorial: só esta peça fica clicável, com destaque. */
+  onlyPieceId?: string | null;
 }
 
 const HINTS: Record<PileMode, string> = {
@@ -33,6 +35,7 @@ export function DrawPile({
   mode = 'idle',
   hideTiles = false,
   onSelectPiece,
+  onlyPieceId = null,
 }: DrawPileProps) {
   const byId = new Map(pieces.map((piece) => [piece.id, piece]));
   const interactive = mode !== 'idle' && !hideTiles;
@@ -46,15 +49,20 @@ export function DrawPile({
       <div className="pile__grid">
         {order.map((id) => {
           const piece = byId.get(id);
+          const clickable = interactive && (onlyPieceId === null || onlyPieceId === id);
+          const highlighted = interactive && onlyPieceId === id;
           return (
             <div className="pile__slot" key={id}>
               {piece && !hideTiles && (
-                <PieceMotion pieceId={piece.id} className="pile__tile">
+                <PieceMotion
+                  pieceId={piece.id}
+                  className={`pile__tile ${highlighted ? 'pile__tile--target' : ''}`}
+                >
                   <DominoPiece
                     piece={piece}
                     isFaceUp={false}
                     back="fill"
-                    onClick={interactive && onSelectPiece ? () => onSelectPiece(piece.id) : undefined}
+                    onClick={clickable && onSelectPiece ? () => onSelectPiece(piece.id) : undefined}
                   />
                 </PieceMotion>
               )}
