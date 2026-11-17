@@ -25,6 +25,13 @@ interface HomeScreenProps {
   onStartTutorial: () => void;
   /** Abre direto a configuração da partida contra o computador (vindo do tutorial). */
   openBotSetup?: boolean;
+  /** Partida guardada neste aparelho, se houver: nomes dos jogadores e peças no monte. */
+  savedGame?: { playerNames: string[]; pileCount: number } | null;
+  onResumeGame?: () => void;
+  onDiscardSavedGame?: () => void;
+  /** O navegador permite instalar o jogo como aplicativo. */
+  canInstall?: boolean;
+  onInstall?: () => void;
 }
 
 // Peças do exemplo "soma 7 pode ser...", só ilustrativas.
@@ -45,6 +52,11 @@ export function HomeScreen({
   onToggleSound,
   onStartTutorial,
   openBotSetup = false,
+  savedGame = null,
+  onResumeGame,
+  onDiscardSavedGame,
+  canInstall = false,
+  onInstall,
 }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -115,6 +127,28 @@ export function HomeScreen({
             ))}
           </div>
 
+          {savedGame && (
+            <section className="resume" aria-label="Partida em andamento">
+              <div className="resume__text">
+                <span className="resume__title">Partida em andamento</span>
+                <span className="resume__desc">
+                  {savedGame.playerNames.join(', ')} ·{' '}
+                  {savedGame.pileCount === 1
+                    ? '1 peça no monte'
+                    : `${savedGame.pileCount} peças no monte`}
+                </span>
+              </div>
+              <div className="resume__actions">
+                <button type="button" className="btn" onClick={onDiscardSavedGame}>
+                  Descartar
+                </button>
+                <button type="button" className="btn btn--primary" onClick={onResumeGame}>
+                  Continuar
+                </button>
+              </div>
+            </section>
+          )}
+
           <div className="home__modes">
             <button
               type="button"
@@ -154,6 +188,12 @@ export function HomeScreen({
               Como jogar
             </button>
           </div>
+
+          {canInstall && (
+            <button type="button" className="btn btn--block" onClick={onInstall}>
+              Instalar no aparelho
+            </button>
+          )}
         </div>
       </div>
 

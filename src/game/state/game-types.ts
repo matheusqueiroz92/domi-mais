@@ -112,6 +112,12 @@ export interface GameState {
    * A interface usa para destacar a jogada mais recente.
    */
   lastPlayed: { playerIndex: number; pieceId: string } | null;
+  /**
+   * Jogadores que estão sem peças na mão, na ordem em que ficaram sem (o
+   * primeiro da lista ficou sem peças há mais tempo). Quem compra sai da
+   * lista. Decide o vencedor quando o monte acaba com mais de uma mão vazia.
+   */
+  emptyHandOrder: number[];
   /** Preenchido quando `phase === 'finished'`. */
   result: GameResult | null;
   logs: string[];
@@ -137,4 +143,6 @@ export type GameAction =
   | { type: 'SELECT_PIECE'; pieceId: string }
   | { type: 'PLAY_PIECE'; pieceId: string; position: TableSide }
   | { type: 'KEEP_PIECE' }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  /** Retoma uma partida salva (o estado é validado antes de entrar). */
+  | { type: 'RESTORE_GAME'; state: GameState };

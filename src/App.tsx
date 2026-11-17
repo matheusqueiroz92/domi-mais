@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import clsx from "clsx";
 import { GameProvider } from "./game/state/game-context";
@@ -28,6 +28,9 @@ import { SoundToggle } from "./components/SoundToggle";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TurnTransition } from "./components/TurnTransition";
 import { TutorialCoach } from "./components/TutorialCoach";
+import { PwaNotice } from "./components/PwaNotice";
+import { usePwa } from "./pwa/usePwa";
+import { loadSavedGame } from "./game/state/saved-game";
 import { ExitIcon, HelpIcon } from "./components/icons";
 import { createScatter, seatOpponents } from "./components/table-layout";
 import type { ScatterPoint } from "./components/table-layout";
@@ -113,13 +116,16 @@ export const HINTS_STORAGE_KEY = "domimais:hints";
 const WIDE_SCREEN = "(min-width: 1024px) and (min-height: 640px)";
 
 function GameContent() {
-  const { state, dispatch, initializeGame } = useGame();
+  const { state, dispatch, initializeGame, resumeGame, discardSavedGame } = useGame();
+  const pwa = usePwa();
   const { theme, toggleTheme } = useTheme();
   const { soundOn, toggleSound, play } = useSound();
   const isWide = useMediaQuery(WIDE_SCREEN);
   // Trajetos da animação de embaralhar; `null` quando ela não está em andamento.
   const [shuffle, setShuffle] = useState<ScatterPoint[][] | null>(null);
   const [showHomeScreen, setShowHomeScreen] = useState(true);
+  // Muda sempre que a partida guardada pode ter mudado, para a tela inicial reler.
+  const [savedGameVersion, setSavedGameVersion] = useState(0);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [resultDismissed, setResultDismissed] = useState(false);
@@ -212,8 +218,28 @@ function GameContent() {
   const tutorialAllowsSide = (side: "left" | "right") =>
     !inTutorial || (expected?.type === "PLAY_PIECE" && expected.position === side);
   // Guia: cartão do tutorial ou, com as dicas ligadas, o painel de dicas.
+  // Fim com mais de uma mão vazia: o resultado explica quem ficou sem peças primeiro.
+  const severalEmptyHands = state.players.filter((p) => p.hand.length === 0).length > 1;
   const hasGuide = !isFinished && (inTutorial || hintsOn);
   const hasSideSeats = seats.left !== null || seats.right !== null;
+
+  const handleResumeGame = () => {
+    if (!resumeGame()) {
+      // A partida guardada sumiu ou estava inválida: a tela inicial se atualiza.
+      setSavedGameVersion((version) => version + 1);
+      return;
+    }
+    tutorial.stop();
+    setResultDismissed(false);
+    setShuffle(null);
+    setOpenBotSetup(false);
+    setShowHomeScreen(false);
+  };
+
+  const handleDiscardSavedGame = () => {
+    discardSavedGame();
+    setSavedGameVersion((version) => version + 1);
+  };
 
   const handleStartTutorial = () => {
     // Monte em ordem fixa e sem animação de embaralhar: o roteiro começa na hora.
@@ -258,6 +284,10 @@ function GameContent() {
   };
 
   const backToHome = (botSetup = false) => {
+    // Sair de uma partida comum descarta a partida guardada; sair do tutorial
+    // não mexe em uma partida guardada antes dele.
+    if (!inTutorial) discardSavedGame();
+    setSavedGameVersion((version) => version + 1);
     tutorial.stop();
     setOpenBotSetup(botSetup);
     dispatch({ type: "RESET_GAME" });
@@ -267,8 +297,19 @@ function GameContent() {
   };
 
   // Mostra a tela inicial se ainda não iniciou o jogo
-  if (showHomeScreen || state.phase === "setup") {
+  const onHome = showHomeScreen || state.phase === "setup";
+  // Partida guardada neste aparelho, mostrada na tela inicial como "Continuar".
+  const savedGame = useMemo(() => {
+    const saved = onHome ? loadSavedGame() : null;
+    return saved
+      ? { playerNames: saved.players.map((p) => p.name), pileCount: saved.drawPile.length }
+      : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- relê quando a versão muda
+  }, [onHome, savedGameVersion]);
+
+  if (onHome) {
     return (
+      <>
       <HomeScreen
         onStartGame={handleStartGame}
         theme={theme}
@@ -277,7 +318,14 @@ function GameContent() {
         onToggleSound={toggleSound}
         onStartTutorial={handleStartTutorial}
         openBotSetup={openBotSetup}
+        savedGame={savedGame}
+        onResumeGame={handleResumeGame}
+        onDiscardSavedGame={handleDiscardSavedGame}
+        canInstall={pwa.canInstall}
+        onInstall={pwa.install}
       />
+      <PwaNotice pwa={pwa} />
+      </>
     );
   }
 
@@ -493,7 +541,9 @@ function GameContent() {
             <p>
               {state.result.reason === "empty-hand"
                 ? winner
-                  ? `${winner.name} venceu: ficou sem peças na mão!`
+                  ? severalEmptyHands
+                    ? `O monte acabou com mais de um jogador sem peças. ${winner.name} venceu: ficou sem peças primeiro!`
+                    : `${winner.name} venceu: ficou sem peças na mão!`
                   : `Empate entre ${tiedNames}: ficaram sem peças na mão.`
                 : winner
                   ? `Jogo fechado. ${winner.name} venceu com a menor soma!`
@@ -533,6 +583,7 @@ function GameContent() {
           </button>
         </div>
       </Modal>
+      <PwaNotice pwa={pwa} />
     </main>
   );
 }

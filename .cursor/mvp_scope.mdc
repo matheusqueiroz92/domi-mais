@@ -12,7 +12,8 @@ nesta ordem, são:
    computador só pode usar informação pública, ver `src/game/ai`)
 3. Tutorial interativo e modo "dica" (concluído; ver `src/tutorial` e
    `src/game/logic/hints.ts`)
-4. PWA com partida salva em localStorage (uso offline)
+4. PWA com partida salva em localStorage (uso offline) (concluído; ver
+   `src/pwa`, `src/game/state/saved-game.ts` e `vite.config.ts`)
 5. Multiplayer online por sala com código, sem login, com chat livre e filtro
    de palavras ofensivas (exige backend WebSocket com estado no servidor)
 

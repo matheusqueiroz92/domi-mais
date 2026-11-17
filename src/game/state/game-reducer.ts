@@ -1,6 +1,7 @@
 import type { GameAction, GameState } from './game-types';
 import { DEFAULT_PLAYER_NAMES, createInitialGameState } from './game-inicial-state';
 import { isValidPlayerCount } from '../logic/rules';
+import { isValidSavedState } from './saved-game';
 import {
   chooseInitialPiece,
   confirmReady,
@@ -56,6 +57,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'RESET_GAME':
       return createInitialGameState(DEFAULT_PLAYER_NAMES);
+
+    case 'RESTORE_GAME':
+      // Só entra uma partida em andamento coerente; o resto é ignorado.
+      return isValidSavedState(action.state) ? action.state : state;
 
     default:
       return state;

@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.9.0 — 13/11/2026
+
+- **Funciona sem internet (PWA):** depois da primeira visita, o jogo inteiro
+  (código, fontes, imagens e sons) fica guardado no aparelho e abre sem
+  conexão. Pode ser instalado como aplicativo: pelo botão "Instalar no
+  aparelho" da tela inicial (Chrome, Edge e Android) ou por "Adicionar à Tela
+  de Início" (iPhone e iPad).
+- **Partida salva:** a partida em andamento é guardada no aparelho a cada
+  jogada. Se a página for fechada ou recarregada, a tela inicial mostra
+  "Partida em andamento", com "Continuar" e "Descartar". No mesmo aparelho, a
+  partida volta na tela de troca de turno, para a mão do jogador não aparecer
+  sem querer. Sair pelo botão da partida descarta a partida guardada. O
+  tutorial não é guardado.
+- **Versão nova com aviso:** quando há atualização, aparece o aviso "Há uma
+  versão nova" com o botão "Atualizar". A página nunca recarrega sozinha no
+  meio de uma partida.
+- As fontes passaram a vir junto com o jogo (antes vinham do Google Fonts), o
+  que também tira a única chamada a outro site.
+- **Correção: empate indevido por mão vazia.** Em partidas (principalmente
+  com 3 e 4 jogadores) o monte podia acabar com dois jogadores sem peças na
+  mão, e o jogo declarava empate entre eles. Agora vence quem ficou sem peças
+  primeiro; mão vazia nunca empata. O motor passou a guardar a ordem em que os
+  jogadores ficam sem peças (`emptyHandOrder`). O empate continua existindo só
+  no jogo fechado com a mesma menor soma.
+- Novas dependências: `vite-plugin-pwa`, `@fontsource/inter` e
+  `@fontsource/space-grotesk`.
+- 318 testes no total.
+
 ## 0.8.0 — 13/11/2026
 
 - **Tutorial ("Tutorial" na tela inicial):** partida guiada contra a Bia, em

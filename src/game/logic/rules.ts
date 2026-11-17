@@ -95,14 +95,16 @@ export function isBlocked(players: readonly Player[], table: Table): boolean {
  *
  * Regras (docs/REGRAS.md):
  * - enquanto houver peças no monte, a partida nunca termina;
- * - com o monte vazio, vence quem ficar sem peças na mão;
+ * - com o monte vazio, vence quem ficar sem peças na mão; se mais de um
+ *   jogador estiver sem peças nesse momento, vence quem ficou sem peças
+ *   primeiro (`emptyHandOrder`), nunca há empate por mão vazia;
  * - com o monte vazio e nenhuma peça encaixando (jogo fechado), vence a menor
  *   soma das peças da mão;
- * - se mais de um jogador cumpre a condição de vitória (mãos vazias ou a mesma
- *   menor soma), há empate entre eles e os demais perdem.
+ * - no jogo fechado, se mais de um jogador tem a mesma menor soma, há empate
+ *   entre eles e os demais perdem.
  */
 export function computeResult(
-  state: Pick<GameState, 'players' | 'table' | 'drawPile'>
+  state: Pick<GameState, 'players' | 'table' | 'drawPile'> & Partial<Pick<GameState, 'emptyHandOrder'>>
 ): GameResult | null {
   if (state.drawPile.length > 0) return null;
 
@@ -113,9 +115,11 @@ export function computeResult(
     .filter((index) => index !== -1);
 
   if (emptyHanded.length > 0) {
+    // Mais de uma mão vazia: vence quem ficou sem peças primeiro.
+    const first = (state.emptyHandOrder ?? []).find((index) => emptyHanded.includes(index));
     return {
       reason: 'empty-hand',
-      winnerIndexes: emptyHanded,
+      winnerIndexes: [first ?? emptyHanded[0]],
       scores,
     };
   }

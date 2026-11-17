@@ -19,7 +19,8 @@ alterar qualquer regra. Resumo:
   com a mesma tela e o mesmo log, encaixando ou não.
 - Monte vazio: a partida continua com as mãos. Quem tem peça que encaixa é
   obrigado a jogar; quem não tem passa a vez automaticamente.
-- Fim (só com o monte vazio): vence quem está sem peças; no jogo fechado vence a
-  menor soma; quem empata na condição de vitória divide o resultado e os
-  demais perdem.
+- Fim (só com o monte vazio): vence quem está sem peças; se mais de um jogador
+  está sem peças, vence quem ficou sem peças primeiro (`emptyHandOrder`), sem
+  empate. No jogo fechado vence a menor soma; só aí pode haver empate (mesma
+  menor soma), e os demais perdem.
 - Jogo no mesmo dispositivo: troca de turno protegida ("Estou pronto").

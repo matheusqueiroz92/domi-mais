@@ -33,7 +33,7 @@ function finishGame(state: GameState, result: GameResult): GameState {
 
   const reasonLog =
     result.reason === 'empty-hand'
-      ? 'Fim de jogo: há jogador sem peças na mão.'
+      ? 'Fim de jogo: o monte acabou e há jogador sem peças na mão.'
       : 'Jogo fechado! Nenhuma peça das mãos encaixa nas pontas.';
 
   const winnerNames = result.winnerIndexes.map((index) => players[index].name);
@@ -174,6 +174,8 @@ export function drawPiece(state: GameState, pieceId: string): GameState {
   return {
     ...state,
     players: replaceCurrentHand(state, [...player.hand, piece]),
+    // Com peça na mão de novo, o jogador sai da fila de quem ficou sem peças.
+    emptyHandOrder: state.emptyHandOrder.filter((index) => index !== state.currentPlayerIndex),
     drawPile: state.drawPile.filter((p) => p.id !== pieceId),
     turnStep: 'play',
     drawnPieceId: piece.id,
@@ -209,13 +211,15 @@ export function playPiece(state: GameState, pieceId: string, side: TableSide): G
   if (!table) return state;
 
   const placed = side === 'left' ? table.pieces[0] : table.pieces[table.pieces.length - 1];
+  const hand = player.hand.filter((p) => p.id !== pieceId);
+  // Jogou a última peça: entra no fim da fila de quem ficou sem peças.
+  const others = state.emptyHandOrder.filter((index) => index !== state.currentPlayerIndex);
+  const emptyHandOrder = hand.length === 0 ? [...others, state.currentPlayerIndex] : others;
 
   return endTurn({
     ...state,
-    players: replaceCurrentHand(
-      state,
-      player.hand.filter((p) => p.id !== pieceId)
-    ),
+    players: replaceCurrentHand(state, hand),
+    emptyHandOrder,
     table,
     lastPlayed: { playerIndex: state.currentPlayerIndex, pieceId },
     logs: [

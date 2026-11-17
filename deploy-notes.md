@@ -29,6 +29,23 @@ cd /opt/apps/domi-mais && docker compose up -d --build
 O `--build` é obrigatório: sem ele o Docker reaproveita a imagem antiga. Se o
 build falhar, o contêiner anterior continua no ar.
 
+## Depois de publicar: versão nova no navegador (PWA)
+
+Desde a 0.9.0 o jogo fica guardado no aparelho. Depois de um deploy, quem já
+abriu o site antes continua vendo a versão antiga até o navegador baixar a
+nova, em segundo plano, e mostrar o aviso **"Há uma versão nova"**. Tocar em
+"Atualizar" recarrega a página na versão nova. Para forçar em um teste:
+recarregue a página uma vez, espere o aviso e toque em "Atualizar".
+
+O arquivo `sw.js` não pode ficar em cache longo no servidor. O Nginx padrão
+não coloca cache em arquivos sem regra própria; se o `nginx.conf` tiver uma
+regra de cache para `.js`, acrescente antes dela:
+
+```nginx
+location = /sw.js { add_header Cache-Control "no-cache"; }
+location = /index.html { add_header Cache-Control "no-cache"; }
+```
+
 ## Conferir
 
 ```bash

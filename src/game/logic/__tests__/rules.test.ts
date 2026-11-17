@@ -101,9 +101,19 @@ describe('fim de jogo (computeResult)', () => {
     expect(computeResult(state)).toEqual({ reason: 'empty-hand', winnerIndexes: [1], scores: [7, 0] });
   });
 
-  it('dois jogadores sem peças: empate', () => {
+  it('dois jogadores sem peças: vence quem ficou sem peças primeiro, sem empate', () => {
     const state = scenario({ handA: [], handB: [] });
-    expect(computeResult(state)).toEqual({ reason: 'empty-hand', winnerIndexes: [0, 1], scores: [0, 0] });
+    expect(computeResult({ ...state, emptyHandOrder: [1, 0] })).toEqual({
+      reason: 'empty-hand',
+      winnerIndexes: [1],
+      scores: [0, 0],
+    });
+    expect(computeResult({ ...state, emptyHandOrder: [0, 1] })?.winnerIndexes).toEqual([0]);
+  });
+
+  it('mão vazia nunca dá empate, mesmo sem a ordem registrada', () => {
+    const state = scenario({ handA: [], handB: [] });
+    expect(computeResult(state)?.winnerIndexes).toHaveLength(1);
   });
 
   it('jogo fechado: vence a menor soma', () => {

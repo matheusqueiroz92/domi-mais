@@ -69,6 +69,7 @@ export function createInitialGameState(
     protectTurns,
     initialPieceId: null,
     lastPlayed: null,
+    emptyHandOrder: [],
     result: null,
     logs: [],
   };

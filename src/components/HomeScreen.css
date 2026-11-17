@@ -251,3 +251,40 @@
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+
+/* Partida guardada neste aparelho. */
+.resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+}
+
+.resume__text {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resume__title {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.resume__desc {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.resume__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

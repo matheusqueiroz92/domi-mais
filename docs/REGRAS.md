@@ -68,9 +68,16 @@ termina em uma destas situações:
 | Situação | Quem vence |
 |---|---|
 | Um jogador está **sem peças na mão** | Esse jogador |
+| Mais de um jogador sem peças na mão | Quem **ficou sem peças primeiro** (não há empate) |
 | **Jogo fechado**: nenhuma peça de nenhuma mão encaixa | Quem tem a **menor soma** das peças da mão |
 | Jogo fechado com dois ou mais jogadores na **mesma menor soma** | **Empate entre eles**; os demais perdem |
-| Mais de um jogador sem peças na mão | **Empate entre eles**; os demais perdem |
+
+Enquanto há monte, um jogador pode jogar a única peça que tem e ficar com a
+mão vazia sem que a partida termine; na vez seguinte ele compra de novo. Por
+isso o monte pode acabar com mais de um jogador sem peças. Nesse caso vence
+quem está sem peças há mais tempo: conta a **última** vez em que o jogador
+ficou sem peças (quem compra uma peça perde o lugar na fila). O único empate
+possível é o do jogo fechado com a mesma menor soma.
 
 A soma de cada jogador é a soma dos versos das peças que sobraram na mão. Mão
 vazia vence mesmo que o adversário tenha soma zero (só a peça 0|0).
@@ -120,6 +127,19 @@ isso o limite é 4.
 - Na troca de turno do mesmo aparelho o painel fica vazio, para um jogador não
   ver a dica do outro.
 
+## Partida salva e uso sem internet
+
+- A partida em andamento fica guardada no aparelho, a cada jogada. Fechar ou
+  recarregar a página não perde a partida: a tela inicial oferece
+  **Continuar** ou **Descartar**.
+- Fica guardada uma partida por aparelho. Começar outra substitui a anterior.
+- No mesmo aparelho, a partida retomada abre na tela de troca de turno; a mão
+  do jogador da vez só aparece depois de "Estou pronto".
+- Sair pelo botão da partida descarta a partida guardada. Partida terminada e
+  tutorial não ficam guardados.
+- Depois da primeira visita o jogo funciona sem internet, nos modos mesmo
+  aparelho, contra o computador e tutorial.
+
 ## Jogo no mesmo dispositivo
 
 Enquanto existir o modo de dois jogadores no mesmo dispositivo, a troca de turno
@@ -139,6 +159,9 @@ tocar em **"Estou pronto"**.
 | 11/11/2026 | No empate, só os jogadores empatados na condição de vitória dividem o resultado. |
 | 11/11/2026 | O modo contra o computador (etapa futura) deverá aceitar 2, 3 ou 4 jogadores. |
 | 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
+| 13/11/2026 | A partida fica salva no aparelho; no mesmo aparelho ela é retomada pela tela de troca de turno. |
+| 13/11/2026 | Atualização do jogo só com o toque em "Atualizar", nunca sozinha. |
+| 16/11/2026 | Mão vazia nunca empata: se o monte acaba com mais de um jogador sem peças, vence quem ficou sem peças primeiro. |
 | 13/11/2026 | O modo "dica" usa só informação pública do jogador e fica desligado por padrão. |
 | 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |
 | 12/11/2026 | Depois da peça inicial a vez passa ao próximo jogador; quem começou não compra em seguida. |

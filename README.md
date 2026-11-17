@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -115,7 +115,7 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 - [x] Nova tela inicial, novo layout da mesa e temas escuro/claro
 - [x] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [x] Tutorial interativo e modo "dica"
-- [ ] PWA com partida salva para uso offline
+- [x] PWA com partida salva para uso offline
 - [ ] Multiplayer online por sala com código, com chat
 
 O modo no mesmo dispositivo será removido quando os modos

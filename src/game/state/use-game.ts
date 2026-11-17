@@ -22,6 +22,10 @@ export interface GameContextType {
     botLevels?: (BotLevel | null)[],
     setup?: GameSetup
   ) => void;
+  /** Retoma a partida guardada no navegador. Devolve `false` se não houver. */
+  resumeGame: () => boolean;
+  /** Apaga a partida guardada no navegador. */
+  discardSavedGame: () => void;
 }
 
 export const GameContext = createContext<GameContextType | undefined>(undefined);

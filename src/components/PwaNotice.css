@@ -1,0 +1,29 @@
+.pwa-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  z-index: 60;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: min(calc(100vw - 24px), 520px);
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 14px;
+}
+
+.pwa-notice p {
+  flex: 1 1 220px;
+}
+
+.pwa-notice__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

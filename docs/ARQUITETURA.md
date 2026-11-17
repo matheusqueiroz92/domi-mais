@@ -19,8 +19,10 @@ src/
 │       ├── game-types.ts          Tipos do estado e das ações
 │       ├── game-inicial-state.ts  Estado inicial e sorteio da partida
 │       ├── game-reducer.ts        Encaminha cada ação para o motor
-│       ├── game-context.tsx       GameProvider (useReducer)
+│       ├── game-context.tsx       GameProvider (useReducer) e gravação da partida
+│       ├── saved-game.ts          Partida salva: gravar, ler, validar, retomar
 │       └── use-game.ts            Contexto e hook useGame
+├── pwa/                usePwa: service worker, aviso de versão nova, instalação
 ├── tutorial/           Roteiro da partida guiada e hook que o conduz
 ├── hooks/              usePersistentFlag (opção liga/desliga salva no navegador)
 ├── components/         Componentes visuais (sem regras de jogo)
@@ -34,6 +36,7 @@ src/
 │   ├── HintToggle          Botão de ligar/desligar as dicas
 │   ├── HintPanel           Painel do modo "dica"
 │   ├── TutorialCoach       Cartão que conduz o tutorial
+│   ├── PwaNotice           Aviso de versão nova / pronto para uso sem internet
 │   ├── TurnTransition      Tela "Passe o dispositivo"
 │   ├── DominoPiece         Peça aberta (pontos) ou virada (soma)
 │   └── table-layout.ts     Cálculo das fileiras da mesa e dos assentos
@@ -64,6 +67,7 @@ servirá para o modo contra o computador e para o servidor do modo online.
 | `protectTurns` | Liga a troca de turno protegida (mesmo dispositivo) |
 | `initialPieceId` | Id da peça inicial; a interface desenha a linha de peças a partir dela |
 | `lastPlayed` | Última peça colocada na mesa e quem a colocou (a interface destaca essa peça) |
+| `emptyHandOrder` | Jogadores sem peças na mão, na ordem em que ficaram sem; quem compra sai da lista. Desempata quando o monte acaba com mais de uma mão vazia |
 | `result` | Resultado final: motivo, `winnerIndexes` (um índice = vitória; vários = empate entre eles) e somas |
 | `logs` | Histórico em texto |
 
@@ -304,6 +308,36 @@ Na tela, o cartão do tutorial e o painel de dicas ocupam o mesmo lugar
 (`.game__guide`): abaixo da mesa no celular e em uma coluna ao lado da mesa em
 telas grandes, para a altura da partida não mudar.
 
+## Partida salva (`state/saved-game.ts`)
+
+- O `GameProvider` grava o estado em `localStorage` (`domimais:game`) a cada
+  mudança, enquanto a partida está em andamento (`isResumable`: fases
+  `choosing-initial`, `transition` e `playing`), e apaga quando ela termina.
+  O tutorial não é gravado (`initializeGame` com `setup`).
+- `loadSavedGame` lê, confere a versão do formato (`SAVE_VERSION`) e valida
+  tudo com `isValidSavedState`: formato dos campos e as 28 peças oficiais,
+  cada uma em um único lugar. Qualquer problema descarta a partida salva.
+- `prepareForResume` troca a fase `playing` por `transition` quando a partida
+  tem troca de turno protegida, para a mão não aparecer ao reabrir.
+- A ação `RESTORE_GAME` coloca o estado salvo no reducer (validado de novo).
+- Ao mudar o `GameState` de forma incompatível, aumente `SAVE_VERSION`: as
+  partidas salvas no formato antigo são descartadas em vez de quebrar o jogo.
+
+## PWA (`vite.config.ts`, `src/pwa`)
+
+- O `vite-plugin-pwa` gera no build o `manifest.webmanifest` e o service
+  worker (`sw.js`, Workbox), que guarda todos os arquivos do jogo no aparelho.
+  Ícones em `public/` (`pwa-192.png`, `pwa-512.png`, `pwa-maskable-512.png`,
+  `apple-touch-icon.png`).
+- As fontes vêm dos pacotes `@fontsource` (importadas em `main.tsx`); o jogo
+  não chama nenhum outro site.
+- `registerType: 'prompt'`: a versão nova é baixada em segundo plano e só
+  entra quando a pessoa toca em "Atualizar" (`PwaNotice`). `usePwa` também
+  guarda o evento `beforeinstallprompt` para o botão "Instalar no aparelho".
+- O service worker só é registrado no build de produção
+  (`import.meta.env.PROD`); em `npm run dev` e nos testes ele não existe. Para
+  testar: `npm run build && npm run preview`.
+
 ## Testes
 
 ```bash
@@ -327,6 +361,9 @@ npm run test:watch # modo interativo
 | `logic/__tests__/hints.test.ts` | Dicas de compra e de jogada, textos, e que a dica depende só do que o jogador vê |
 | `tutorial/__tests__/script.test.ts` | Roteiro do tutorial válido no motor e coerente com o texto |
 | `App.guides.test.tsx` | Tutorial do início ao fim e modo "dica" na tela |
+| `state/__tests__/saved-game.test.ts` | Partida salva: gravação, leitura, validação (19 formas de estado inválido), retomada |
+| `pwa/__tests__/usePwa.test.tsx` | Avisos de versão nova e de uso sem internet, instalação |
+| `App.save.test.tsx` | Fechar e reabrir a página, continuar, descartar, tutorial não gravado |
 | `App.test.tsx` | Tela inicial, tema, som, embaralhar, fluxo da partida, partidas inteiras com 2, 3 e 4 jogadores e contra o computador |
 
 Invariantes verificadas a cada jogada na simulação: sempre existem 28 peças
