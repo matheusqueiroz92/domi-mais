@@ -1,6 +1,6 @@
 import type { DominoPiece, GameState, Player } from './game-types';
 import { generateDominoPieces } from '../logic/pieces';
-import { isValidPlayerCount } from '../logic/rules';
+import { computeResult, isValidPlayerCount } from '../logic/rules';
 
 /** Chave da partida em andamento no navegador. */
 export const SAVE_KEY = 'domimais:game';
@@ -135,6 +135,10 @@ export function isValidSavedState(value: unknown): value is GameState {
   ) {
     return false;
   }
+
+  // Partida que já deveria ter terminado (por exemplo, mesa fechada salva por
+  // uma versão antiga do jogo) não é retomada.
+  if (computeResult(value as unknown as GameState) !== null) return false;
 
   return (
     typeof value.protectTurns === 'boolean' &&

@@ -85,6 +85,28 @@ export function placePiece(table: Table, piece: DominoPiece, side: TableSide): T
     : { ...table, rightEnd: placed.right, pieces: [...table.pieces, placed] };
 }
 
+/** Quantas peças do jogo têm um certo número (de 0 a 6, cada número está em 7 peças). */
+const PIECES_PER_NUMBER = 7;
+
+/**
+ * Mesa fechada: as duas pontas mostram o mesmo número e as 7 peças com esse
+ * número já estão na mesa. Nenhuma peça que sobrou (nas mãos ou no monte)
+ * pode encaixar, então a partida acaba na hora, mesmo com peças no monte.
+ *
+ * É o único jeito de nenhuma peça restante encaixar com peças no monte: se as
+ * pontas fossem diferentes, cada número de ponta apareceria um número ímpar de
+ * vezes na mesa, e as 7 peças com ele somam 8 metades (par). Só depende da
+ * mesa, que é pública: todos os jogadores conseguem ver que fechou.
+ *
+ * Devolve o número que fechou a mesa, ou `null` se ela não está fechada.
+ */
+export function closedTableNumber(table: Table): number | null {
+  const { leftEnd, rightEnd, pieces } = table;
+  if (leftEnd === null || leftEnd !== rightEnd) return null;
+  const withNumber = pieces.filter((piece) => piece.left === leftEnd || piece.right === leftEnd);
+  return withNumber.length === PIECES_PER_NUMBER ? leftEnd : null;
+}
+
 /** Jogo fechado: nenhuma peça de nenhuma mão encaixa na mesa. */
 export function isBlocked(players: readonly Player[], table: Table): boolean {
   return players.every((player) => !hasPlayablePiece(player.hand, table));
@@ -94,7 +116,10 @@ export function isBlocked(players: readonly Player[], table: Table): boolean {
  * Verifica se a partida terminou e, em caso positivo, devolve o resultado.
  *
  * Regras (docs/REGRAS.md):
- * - enquanto houver peças no monte, a partida nunca termina;
+ * - a mesa fechou (`closedTableNumber`): a partida termina na hora, mesmo com
+ *   peças no monte; vence quem está sem peças na mão ou, se ninguém está, a
+ *   menor soma (com empate possível na menor soma);
+ * - fora isso, enquanto houver peças no monte, a partida nunca termina;
  * - com o monte vazio, vence quem ficar sem peças na mão; se mais de um
  *   jogador estiver sem peças nesse momento, vence quem ficou sem peças
  *   primeiro (`emptyHandOrder`), nunca há empate por mão vazia;
@@ -106,7 +131,10 @@ export function isBlocked(players: readonly Player[], table: Table): boolean {
 export function computeResult(
   state: Pick<GameState, 'players' | 'table' | 'drawPile'> & Partial<Pick<GameState, 'emptyHandOrder'>>
 ): GameResult | null {
-  if (state.drawPile.length > 0) return null;
+  const closed = closedTableNumber(state.table);
+  if (state.drawPile.length > 0 && closed === null) return null;
+  // Só aparece no resultado quando foi a mesa fechada que encerrou a partida.
+  const closedInfo = closed === null ? {} : { closedEnd: closed };
 
   const scores = state.players.map((player) => handSum(player.hand));
 
@@ -121,10 +149,12 @@ export function computeResult(
       reason: 'empty-hand',
       winnerIndexes: [first ?? emptyHanded[0]],
       scores,
+      ...closedInfo,
     };
   }
 
-  if (isBlocked(state.players, state.table)) {
+  // Com a mesa fechada nenhuma mão encaixa, então `isBlocked` daria o mesmo.
+  if (closed !== null || isBlocked(state.players, state.table)) {
     const lowest = Math.min(...scores);
     const winners = scores
       .map((score, index) => (score === lowest ? index : -1))
@@ -133,6 +163,7 @@ export function computeResult(
       reason: 'blocked',
       winnerIndexes: winners,
       scores,
+      ...closedInfo,
     };
   }
 

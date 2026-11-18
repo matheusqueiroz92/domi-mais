@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.1 — 18/11/2026
+
+- **Correção: mesa fechada com peças no monte.** Quando uma jogada deixava as
+  duas pontas com o mesmo número e todas as 7 peças desse número já estavam na
+  mesa, a partida continuava e os jogadores seguiam comprando, sem nenhuma
+  peça poder encaixar. Agora a partida acaba na hora, na jogada de quem fechou:
+  vence quem está sem peças na mão (se houver mais de um, quem ficou sem
+  primeiro) ou, se todos têm peças, a menor soma. O empate na menor soma
+  continua possível.
+- A mensagem do resultado explica o motivo: "Jogo fechado: as duas pontas são
+  6 e todas as peças com 6 já estão na mesa."
+- O computador (Médio e Difícil) passou a fechar a mesa quando isso dá a
+  vitória e a evitar fechar quando perderia. O modo "dica" avisa quando uma
+  jogada fecha o jogo e se você venceria.
+- Partida salva por uma versão anterior que já esteja com a mesa fechada não
+  é retomada (é descartada ao abrir a tela inicial).
+- Novos testes do cenário com 2, 3 e 4 jogadores, incluindo partidas
+  simuladas: em toda partida, a mesa fechada encerra o jogo na mesma jogada.
+
 ## 0.9.0 — 13/11/2026
 
 - **Funciona sem internet (PWA):** depois da primeira visita, o jogo inteiro

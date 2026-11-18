@@ -19,7 +19,14 @@ import {
   playPiece,
 } from '../logic/engine';
 import { getPlayableSides, placePiece } from '../logic/rules';
-import { fitProbability, fitsEnds as fitsAnyEnd, getPlayerView, pairKey, unknownPieces } from '../logic/deduction';
+import {
+  closingOutcome,
+  fitProbability,
+  fitsEnds as fitsAnyEnd,
+  getPlayerView,
+  pairKey,
+  unknownPieces,
+} from '../logic/deduction';
 import type { HiddenPiece, PlayerView } from '../logic/deduction';
 
 /** Nomes dos jogadores controlados pelo computador, na ordem em que entram na partida. */
@@ -90,6 +97,42 @@ function endsAfter(table: Table, move: Move): Ends {
   return next ? [next.leftEnd, next.rightEnd] : [table.leftEnd, table.rightEnd];
 }
 
+/**
+ * Peso de uma jogada que fecha a mesa (a partida acaba na hora): grande e
+ * positivo se o computador vence, negativo se perde. `null` se não fecha.
+ */
+function closingValue(view: BotView, rest: readonly DominoPiece[], table: Table, move: Move): number | null {
+  const next = placePiece(table, move.piece, move.side);
+  const outcome = next ? closingOutcome(view, rest, next) : null;
+  if (outcome === null) return null;
+  return outcome === 'win' ? 5000 : outcome === 'tie' ? 500 : -5000;
+}
+
+/**
+ * Jogadas que fecham a mesa têm resultado certo (a partida acaba na hora),
+ * então os níveis médio e difícil decidem sobre elas antes de qualquer conta:
+ * - se alguma jogada fecha a mesa e vence, joga essa;
+ * - jogadas que fecham e perdem são descartadas; se não sobrar nenhuma,
+ *   fica com a peça quando pode, e só joga se for obrigado (monte vazio).
+ */
+type ClosingDecision = { action: GameAction } | { moves: Move[] };
+
+function decideClosingMoves(view: BotView, moves: Move[], mayKeep: boolean): ClosingDecision {
+  const outcomeOf = (move: Move) => {
+    const next = placePiece(view.table, move.piece, move.side);
+    const rest = view.hand.filter((piece) => piece.id !== move.piece.id);
+    return next ? closingOutcome(view, rest, next) : null;
+  };
+  const winning = moves.find((move) => outcomeOf(move) === 'win');
+  if (winning) {
+    return { action: { type: 'PLAY_PIECE', pieceId: winning.piece.id, position: winning.side } };
+  }
+  const safe = moves.filter((move) => outcomeOf(move) !== 'lose');
+  if (safe.length > 0) return { moves: safe };
+  if (mayKeep) return { action: { type: 'KEEP_PIECE' } };
+  return { moves };
+}
+
 /* ------------------------------------------------------------------ Médio */
 
 /** Nota de uma jogada para o nível médio (maior é melhor). */
@@ -98,6 +141,8 @@ function mediumMoveScore(view: BotView, move: Move, unknown: Hidden[]): number {
   // Livrar-se de pontos, buchas primeiro, e manter pontas boas para a própria mão.
   let score = move.piece.sum + (isDouble(move.piece) ? 2 : 0);
   const rest = view.hand.filter((piece) => piece.id !== move.piece.id);
+  const closing = closingValue(view, rest, view.table, move);
+  if (closing !== null) return closing + score;
   score += 1.5 * rest.filter((piece) => fitsEnds(piece, ends)).length;
   for (const hand of view.opponents) {
     for (const tile of hand) score -= 1.2 * fitProbability(tile.sum, ends, unknown);
@@ -147,7 +192,8 @@ function bestValue(view: BotView, hand: readonly DominoPiece[], unknown: Hidden[
   let best = mayKeep ? positionValue(view, hand, [table.leftEnd, table.rightEnd], unknown) : -Infinity;
   for (const move of legalMovesFor(hand, table)) {
     const rest = hand.filter((piece) => piece.id !== move.piece.id);
-    best = Math.max(best, positionValue(view, rest, endsAfter(table, move), unknown));
+    const closing = closingValue(view, rest, table, move);
+    best = Math.max(best, closing ?? positionValue(view, rest, endsAfter(table, move), unknown));
   }
   return best;
 }
@@ -276,13 +322,10 @@ function choosePileTile(view: BotView, level: BotLevel, rng: RandomFn): HiddenPi
 function chooseHardMove(view: BotView, moves: Move[], mayKeep: boolean, rng: RandomFn): Move | null {
   const unknown = unknownPieces(view);
   const table = view.table;
-  const heuristic = (move: Move) =>
-    positionValue(
-      view,
-      view.hand.filter((piece) => piece.id !== move.piece.id),
-      endsAfter(table, move),
-      unknown
-    );
+  const heuristic = (move: Move) => {
+    const rest = view.hand.filter((piece) => piece.id !== move.piece.id);
+    return closingValue(view, rest, table, move) ?? positionValue(view, rest, endsAfter(table, move), unknown);
+  };
 
   const opponentHand = knownOpponentHand(view, unknown);
   if (!opponentHand) return pickBest(moves, heuristic, rng);
@@ -450,9 +493,12 @@ function decideHard(state: GameState, view: BotView, rng: RandomFn, allowBluff: 
     return pickBySimulation(state, me, options, rng);
   }
 
-  const moves = legalMovesFor(view.hand, view.table);
+  const legal = legalMovesFor(view.hand, view.table);
   const mayKeep = canKeepPiece(state);
-  if (moves.length === 0) return mayKeep ? { type: 'KEEP_PIECE' } : null;
+  if (legal.length === 0) return mayKeep ? { type: 'KEEP_PIECE' } : null;
+  const closing = decideClosingMoves(view, legal, mayKeep);
+  if ('action' in closing) return closing.action;
+  const moves = closing.moves;
   if (allowBluff && mayKeep && shouldBluff(view, 'hard', rng)) return { type: 'KEEP_PIECE' };
 
   // Com dois jogadores e o monte vazio, o final é calculado com exatidão.
@@ -487,10 +533,16 @@ function decide(state: GameState, level: BotLevel, rng: RandomFn, allowBluff: bo
     return { type: 'DRAW_PIECE', pieceId: choosePileTile(view, level, rng).id };
   }
 
-  const moves = legalMovesFor(view.hand, view.table);
+  let moves = legalMovesFor(view.hand, view.table);
   const mayKeep = canKeepPiece(state);
 
   if (moves.length === 0) return mayKeep ? { type: 'KEEP_PIECE' } : null;
+  // O fácil joga ao acaso, sem pensar em fechar a mesa.
+  if (level !== 'easy') {
+    const closing = decideClosingMoves(view, moves, mayKeep);
+    if ('action' in closing) return closing.action;
+    moves = closing.moves;
+  }
   if (allowBluff && mayKeep && shouldBluff(view, level, rng)) return { type: 'KEEP_PIECE' };
 
   let move: Move;

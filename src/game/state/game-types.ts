@@ -58,8 +58,11 @@ export interface Table {
 
 /**
  * Motivo do fim da partida:
- * - `empty-hand`: com o monte vazio, algum jogador ficou sem peças;
- * - `blocked`: com o monte vazio, nenhuma peça das mãos encaixa (jogo fechado).
+ * - `empty-hand`: algum jogador está sem peças na mão quando a partida acaba
+ *   (monte vazio ou mesa fechada);
+ * - `blocked`: jogo fechado sem mão vazia; vence a menor soma. Acontece com o
+ *   monte vazio e nenhuma peça das mãos encaixando, ou a qualquer momento
+ *   quando a mesa fecha (veja `closedEnd`).
  */
 export type GameEndReason = 'empty-hand' | 'blocked';
 
@@ -72,6 +75,11 @@ export interface GameResult {
   winnerIndexes: number[];
   /** Soma da mão de cada jogador, na ordem de `players`. */
   scores: number[];
+  /**
+   * Presente quando a partida acabou porque a mesa fechou: as duas pontas
+   * mostram este número e todas as 7 peças com ele já estão na mesa.
+   */
+  closedEnd?: number;
 }
 
 export interface GameState {

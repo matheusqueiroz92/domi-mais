@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { gameReducer } from '../game-reducer';
 import { createInitialGameState, createRandomSetup } from '../game-inicial-state';
 import { seededRandom } from '../../logic/__tests__/helpers';
+import { closingGame } from '../../logic/__tests__/closed-table-helpers';
 import type { GameAction, GameState } from '../game-types';
 import {
   SAVE_KEY,
@@ -160,6 +161,22 @@ describe('partida salva: validação', () => {
     ['registro que não é texto', (s) => ({ ...s, logs: [1, 2] })],
     ['sem a troca de turno definida', (s) => ({ ...s, protectTurns: undefined })],
   ];
+
+  it('recusa partida com a mesa fechada (já deveria ter terminado)', () => {
+    const state = closingGame({ hands: [[[4, 6], [1, 2]], [[5, 5]], [[0, 0]], [[3, 3]]] });
+    expect(isValidSavedState(state)).toBe(true);
+    const closed = clone(state);
+    const piece46 = closed.players[0].hand.find((p) => p.left + p.right === 10)!;
+    closed.players[0].hand = closed.players[0].hand.filter((p) => p !== piece46);
+    closed.table = {
+      ...closed.table,
+      rightEnd: 6,
+      pieces: [...closed.table.pieces, { ...piece46, left: 4, right: 6, isFaceUp: true }],
+    };
+    closed.drawnPieceId = null;
+    closed.selectedPieceId = null;
+    expect(isValidSavedState(closed)).toBe(false);
+  });
 
   it.each(cases)('recusa: %s', (_name, breakIt) => {
     expect(isValidSavedState(breakIt(valid()))).toBe(false);

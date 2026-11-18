@@ -75,7 +75,9 @@ export function HintPanel({ state, playerIndex, hidden = false }: HintPanelProps
             {playable
               .map(
                 (piece) =>
-                  `${piece.left}|${piece.right} (${piece.sides.map((side) => SIDE_LABEL[side]).join(' ou ')})`
+                  `${piece.left}|${piece.right} (${piece.sides.map((side) => SIDE_LABEL[side]).join(' ou ')}${
+                    piece.closes ? ', fecha o jogo' : ''
+                  })`
               )
               .join(', ')}
             .

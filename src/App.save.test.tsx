@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
 import { seededRandom } from './game/logic/__tests__/helpers';
-import { SAVE_KEY } from './game/state/saved-game';
+import { SAVE_KEY, SAVE_VERSION } from './game/state/saved-game';
+import { closingGame } from './game/logic/__tests__/closed-table-helpers';
 
 const FACE_DOWN = /^Peça virada, soma \d+$/;
 const KEEP = /^(Ficar com a peça|Passar a vez)$/;
@@ -137,5 +138,34 @@ describe('partida salva no aparelho', () => {
     fireEvent.click(within(resumeCard()!).getByRole('button', { name: 'Continuar' }));
     expect(screen.queryByRole('button', { name: 'Estou pronto' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sair da partida' })).toBeInTheDocument();
+  });
+});
+
+describe('mesa fechada com peças no monte (na tela)', () => {
+  it('jogar a peça que fecha encerra a partida e explica o motivo', () => {
+    const state = closingGame({
+      hands: [[[4, 6], [1, 2]], [[5, 5], [4, 4]], [[0, 0], [0, 2]], [[3, 3], [1, 1]]],
+    });
+    window.localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({ version: SAVE_VERSION, savedAt: 0, state })
+    );
+    render(<App />);
+    fireEvent.click(within(resumeCard()!).getByRole('button', { name: 'Continuar' }));
+
+    const hand = within(screen.getByTestId('hand'));
+    const closingPiece = hand.getByRole('button', { name: 'Peça 4|6' });
+    if (closingPiece.getAttribute('aria-pressed') !== 'true') fireEvent.click(closingPiece);
+    fireEvent.click(screen.getByRole('button', { name: 'Jogar na ponta direita' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent(
+      'Jogo fechado: as duas pontas são 6 e todas as peças com 6 já estão na mesa. Caio venceu com a menor soma!'
+    );
+    expect(dialog).toHaveTextContent('Ana: 3 · Beto: 18 · Caio: 2 · Dani: 8');
+    // Ainda há peças no monte, mas ninguém pode mais comprar.
+    expect(pileButtons()).toHaveLength(0);
+    // Partida terminada não fica guardada.
+    expect(saved()).toBeNull();
   });
 });

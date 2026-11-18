@@ -108,7 +108,9 @@ testes, usa-se um gerador com semente para reproduzir partidas.
 
 Depois de `playPiece` ou `keepPiece`:
 
-1. `computeResult` verifica o fim da partida (só possível com o monte vazio).
+1. `computeResult` verifica o fim da partida: com o monte vazio ou, a
+   qualquer momento, com a mesa fechada (`closedTableNumber`: pontas iguais e
+   as 7 peças desse número na mesa). Nesse caso o resultado traz `closedEnd`.
 2. Escolhe o próximo jogador. Com o monte vazio, quem não tem peça que encaixa
    é pulado e entra em `autoPassedPlayerIndexes`.
 3. Se o jogador mudou e `protectTurns` está ligado, a fase vira `transition`.
@@ -152,6 +154,13 @@ sejam diferentes.
 `fitProbability` é a dedução que o jogo ensina: uma peça de soma 7 pode ser
 1|6, 2|5 ou 3|4; descontadas as peças já vistas, calcula-se a chance de ela
 encaixar em uma ponta.
+
+**Mesa fechada.** Jogada que fecha a mesa encerra a partida com resultado
+certo, calculável só com informação pública (`closingOutcome` em
+`deduction.ts`: somas dos versos de cada adversário). Médio e Difícil decidem
+essas jogadas antes de qualquer conta (`decideClosingMoves`): fecham quando
+vencem, nunca fecham para perder se houver outra jogada e, se não houver, ficam
+com a peça comprada. O Fácil continua jogando ao acaso.
 
 **Simulação (nível difícil).** Para comparar opções, o computador imagina
 `HARD_SAMPLES` "mundos possíveis" (`imagineWorld`): dá a cada peça virada uma
@@ -286,7 +295,8 @@ mesmo módulo; nenhum dos dois lê peças viradas.
   encaixam e a chance; ordenadas da maior chance para a menor.
 - `getPlayHints`: peças da mão que encaixam e uma sugestão. A sugestão prefere
   a jogada que deixa mais peças da própria mão encaixando e, no empate, a peça
-  de mais pontos.
+  de mais pontos. Jogadas que fecham a mesa são marcadas (`closes`): a dica
+  sugere fechar quando o jogador vence e evita fechar quando perde.
 - A preferência fica em `localStorage` (`domimais:hints`), pelo hook
   `usePersistentFlag`. O painel recebe `hidden` fora da vez do jogador e na
   troca de turno, e aí mostra só um aviso.
@@ -363,6 +373,7 @@ npm run test:watch # modo interativo
 | `App.guides.test.tsx` | Tutorial do início ao fim e modo "dica" na tela |
 | `state/__tests__/saved-game.test.ts` | Partida salva: gravação, leitura, validação (19 formas de estado inválido), retomada |
 | `pwa/__tests__/usePwa.test.tsx` | Avisos de versão nova e de uso sem internet, instalação |
+| `logic/__tests__/closed-table.test.ts` | Mesa fechada com peças no monte: fim na hora, vencedor, motor, dicas e computador (cenários montados em `closed-table-helpers.ts`) |
 | `App.save.test.tsx` | Fechar e reabrir a página, continuar, descartar, tutorial não gravado |
 | `App.test.tsx` | Tela inicial, tema, som, embaralhar, fluxo da partida, partidas inteiras com 2, 3 e 4 jogadores e contra o computador |
 

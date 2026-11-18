@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.1-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -40,8 +40,12 @@ em [domimais.com.br](https://domimais.com.br).
    ela e fingir que não encaixava. O jogo nunca revela o blefe.
 5. Quando o monte acaba, o jogo continua com as peças das mãos: quem tem peça
    que encaixa é obrigado a jogar e quem não tem passa a vez automaticamente.
-6. **Vence** quem ficar sem peças. Se o jogo fechar, vence a menor soma das
-   peças da mão; quem empatar na menor soma divide a vitória.
+6. **Mesa fechada:** se as duas pontas ficarem com o mesmo número e as 7 peças
+   desse número já estiverem na mesa, a partida acaba na hora, mesmo com
+   peças no monte.
+7. **Vence** quem ficar sem peças (se houver mais de um, quem ficou sem
+   primeiro). Se o jogo fechar, vence a menor soma das peças da mão; quem
+   empatar na menor soma divide a vitória.
 
 As regras completas estão em [docs/REGRAS.md](docs/REGRAS.md).
 

@@ -62,24 +62,36 @@ mesmo turno, como em qualquer turno de compra.
 
 ## Fim da partida
 
-Enquanto houver peças no monte, a partida nunca termina. Com o monte vazio, ela
-termina em uma destas situações:
+A partida termina em dois momentos:
+
+- **Mesa fechada, a qualquer hora (mesmo com peças no monte):** as duas pontas
+  da mesa mostram o mesmo número e as 7 peças que têm esse número já estão na
+  mesa. Nenhuma peça que sobrou, nas mãos ou no monte, pode encaixar mais, e a
+  partida acaba no mesmo instante, na jogada de quem fechou. Exemplo: pontas 6
+  e 6 com 0|6, 1|6, 2|6, 3|6, 4|6, 5|6 e 6|6 na mesa.
+- **Monte vazio:** quando alguém fica sem peças ou quando nenhuma peça das mãos
+  encaixa.
+
+Nos dois casos, o vencedor é decidido assim:
 
 | Situação | Quem vence |
 |---|---|
 | Um jogador está **sem peças na mão** | Esse jogador |
 | Mais de um jogador sem peças na mão | Quem **ficou sem peças primeiro** (não há empate) |
-| **Jogo fechado**: nenhuma peça de nenhuma mão encaixa | Quem tem a **menor soma** das peças da mão |
+| **Jogo fechado** (mesa fechada, ou monte vazio sem nenhuma peça das mãos encaixando), sem ninguém sem peças | Quem tem a **menor soma** das peças da mão |
 | Jogo fechado com dois ou mais jogadores na **mesma menor soma** | **Empate entre eles**; os demais perdem |
 
+Fora a mesa fechada, enquanto houver peças no monte a partida nunca termina.
 Enquanto há monte, um jogador pode jogar a única peça que tem e ficar com a
 mão vazia sem que a partida termine; na vez seguinte ele compra de novo. Por
 isso o monte pode acabar com mais de um jogador sem peças. Nesse caso vence
 quem está sem peças há mais tempo: conta a **última** vez em que o jogador
-ficou sem peças (quem compra uma peça perde o lugar na fila). O único empate
+ficou sem peças (quem compra uma peça perde o lugar na fila). Vale também se
+a mesa fechar com mais de um jogador sem peças. O único empate
 possível é o do jogo fechado com a mesma menor soma.
 
-A soma de cada jogador é a soma dos versos das peças que sobraram na mão. Mão
+A soma de cada jogador é a soma dos versos das peças que sobraram na mão. As
+peças que ficaram no monte quando a mesa fecha não contam para ninguém. Mão
 vazia vence mesmo que o adversário tenha soma zero (só a peça 0|0).
 
 ## Quantidade de jogadores
@@ -161,6 +173,7 @@ tocar em **"Estou pronto"**.
 | 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
 | 13/11/2026 | A partida fica salva no aparelho; no mesmo aparelho ela é retomada pela tela de troca de turno. |
 | 13/11/2026 | Atualização do jogo só com o toque em "Atualizar", nunca sozinha. |
+| 18/11/2026 | Mesa fechada (pontas iguais e as 7 peças desse número na mesa) encerra a partida na hora, mesmo com peças no monte. |
 | 16/11/2026 | Mão vazia nunca empata: se o monte acaba com mais de um jogador sem peças, vence quem ficou sem peças primeiro. |
 | 13/11/2026 | O modo "dica" usa só informação pública do jogador e fica desligado por padrão. |
 | 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |

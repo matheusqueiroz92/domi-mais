@@ -136,6 +136,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     title: 'Como a partida termina',
     text: [
       'O jogo segue até o monte acabar. Com o monte vazio, quem tem peça que encaixa é obrigado a jogar; quem não tem passa a vez automaticamente.',
+      'Se as duas pontas ficarem com o mesmo número e as 7 peças desse número já estiverem na mesa, o jogo fecha e acaba na hora, mesmo com peças no monte.',
       'Vence quem ficar sem peças na mão. Se ninguém mais puder jogar, vence a menor soma das peças na mão.',
       'Nas partidas, toque na lâmpada no alto da tela para ligar as dicas e ver o raciocínio de cada jogada.',
     ],

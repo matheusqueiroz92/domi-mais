@@ -19,7 +19,9 @@ alterar qualquer regra. Resumo:
   com a mesma tela e o mesmo log, encaixando ou não.
 - Monte vazio: a partida continua com as mãos. Quem tem peça que encaixa é
   obrigado a jogar; quem não tem passa a vez automaticamente.
-- Fim (só com o monte vazio): vence quem está sem peças; se mais de um jogador
+- Mesa fechada (`closedTableNumber`): pontas iguais e as 7 peças desse número na
+  mesa. A partida acaba na hora, mesmo com peças no monte.
+- Fim (monte vazio ou mesa fechada): vence quem está sem peças; se mais de um jogador
   está sem peças, vence quem ficou sem peças primeiro (`emptyHandOrder`), sem
   empate. No jogo fechado vence a menor soma; só aí pode haver empate (mesma
   menor soma), e os demais perdem.

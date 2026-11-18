@@ -220,6 +220,12 @@ function GameContent() {
   // Guia: cartão do tutorial ou, com as dicas ligadas, o painel de dicas.
   // Fim com mais de uma mão vazia: o resultado explica quem ficou sem peças primeiro.
   const severalEmptyHands = state.players.filter((p) => p.hand.length === 0).length > 1;
+  // Fim porque a mesa fechou (pode acontecer com peças no monte).
+  const closedEnd = state.result?.closedEnd;
+  const closedNote =
+    closedEnd === undefined
+      ? ""
+      : `Jogo fechado: as duas pontas são ${closedEnd} e todas as peças com ${closedEnd} já estão na mesa. `;
   const hasGuide = !isFinished && (inTutorial || hintsOn);
   const hasSideSeats = seats.left !== null || seats.right !== null;
 
@@ -539,15 +545,16 @@ function GameContent() {
         {state.result && (
           <>
             <p>
+              {closedNote}
               {state.result.reason === "empty-hand"
                 ? winner
                   ? severalEmptyHands
-                    ? `O monte acabou com mais de um jogador sem peças. ${winner.name} venceu: ficou sem peças primeiro!`
+                    ? `${closedNote ? "Mais de um jogador estava sem peças." : "O monte acabou com mais de um jogador sem peças."} ${winner.name} venceu: ficou sem peças primeiro!`
                     : `${winner.name} venceu: ficou sem peças na mão!`
                   : `Empate entre ${tiedNames}: ficaram sem peças na mão.`
                 : winner
-                  ? `Jogo fechado. ${winner.name} venceu com a menor soma!`
-                  : `Jogo fechado. Empate entre ${tiedNames}, com a menor soma.`}
+                  ? `${closedNote ? "" : "Jogo fechado. "}${winner.name} venceu com a menor soma!`
+                  : `${closedNote ? "" : "Jogo fechado. "}Empate entre ${tiedNames}, com a menor soma.`}
             </p>
             <p className="result-scores">
               {state.players

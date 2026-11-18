@@ -29,6 +29,10 @@ export function RulesContent() {
             Quando o monte acaba, o jogo continua com as peças das mãos: quem tem peça que encaixa
             é obrigado a jogar, e quem não tem passa a vez automaticamente.
           </li>
+          <li>
+            Se as duas pontas da mesa ficarem com o mesmo número e todas as 7 peças desse número já
+            estiverem na mesa, o jogo fecha e a partida acaba na hora, mesmo com peças no monte.
+          </li>
         </ul>
       </section>
       <section>

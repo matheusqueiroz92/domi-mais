@@ -5,6 +5,7 @@
  */
 import type { DominoPiece, GameState, Table } from '../state/game-types';
 import { generateDominoPieces } from './pieces';
+import { closedTableNumber } from './rules';
 
 /** Peça virada, como um jogador a enxerga: só o id e a soma. */
 export interface HiddenPiece {
@@ -81,4 +82,32 @@ export function fitProbability(
   const candidates = unknown.filter((piece) => piece.sum === sum);
   if (candidates.length === 0) return 0;
   return candidates.filter((piece) => fitsEnds(piece, ends)).length / candidates.length;
+}
+
+/** Resultado, para quem joga, de uma jogada que fecha a mesa. */
+export type ClosingOutcome = 'win' | 'tie' | 'lose';
+
+/**
+ * Se a jogada deixar a mesa `nextTable` fechada, a partida acaba na hora:
+ * diz se o jogador vence, empata ou perde. `rest` é a mão dele depois da
+ * jogada. Devolve `null` se a mesa não fecha.
+ *
+ * Usa só informação pública: a soma de cada adversário é a soma dos versos
+ * das peças dele. Adversário que já está sem peças vence (ficou sem antes).
+ */
+export function closingOutcome(
+  view: PlayerView,
+  rest: readonly DominoPiece[],
+  nextTable: Table
+): ClosingOutcome | null {
+  if (closedTableNumber(nextTable) === null) return null;
+  if (view.opponents.some((tiles) => tiles.length === 0)) return 'lose';
+  if (rest.length === 0) return 'win';
+
+  const mine = rest.reduce((total, piece) => total + piece.sum, 0);
+  const lowestOther = Math.min(
+    ...view.opponents.map((tiles) => tiles.reduce((total, tile) => total + tile.sum, 0))
+  );
+  if (mine < lowestOther) return 'win';
+  return mine === lowestOther ? 'tie' : 'lose';
 }

@@ -4,7 +4,7 @@ import { gameReducer } from '../../state/game-reducer';
 import { createInitialGameState, createRandomSetup } from '../../state/game-inicial-state';
 import { canKeepPiece } from '../engine';
 import { handSum } from '../pieces';
-import { getPlayableSides, hasPlayablePiece, isBlocked } from '../rules';
+import { closedTableNumber, getPlayableSides, hasPlayablePiece, isBlocked } from '../rules';
 import type { RandomFn } from '../pieces';
 import { PLAYER_NAMES, seededRandom } from './helpers';
 
@@ -71,6 +71,8 @@ function playRandomGame(rng: RandomFn, playerCount: number, protectTurns: boolea
     expect(next).not.toBe(state);
     state = next;
     checkInvariants(state);
+    // Mesa fechada encerra a partida na mesma jogada, nunca fica "em jogo".
+    if (closedTableNumber(state.table) !== null) expect(state.phase).toBe('finished');
   }
 
   return state;
@@ -85,15 +87,22 @@ describe('simulação de partidas completas', () => {
     '200 partidas aleatórias com $playerCount jogadores sempre terminam com resultado coerente (protectTurns=$protectTurns)',
     ({ playerCount, protectTurns }) => {
       const reasons = new Set<string>();
+      let closedWithPile = 0;
 
       for (let seed = 1; seed <= 200; seed++) {
         const state = playRandomGame(seededRandom(seed), playerCount, protectTurns);
 
         expect(state.phase).toBe('finished');
         expect(state.players).toHaveLength(playerCount);
-        expect(state.drawPile).toHaveLength(0);
 
         const result = state.result!;
+        // A partida acaba com o monte vazio ou porque a mesa fechou (com ou sem monte).
+        const closed = closedTableNumber(state.table);
+        expect(result.closedEnd ?? null).toBe(closed);
+        if (state.drawPile.length > 0) {
+          expect(closed).not.toBeNull();
+          closedWithPile++;
+        }
         const scores = state.players.map((p) => handSum(p.hand));
         expect(result.scores).toEqual(scores);
         expect(state.players.map((p) => p.score)).toEqual(scores);
@@ -104,9 +113,10 @@ describe('simulação de partidas completas', () => {
         expect(winners.length).toBeGreaterThan(0);
 
         if (result.reason === 'empty-hand') {
-          // Vencem todos os que estão sem peças (mesmo que alguém só tenha o [0|0]).
-          for (const i of winners) expect(state.players[i].hand).toHaveLength(0);
-          for (const i of losers) expect(state.players[i].hand.length).toBeGreaterThan(0);
+          // Mão vazia nunca empata: vence um só, sem peças (mesmo contra o [0|0]).
+          expect(winners).toHaveLength(1);
+          expect(state.players[winners[0]].hand).toHaveLength(0);
+          expect(state.emptyHandOrder[0]).toBe(winners[0]);
         } else {
           expect(isBlocked(state.players, state.table)).toBe(true);
           expect(state.players.every((p) => p.hand.length > 0)).toBe(true);
@@ -116,8 +126,10 @@ describe('simulação de partidas completas', () => {
         }
       }
 
-      // As duas formas de terminar aparecem na amostra.
+      // As duas formas de terminar aparecem na amostra, e a mesa fechada com
+      // peças no monte também (é comum: foi assim que o problema apareceu).
       expect(reasons).toEqual(new Set(['empty-hand', 'blocked']));
+      expect(closedWithPile).toBeGreaterThan(0);
     }
   );
 });

@@ -32,9 +32,11 @@ function finishGame(state: GameState, result: GameResult): GameState {
   }));
 
   const reasonLog =
-    result.reason === 'empty-hand'
-      ? 'Fim de jogo: o monte acabou e há jogador sem peças na mão.'
-      : 'Jogo fechado! Nenhuma peça das mãos encaixa nas pontas.';
+    result.closedEnd !== undefined
+      ? `Jogo fechado! As duas pontas são ${result.closedEnd} e todas as peças com ${result.closedEnd} já estão na mesa.`
+      : result.reason === 'empty-hand'
+        ? 'Fim de jogo: o monte acabou e há jogador sem peças na mão.'
+        : 'Jogo fechado! Nenhuma peça das mãos encaixa nas pontas.';
 
   const winnerNames = result.winnerIndexes.map((index) => players[index].name);
   const outcomeLog =

@@ -3,8 +3,8 @@
  * Usa só o que ele mesmo pode ver (`getPlayerView`): nunca revela uma peça virada.
  */
 import type { GameState, TableSide } from '../state/game-types';
-import { fitsEnds, getPlayerView, unknownPieces } from './deduction';
-import type { Candidate } from './deduction';
+import { closingOutcome, fitsEnds, getPlayerView, unknownPieces } from './deduction';
+import type { Candidate, ClosingOutcome } from './deduction';
 import { isDouble } from './pieces';
 import { getPlayableSides, placePiece } from './rules';
 
@@ -54,6 +54,8 @@ export interface PlayableHint {
   left: number;
   right: number;
   sides: TableSide[];
+  /** Jogar esta peça fecha a mesa e acaba a partida: o resultado para quem joga. */
+  closes?: ClosingOutcome;
 }
 
 export interface PlayHints {
@@ -72,6 +74,7 @@ export interface PlayHints {
 export function getPlayHints(state: GameState, playerIndex: number): PlayHints {
   const { hand } = state.players[playerIndex];
   const table = state.table;
+  const view = getPlayerView(state, playerIndex);
 
   const playable: PlayableHint[] = [];
   let best: { score: number; hint: NonNullable<PlayHints['suggestion']> } | null = null;
@@ -80,7 +83,8 @@ export function getPlayHints(state: GameState, playerIndex: number): PlayHints {
     const fits = getPlayableSides(piece, table);
     const sides = (['left', 'right'] as const).filter((side) => fits[side]);
     if (sides.length === 0) continue;
-    playable.push({ pieceId: piece.id, left: piece.left, right: piece.right, sides });
+    const hint: PlayableHint = { pieceId: piece.id, left: piece.left, right: piece.right, sides };
+    playable.push(hint);
 
     for (const side of sides) {
       const next = placePiece(table, piece, side);
@@ -88,11 +92,22 @@ export function getPlayHints(state: GameState, playerIndex: number): PlayHints {
       const ends = [next.leftEnd, next.rightEnd];
       const rest = hand.filter((other) => other.id !== piece.id);
       const stillFitting = rest.filter((other) => fitsEnds(other, ends)).length;
-      const score = stillFitting * 100 + piece.sum + (isDouble(piece) ? 0.5 : 0);
+      // Fechar a mesa acaba a partida: vale muito se vence, nada se perde.
+      const closes = closingOutcome(view, rest, next);
+      if (closes) hint.closes = closes;
+      const closingWeight = closes === 'win' ? 1e6 : closes === 'tie' ? 5e5 : closes === 'lose' ? -1e6 : 0;
+      const score = closingWeight + stillFitting * 100 + piece.sum + (isDouble(piece) ? 0.5 : 0);
 
       if (!best || score > best.score) {
         let reason: string;
-        if (rest.length === 0) {
+        const mine = rest.reduce((total, other) => total + other.sum, 0);
+        if (closes === 'lose') {
+          reason = 'é a única que encaixa, mas fecha o jogo e você perde pela soma';
+        } else if (closes === 'tie') {
+          reason = `fecha o jogo e você empata com a menor soma (${mine})`;
+        } else if (closes === 'win' && rest.length > 0) {
+          reason = `fecha o jogo e você vence com a menor soma (${mine})`;
+        } else if (rest.length === 0) {
           reason = 'é a sua última peça';
         } else if (stillFitting > 0) {
           reason =
