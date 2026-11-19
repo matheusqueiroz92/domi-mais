@@ -3,3 +3,7 @@ dist
 .git
 *.docx
 .cursor
+server/dist
+*.log
+Claude outputs
+deploy-notes.md

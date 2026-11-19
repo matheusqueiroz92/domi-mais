@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.9.2-blue.svg)
+![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -112,6 +112,7 @@ domi-mais/
 │   ├── App.tsx            Tela da partida
 │   └── main.tsx           Ponto de entrada
 ├── server/                Servidor do modo online (Node + Socket.IO)
+├── deploy/                Dockerfiles, nginx.conf e docker-compose da VPS
 ├── CHANGELOG.md
 ├── deploy-notes.md        Como publicar na VPS
 └── package.json
@@ -126,9 +127,9 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 - [x] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [x] Tutorial interativo e modo "dica"
 - [x] PWA com partida salva para uso offline
-- [ ] Multiplayer online por sala com código, com chat (fases 1, 2 e 3 de 4
-  prontas: servidor, telas e chat; falta o deploy; veja
+- [x] Multiplayer online por sala com código, com chat (veja
   [docs/ONLINE.md](docs/ONLINE.md))
+- [ ] Retirar o modo "mesmo aparelho" depois do teste com alunos
 
 O modo no mesmo dispositivo será removido quando os modos
 contra o computador e online estiverem prontos.

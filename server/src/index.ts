@@ -2,8 +2,8 @@
  * Servidor do modo online do DomiMais.
  *
  *   npm run dev:server     (desenvolvimento, reinicia ao salvar)
- *   npm run build:server   (gera server/dist/index.js)
- *   node server/dist/index.js
+ *   npm run build:server   (gera server/dist/server.cjs)
+ *   node server/dist/server.cjs
  *
  * Variáveis de ambiente:
  *   PORT          porta HTTP (padrão 3001)

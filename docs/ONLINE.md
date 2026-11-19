@@ -4,8 +4,9 @@ Partidas de 2 a 4 jogadores, cada um no seu aparelho, em uma sala aberta por
 código. Este documento descreve o servidor (`server/`), o protocolo e as
 decisões de funcionamento.
 
-Situação (19/11/2026): **fases 1, 2 e 3 de 4 concluídas** (servidor, telas e
-chat). Falta o deploy na VPS (fase 4). Até a fase 4, o site
+Situação (19/11/2026): **as 4 fases estão prontas** (servidor, telas, chat e
+deploy, versão 0.10.0). O passo a passo da publicação está em
+`deploy-notes.md`. Até a fase 4, o site
 publicado mostra o modo online como "Em breve" (veja "Ligar o modo online").
 
 ## Como se joga (telas)
@@ -179,8 +180,23 @@ testes. No build de produção, só com a variável `VITE_ONLINE=on`:
 VITE_ONLINE=on npm run build
 ```
 
-Sem ela, a tela inicial mostra "Online com amigos — Em breve". Na fase 4, o
-build da VPS passa a usar `VITE_ONLINE=on`.
+Sem ela, a tela inicial mostra "Online com amigos — Em breve". O build da VPS
+(`deploy/web.Dockerfile`) usa `VITE_ONLINE=on`. Para esconder o modo online de
+novo sem mexer no código, troque `VITE_ONLINE: "on"` por `"off"` no
+`docker-compose.yml` e publique.
+
+## Na VPS (deploy)
+
+- Dois contêineres no `deploy/docker-compose.yml`: `domi-mais` (o site, Nginx)
+  e `domi-mais-server` (o servidor, Node, porta 3001).
+- O Traefik manda `domimais.com.br/socket/` (e `www.`) para o servidor, com
+  prioridade sobre o site; o resto vai para o Nginx. WebSocket passa pelo
+  Traefik sem configuração extra.
+- O servidor responde `GET /health` dentro do contêiner (usado pelo
+  `HEALTHCHECK` do Docker); essa rota não é publicada.
+- Publicar uma versão nova reinicia o servidor e **encerra as partidas online
+  em andamento** (as salas ficam só na memória). Publique fora do horário de
+  uso.
 
 ## Desenvolvimento
 
@@ -190,7 +206,7 @@ Para testar com duas pessoas no computador, abra o jogo em duas janelas
 ```bash
 npm run dev:server    # servidor na porta 3001, reinicia ao salvar
 npm run dev           # o jogo; /socket/ é encaminhado para a porta 3001
-npm run build:server  # gera server/dist/index.js
+npm run build:server  # gera server/dist/server.cjs (arquivo único)
 npm run start:server  # roda o servidor compilado
 ```
 

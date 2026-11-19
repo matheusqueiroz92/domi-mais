@@ -1,21 +1,29 @@
 # Changelog
 
-## 0.9.2 — 19/11/2026
+## 0.10.0 — 19/11/2026 — modo online
 
-- **Aviso de "sua vez"** (contra o computador e no modo online): quando a vez
-  chega, aparece por alguns segundos a faixa "Sua vez!" dizendo o que fazer
-  ("Compre uma peça do monte"), a área da sua mão fica em destaque enquanto a
-  vez for sua, toca um som próprio (duas notas, diferente do estalo das
-  peças), o celular vibra (onde o navegador permite) e o título da aba vira
-  "● Sua vez — DomiMais". No mesmo aparelho a tela "Passe o dispositivo" já
-  faz esse papel, e no tutorial o cartão guia cada passo.
-- **Online: faltam 10 segundos** — a contagem fica vermelha e toca um aviso
-  curto, uma única vez por jogada.
-- **Online: a peça comprada já vem selecionada**, mostrando na hora as pontas
-  onde ela encaixa, sem precisar tocar nela na mão (como já acontecia nas
-  partidas locais).
+Partidas de 2 a 4 jogadores, cada um no seu aparelho, em salas por código,
+com chat. Detalhes em `docs/ONLINE.md`.
 
-## Em desenvolvimento — modo online, fase 3 de 4 (chat)
+### Fase 4: deploy
+
+- **Arquivos de deploy no repositório** (pasta `deploy/`): Dockerfile do site
+  (`web.Dockerfile`, com o modo online ligado), `nginx.conf`, Dockerfile do
+  servidor (`server.Dockerfile`) e o `docker-compose.yml` com os dois
+  contêineres. Antes, o Dockerfile e o `nginx.conf` existiam só na VPS.
+- O servidor vira um arquivo único (`server/dist/server.cjs`), sem
+  `node_modules` na imagem. `npm run build:server` e `npm run start:server`
+  mudaram para esse arquivo.
+- O Traefik manda `domimais.com.br/socket/` para o contêiner do servidor; o
+  resto continua no Nginx do site.
+- Nginx: cache longo para `/assets/` (nomes mudam a cada versão) e "no-cache"
+  para `index.html`, `sw.js` e o manifesto do PWA, para as versões novas
+  chegarem rápido. O build da imagem roda `nginx -t`: configuração com erro
+  não derruba o site.
+- `deploy-notes.md` reescrito: passo a passo, conferências e como voltar
+  atrás.
+
+### Fase 3: chat
 
 - **Chat da sala**, na sala de espera e na partida (botão de balão com o
   número de mensagens novas e uma prévia da última): mensagens rápidas,
@@ -30,7 +38,7 @@
   caber o do chat.
 - 78 testes novos (489 no total), incluindo os de falso positivo do filtro.
 
-## Em desenvolvimento — modo online, fase 2 de 4 (telas)
+### Fase 2: telas
 
 - **Telas do modo online:** entrada (criar sala ou entrar com código), link
   de convite (`?sala=CÓDIGO`), sala de espera com código, copiar link,
@@ -41,12 +49,11 @@
   mesmo lugar; ao reabrir a página, a tela inicial oferece "Voltar" para a
   sala guardada no aparelho.
 - O modo online só aparece em `npm run dev` ou em builds com
-  `VITE_ONLINE=on`: o site publicado continua com "Em breve" até o servidor
-  estar na VPS (fase 4).
+  `VITE_ONLINE=on` (o build da VPS passa a usar, na fase 4).
 - 12 testes de tela novos, com o servidor de verdade rodando no teste (399 no
   total).
 
-## Em desenvolvimento — modo online, fase 1 de 4 (servidor)
+### Fase 1: servidor
 
 - **Servidor do modo online** (`server/`, Node + Socket.IO), ainda sem telas
   no jogo. Salas por código de 5 letras, 2 a 4 jogadores, vagas completáveis
@@ -59,6 +66,21 @@
   `start:server`. Em `npm run dev`, `/socket/` é encaminhado ao servidor local.
 - 40 testes novos, incluindo partidas inteiras de 2, 3 e 4 jogadores com
   clientes Socket.IO de verdade (387 no total).
+
+## 0.9.2 — 19/11/2026
+
+- **Aviso de "sua vez"** (contra o computador e no modo online): quando a vez
+  chega, aparece por alguns segundos a faixa "Sua vez!" dizendo o que fazer
+  ("Compre uma peça do monte"), a área da sua mão fica em destaque enquanto a
+  vez for sua, toca um som próprio (duas notas, diferente do estalo das
+  peças), o celular vibra (onde o navegador permite) e o título da aba vira
+  "● Sua vez — DomiMais". No mesmo aparelho a tela "Passe o dispositivo" já
+  faz esse papel, e no tutorial o cartão guia cada passo.
+- **Online: faltam 10 segundos** — a contagem fica vermelha e toca um aviso
+  curto, uma única vez por jogada.
+- **Online: a peça comprada já vem selecionada**, mostrando na hora as pontas
+  onde ela encaixa, sem precisar tocar nela na mão (como já acontecia nas
+  partidas locais).
 
 ## 0.9.1 — 18/11/2026
 

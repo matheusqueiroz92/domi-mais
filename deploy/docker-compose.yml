@@ -1,0 +1,45 @@
+# DomiMais na VPS. Copie para /opt/apps/domi-mais/docker-compose.yml.
+# Passo a passo e como voltar atrás: deploy-notes.md.
+
+services:
+  # Site (o mesmo contêiner de antes, agora com o Dockerfile do repositório).
+  frontend:
+    build:
+      context: /var/www/domi-mais
+      dockerfile: deploy/web.Dockerfile
+      args:
+        VITE_ONLINE: "on"
+    container_name: domi-mais
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.domi-mais.rule=Host(`domimais.com.br`) || Host(`www.domimais.com.br`)"
+      - "traefik.http.routers.domi-mais.entrypoints=websecure"
+      - "traefik.http.routers.domi-mais.tls.certresolver=letsencrypt"
+      - "traefik.http.services.domi-mais.loadbalancer.server.port=80"
+
+  # Servidor do modo online: recebe só o caminho /socket/ do mesmo domínio.
+  server:
+    build:
+      context: /var/www/domi-mais
+      dockerfile: deploy/server.Dockerfile
+    container_name: domi-mais-server
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.domi-mais-socket.rule=(Host(`domimais.com.br`) || Host(`www.domimais.com.br`)) && PathPrefix(`/socket/`)"
+      - "traefik.http.routers.domi-mais-socket.entrypoints=websecure"
+      - "traefik.http.routers.domi-mais-socket.tls.certresolver=letsencrypt"
+      # Mais prioridade que o site, para /socket/ não cair no Nginx.
+      - "traefik.http.routers.domi-mais-socket.priority=100"
+      - "traefik.http.services.domi-mais-socket.loadbalancer.server.port=3001"
+
+networks:
+  traefik-public:
+    external: true
