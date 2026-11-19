@@ -32,6 +32,19 @@ interface HomeScreenProps {
   /** O navegador permite instalar o jogo como aplicativo. */
   canInstall?: boolean;
   onInstall?: () => void;
+  /** Modo online: criar ou entrar em uma sala. Devolvem `true` quando deu certo. */
+  onCreateRoom?: (name: string) => Promise<boolean>;
+  onJoinRoom?: (code: string, name: string) => Promise<boolean>;
+  onlineBusy?: boolean;
+  onlineError?: string | null;
+  /** Código vindo de um link de convite: abre a entrada já preenchida. */
+  inviteCode?: string | null;
+  /** Nome usado da última vez no modo online. */
+  savedName?: string;
+  /** Sala online guardada neste aparelho, para voltar. */
+  savedRoomCode?: string | null;
+  onResumeRoom?: () => void;
+  onLeaveSavedRoom?: () => void;
 }
 
 // Peças do exemplo "soma 7 pode ser...", só ilustrativas.
@@ -57,6 +70,15 @@ export function HomeScreen({
   onDiscardSavedGame,
   canInstall = false,
   onInstall,
+  onCreateRoom,
+  onJoinRoom,
+  onlineBusy = false,
+  onlineError = null,
+  inviteCode = null,
+  savedName = '',
+  savedRoomCode = null,
+  onResumeRoom,
+  onLeaveSavedRoom,
 }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -66,6 +88,12 @@ export function HomeScreen({
   const [botLevel, setBotLevel] = useState<BotLevel>('medium');
   const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
   const [names, setNames] = useState<string[]>(() => Array(MAX_PLAYERS).fill(''));
+  const [showOnlineModal, setShowOnlineModal] = useState(inviteCode !== null);
+  const [onlineName, setOnlineName] = useState(savedName);
+  const [roomCode, setRoomCode] = useState(inviteCode ?? '');
+  const onlineEnabled = Boolean(onCreateRoom && onJoinRoom);
+  const hasOnlineName = onlineName.trim().length > 0;
+  const hasRoomCode = roomCode.trim().length > 0;
 
   const playerNames = names.slice(0, playerCount).map((name) => name.trim());
   const canStart = playerNames.every((name) => name.length > 0);
@@ -127,6 +155,23 @@ export function HomeScreen({
             ))}
           </div>
 
+          {savedRoomCode && (
+            <section className="resume" aria-label="Sala online">
+              <div className="resume__text">
+                <span className="resume__title">Sala online {savedRoomCode}</span>
+                <span className="resume__desc">Você estava nesta sala</span>
+              </div>
+              <div className="resume__actions">
+                <button type="button" className="btn" onClick={onLeaveSavedRoom} disabled={onlineBusy}>
+                  Sair da sala
+                </button>
+                <button type="button" className="btn btn--primary" onClick={onResumeRoom} disabled={onlineBusy}>
+                  Voltar
+                </button>
+              </div>
+            </section>
+          )}
+
           {savedGame && (
             <section className="resume" aria-label="Partida em andamento">
               <div className="resume__text">
@@ -170,14 +215,25 @@ export function HomeScreen({
               </span>
               <ChevronIcon />
             </button>
-            <div className="mode">
-              <GlobeIcon size={28} />
-              <span className="mode__text">
-                <span className="mode__title">Online com amigos</span>
-                <span className="mode__desc">Sala por código, sem cadastro</span>
-              </span>
-              <span className="mode__soon">Em breve</span>
-            </div>
+            {onlineEnabled ? (
+              <button type="button" className="mode mode--button" onClick={() => setShowOnlineModal(true)}>
+                <GlobeIcon size={28} />
+                <span className="mode__text">
+                  <span className="mode__title">Online com amigos</span>
+                  <span className="mode__desc">Sala por código, cada um no seu aparelho</span>
+                </span>
+                <ChevronIcon />
+              </button>
+            ) : (
+              <div className="mode">
+                <GlobeIcon size={28} />
+                <span className="mode__text">
+                  <span className="mode__title">Online com amigos</span>
+                  <span className="mode__desc">Sala por código, sem cadastro</span>
+                </span>
+                <span className="mode__soon">Em breve</span>
+              </div>
+            )}
           </div>
 
           <div className="home__learn">
@@ -199,6 +255,82 @@ export function HomeScreen({
 
       <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
         <RulesContent />
+      </Modal>
+
+      <Modal
+        isOpen={showOnlineModal}
+        onClose={() => setShowOnlineModal(false)}
+        title="Jogar online"
+        showCloseButton={false}
+      >
+        <form
+          className="player-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (hasOnlineName && hasRoomCode) void onJoinRoom?.(roomCode, onlineName);
+          }}
+        >
+          <div className="player-form__field">
+            <label htmlFor="online-name" className="player-form__label">
+              Seu nome
+            </label>
+            <input
+              id="online-name"
+              type="text"
+              className="player-form__input"
+              placeholder="Como os outros vão ver você"
+              value={onlineName}
+              maxLength={20}
+              autoComplete="nickname"
+              onChange={(e) => setOnlineName(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <button
+            type="button"
+            className="btn btn--primary btn--block"
+            disabled={!hasOnlineName || onlineBusy}
+            onClick={() => void onCreateRoom?.(onlineName)}
+          >
+            Criar uma sala
+          </button>
+
+          <p className="online-form__or">ou entre na sala de um amigo</p>
+
+          <div className="player-form__field">
+            <label htmlFor="room-code" className="player-form__label">
+              Código da sala
+            </label>
+            <input
+              id="room-code"
+              type="text"
+              className="player-form__input online-form__code"
+              placeholder="Ex.: K7M2Q"
+              value={roomCode}
+              maxLength={7}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+            />
+          </div>
+
+          {onlineError && (
+            <p className="online-form__error" role="alert">
+              {onlineError}
+            </p>
+          )}
+
+          <div className="modal__actions">
+            <button type="button" className="btn" onClick={() => setShowOnlineModal(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn--primary" disabled={!hasOnlineName || !hasRoomCode || onlineBusy}>
+              Entrar na sala
+            </button>
+          </div>
+        </form>
       </Modal>
 
       <Modal

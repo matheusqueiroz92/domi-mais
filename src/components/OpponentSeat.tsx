@@ -10,11 +10,13 @@ interface OpponentSeatProps {
   position: 'top' | 'left' | 'right';
   /** Destaca o adversário quando é a vez dele. */
   active?: boolean;
+  /** Situação no modo online ("Sem conexão", "Computador jogando"...). */
+  note?: string;
   testId?: string;
 }
 
 /** Adversário em volta da mesa: nome, quantidade de peças e os versos (somas). */
-export function OpponentSeat({ player, position, active = false, testId }: OpponentSeatProps) {
+export function OpponentSeat({ player, position, active = false, note, testId }: OpponentSeatProps) {
   const count = player.hand.length;
   return (
     <div
@@ -30,6 +32,7 @@ export function OpponentSeat({ player, position, active = false, testId }: Oppon
         )}
         {player.name}
       </span>
+      {note && <span className="seat__note">{note}</span>}
       <span className="seat__count">
         {count} {count === 1 ? 'peça' : 'peças'}
       </span>

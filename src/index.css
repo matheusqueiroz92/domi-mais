@@ -58,6 +58,7 @@
   --font-head: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --danger: #c62828;
+  --on-danger: #ffffff;
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.35;

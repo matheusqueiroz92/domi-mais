@@ -90,13 +90,19 @@ describe('App (jogo no mesmo dispositivo)', () => {
   });
 
   describe('tela inicial', () => {
-    it('mostra os modos de jogo: "Mesmo aparelho" e "Contra o computador" disponíveis; online em breve', () => {
+    it('com o modo online desligado (site publicado antes do servidor), ele aparece como "Em breve"', () => {
+      render(<App onlineEnabled={false} />);
+      expect(screen.getByText('Online com amigos')).toBeInTheDocument();
+      expect(screen.getByText('Em breve')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Online com amigos/ })).toBeNull();
+    });
+
+    it('mostra os três modos de jogo disponíveis: mesmo aparelho, contra o computador e online', () => {
       render(<App />);
       expect(screen.getByRole('button', { name: SAME_DEVICE })).toBeEnabled();
       expect(screen.getByRole('button', { name: VS_COMPUTER })).toBeEnabled();
-      expect(screen.getByText('Online com amigos')).toBeInTheDocument();
-      expect(screen.getAllByText('Em breve')).toHaveLength(1);
-      expect(screen.queryByRole('button', { name: /Online/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /Online com amigos/ })).toBeEnabled();
+      expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
     });
 
     it('"Como jogar" abre as regras', () => {

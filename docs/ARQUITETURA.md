@@ -22,7 +22,7 @@ src/
 │       ├── game-context.tsx       GameProvider (useReducer) e gravação da partida
 │       ├── saved-game.ts          Partida salva: gravar, ler, validar, retomar
 │       └── use-game.ts            Contexto e hook useGame
-├── online/             protocol.ts: tipos e constantes do modo online
+├── online/             Modo online: protocolo, conexão, sala de espera, cronômetro
 ├── pwa/                usePwa: service worker, aviso de versão nova, instalação
 ├── tutorial/           Roteiro da partida guiada e hook que o conduz
 ├── hooks/              usePersistentFlag (opção liga/desliga salva no navegador)

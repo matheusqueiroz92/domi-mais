@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import clsx from "clsx";
 import { GameProvider } from "./game/state/game-context";
@@ -40,6 +40,14 @@ import { useTheme } from "./theme/useTheme";
 import { usePersistentFlag } from "./hooks/usePersistentFlag";
 import { TUTORIAL_PLAYERS, createTutorialSetup } from "./tutorial/script";
 import { useTutorial } from "./tutorial/useTutorial";
+import { inviteCodeFromUrl, readSavedName, useOnlineRoom } from "./online/useOnlineRoom";
+import type { OnlineRoom } from "./online/useOnlineRoom";
+import { OnlineGameProvider } from "./online/OnlineGameProvider";
+import { LobbyScreen } from "./online/LobbyScreen";
+import { TurnTimer } from "./online/TurnTimer";
+import { ConnectionBanner } from "./online/ConnectionBanner";
+import type { SeatView } from "./online/protocol";
+import { ONLINE_ENABLED } from "./online/config";
 import "./App.css";
 
 /**
@@ -109,20 +117,48 @@ function getStatusMessage(state: GameState, viewerIndex: number): string | null 
   return `${passNotice}Monte vazio: ${player.name}, jogue uma peça que encaixe`;
 }
 
+/** Situação de um adversário no modo online, mostrada junto do nome. */
+function onlineSeatNote(seat: SeatView | undefined): string | undefined {
+  if (!seat) return undefined;
+  if (seat.left) return "Saiu da partida";
+  if (seat.takenOver) return "Computador jogando";
+  if (seat.kind === "human" && !seat.connected) return "Sem conexão";
+  return undefined;
+}
+
+const prefersReducedMotion = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
 /** Chave da preferência do modo "dica" no navegador. */
 export const HINTS_STORAGE_KEY = "domimais:hints";
 
 /** Telas grandes: a partida ocupa a janela inteira, sem rolagem. */
 const WIDE_SCREEN = "(min-width: 1024px) and (min-height: 640px)";
 
-function GameContent() {
+interface GameContentProps {
+  online: OnlineRoom;
+  /** Código de um link de convite ainda não usado. */
+  invite?: string | null;
+  onCreateRoom?: (name: string) => Promise<boolean>;
+  onJoinRoom?: (code: string, name: string) => Promise<boolean>;
+}
+
+function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameContentProps) {
   const { state, dispatch, initializeGame, resumeGame, discardSavedGame } = useGame();
+  // Partida online: o estado vem do servidor (OnlineGameProvider).
+  const onlineView = online.view?.game ? online.view : null;
+  const isOnline = onlineView !== null;
   const pwa = usePwa();
   const { theme, toggleTheme } = useTheme();
   const { soundOn, toggleSound, play } = useSound();
   const isWide = useMediaQuery(WIDE_SCREEN);
   // Trajetos da animação de embaralhar; `null` quando ela não está em andamento.
-  const [shuffle, setShuffle] = useState<ScatterPoint[][] | null>(null);
+  // No online, a partida que acabou de começar abre com a mistura das peças.
+  const [shuffle, setShuffle] = useState<ScatterPoint[][] | null>(() =>
+    isOnline && state.table.pieces.length === 0 && state.drawPile.length === 28 && !prefersReducedMotion()
+      ? createScatter(28)
+      : null
+  );
   const [showHomeScreen, setShowHomeScreen] = useState(true);
   // Muda sempre que a partida guardada pode ter mudado, para a tela inicial reler.
   const [savedGameVersion, setSavedGameVersion] = useState(0);
@@ -134,7 +170,7 @@ function GameContent() {
   const [openBotSetup, setOpenBotSetup] = useState(false);
 
   const currentPlayer = getCurrentPlayer(state);
-  const viewerIndex = getViewerIndex(state);
+  const viewerIndex = onlineView ? onlineView.youIndex : getViewerIndex(state);
   const viewer = state.players[viewerIndex];
   const isViewerTurn = state.currentPlayerIndex === viewerIndex;
   const hasBots = state.players.some((player) => player.botLevel !== null);
@@ -160,15 +196,21 @@ function GameContent() {
   const statusMessage = isShuffling
     ? "Embaralhando as peças…"
     : getStatusMessage(state, viewerIndex);
+  // Contra o computador e no online, a última ação dos outros aparece embaixo.
+  const showLastAction = hasBots || isOnline;
   const lastOpponentAction =
-    hasBots && isPlaying && !isShuffling ? getLastOpponentAction(state, viewerIndex) : null;
+    showLastAction && isPlaying && !isShuffling
+      ? (onlineView?.notice ?? getLastOpponentAction(state, viewerIndex))
+      : null;
   const canKeep = isViewerTurn && canKeepPiece(state);
   const lastPlayed = state.lastPlayed;
   // A peça abre ao chegar à mesa quando vem virada: do monte (peça inicial)
   // ou da mão de um jogador do computador.
   const flipPieceId =
     lastPlayed &&
-    (state.table.pieces.length === 1 || state.players[lastPlayed.playerIndex].botLevel !== null)
+    (state.table.pieces.length === 1 ||
+      state.players[lastPlayed.playerIndex].botLevel !== null ||
+      (isOnline && lastPlayed.playerIndex !== viewerIndex))
       ? lastPlayed.pieceId
       : null;
   const hasPlayablePiece = currentPlayerCanPlay(state);
@@ -184,6 +226,26 @@ function GameContent() {
   const tiedNames = winners.map((player) => player.name).join(" e ");
   // Quem está olhando para a tela fica embaixo; os outros, em volta da mesa.
   const seats = seatOpponents(state.players.length, viewerIndex);
+
+  // Online: som da partida que começa e das ações dos outros jogadores.
+  const initialShuffle = useRef(shuffle !== null);
+  useEffect(() => {
+    if (initialShuffle.current) play("shuffle");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir a partida
+  }, []);
+  const seen = useRef({ pile: state.drawPile.length, table: state.table.pieces.length });
+  useEffect(() => {
+    const before = seen.current;
+    seen.current = { pile: state.drawPile.length, table: state.table.pieces.length };
+    if (!isOnline) return;
+    const othersTurn = state.currentPlayerIndex !== viewerIndex;
+    if (state.drawPile.length < before.pile && othersTurn && state.table.pieces.length === before.table) {
+      play("draw");
+    }
+    if (state.table.pieces.length > before.table && state.lastPlayed?.playerIndex !== viewerIndex) {
+      play("place");
+    }
+  }, [isOnline, play, state.drawPile.length, state.table.pieces.length, state.currentPlayerIndex, state.lastPlayed, viewerIndex]);
 
   // Som das ações do computador.
   const handleBotAction = useCallback(
@@ -212,7 +274,8 @@ function GameContent() {
 
   // O computador joga sozinho na vez dele; espera o embaralhar e as janelas abertas.
   useBotTurns(state, dispatch, {
-    paused: showHomeScreen || isShuffling || showRules || showExitModal || inTutorial,
+    // No online quem joga pelo computador é o servidor.
+    paused: showHomeScreen || isShuffling || showRules || showExitModal || inTutorial || isOnline,
     onAction: handleBotAction,
   });
   const tutorialAllowsSide = (side: "left" | "right") =>
@@ -289,6 +352,13 @@ function GameContent() {
     }
   };
 
+  const isHost = onlineView?.seats[onlineView.youIndex]?.isHost ?? false;
+  const onlineHost = onlineView?.seats.find((seat) => seat.isHost);
+  const leaveOnline = () => {
+    setShowExitModal(false);
+    void online.leave();
+  };
+
   const backToHome = (botSetup = false) => {
     // Sair de uma partida comum descarta a partida guardada; sair do tutorial
     // não mexe em uma partida guardada antes dele.
@@ -303,7 +373,7 @@ function GameContent() {
   };
 
   // Mostra a tela inicial se ainda não iniciou o jogo
-  const onHome = showHomeScreen || state.phase === "setup";
+  const onHome = !isOnline && (showHomeScreen || state.phase === "setup");
   // Partida guardada neste aparelho, mostrada na tela inicial como "Continuar".
   const savedGame = useMemo(() => {
     const saved = onHome ? loadSavedGame() : null;
@@ -329,7 +399,29 @@ function GameContent() {
         onDiscardSavedGame={handleDiscardSavedGame}
         canInstall={pwa.canInstall}
         onInstall={pwa.install}
+        onCreateRoom={onCreateRoom}
+        onJoinRoom={onJoinRoom}
+        onlineBusy={online.busy}
+        onlineError={online.error}
+        inviteCode={invite}
+        savedName={readSavedName()}
+        savedRoomCode={onCreateRoom ? (online.savedSession?.code ?? null) : null}
+        onResumeRoom={() => void online.resume()}
+        onLeaveSavedRoom={() => void online.leaveSaved()}
       />
+      <Modal
+        isOpen={online.closedReason !== null}
+        onClose={online.dismissClosed}
+        title="Você saiu da sala"
+        showCloseButton={false}
+      >
+        <p>{online.closedReason}</p>
+        <div className="modal__actions">
+          <button type="button" className="btn btn--primary" onClick={online.dismissClosed}>
+            Entendi
+          </button>
+        </div>
+      </Modal>
       <PwaNotice pwa={pwa} />
       </>
     );
@@ -364,7 +456,9 @@ function GameContent() {
             className="icon-btn"
             aria-label="Sair da partida"
             title="Sair da partida"
-            onClick={isFinished ? () => backToHome() : () => setShowExitModal(true)}
+            onClick={
+              isFinished ? (isOnline ? leaveOnline : () => backToHome()) : () => setShowExitModal(true)
+            }
           >
             <ExitIcon />
           </button>
@@ -381,6 +475,7 @@ function GameContent() {
                 player={state.players[index]}
                 position={position}
                 active={isPlaying && !isShuffling && index === state.currentPlayerIndex}
+                note={onlineSeatNote(onlineView?.seats[index])}
                 testId={`seat-${index}`}
               />
             );
@@ -452,8 +547,17 @@ function GameContent() {
               </p>
             )}
 
-            {/* Contra o computador: o espaço fica reservado para a tela não pular. */}
-            {hasBots && !inTutorial && (
+            {/* Online: 60 segundos por jogada. */}
+            {onlineView?.turnDeadline && !isShuffling && (
+              <TurnTimer
+                deadline={onlineView.turnDeadline}
+                clockOffset={online.clockOffset}
+                label={isViewerTurn ? "Seu tempo" : `Tempo de ${currentPlayer.name}`}
+              />
+            )}
+
+            {/* Contra o computador e no online: o espaço fica reservado para a tela não pular. */}
+            {showLastAction && !inTutorial && (
               <p className="game__last-action">
                 {lastOpponentAction && `Última jogada: ${lastOpponentAction}`}
               </p>
@@ -517,9 +621,18 @@ function GameContent() {
               </div>
             </div>
           ))}
-          <button type="button" className="btn btn--primary btn--block" onClick={() => backToHome()}>
-            Nova partida
-          </button>
+          {isOnline ? (
+            <OnlineFinishActions
+              isHost={isHost}
+              hostName={onlineHost?.name}
+              onRestart={() => void online.restart()}
+              onLeave={leaveOnline}
+            />
+          ) : (
+            <button type="button" className="btn btn--primary btn--block" onClick={() => backToHome()}>
+              Nova partida
+            </button>
+          )}
         </section>
       )}
 
@@ -565,9 +678,19 @@ function GameContent() {
               <button type="button" className="btn" onClick={() => setResultDismissed(true)}>
                 Ver a mesa
               </button>
-              <button type="button" className="btn btn--primary" onClick={() => backToHome()}>
-                Nova partida
-              </button>
+              {!isOnline ? (
+                <button type="button" className="btn btn--primary" onClick={() => backToHome()}>
+                  Nova partida
+                </button>
+              ) : isHost ? (
+                <button type="button" className="btn btn--primary" onClick={() => void online.restart()}>
+                  Jogar de novo
+                </button>
+              ) : (
+                <button type="button" className="btn btn--primary" onClick={leaveOnline}>
+                  Sair da sala
+                </button>
+              )}
             </div>
           </>
         )}
@@ -580,12 +703,20 @@ function GameContent() {
         title="Sair da partida?"
         showCloseButton={false}
       >
-        <p>Todo o progresso desta partida será perdido.</p>
+        <p>
+          {isOnline
+            ? "O computador vai jogar no seu lugar até o fim, e você não poderá voltar para esta partida."
+            : "Todo o progresso desta partida será perdido."}
+        </p>
         <div className="modal__actions">
           <button type="button" className="btn" onClick={() => setShowExitModal(false)}>
             Continuar jogando
           </button>
-          <button type="button" className="btn btn--danger" onClick={() => backToHome()}>
+          <button
+            type="button"
+            className="btn btn--danger"
+            onClick={isOnline ? leaveOnline : () => backToHome()}
+          >
             Sim, sair
           </button>
         </div>
@@ -595,12 +726,105 @@ function GameContent() {
   );
 }
 
-function App() {
+/** Fim da partida online: o dono volta todos para a sala; os outros esperam ou saem. */
+function OnlineFinishActions({
+  isHost,
+  hostName,
+  onRestart,
+  onLeave,
+}: {
+  isHost: boolean;
+  hostName?: string;
+  onRestart: () => void;
+  onLeave: () => void;
+}) {
+  return (
+    <div className="final__online">
+      {!isHost && (
+        <p className="final__wait">Aguardando {hostName ?? "o dono da sala"} começar outra partida…</p>
+      )}
+      <div className="modal__actions">
+        <button type="button" className="btn" onClick={onLeave}>
+          Sair da sala
+        </button>
+        {isHost && (
+          <button type="button" className="btn btn--primary" onClick={onRestart}>
+            Jogar de novo
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Escolhe a tela: sala de espera e partida online quando há uma sala;
+ * senão, a tela inicial e as partidas neste aparelho.
+ */
+function Root({ onlineUrl, onlineEnabled }: { onlineUrl?: string; onlineEnabled: boolean }) {
+  const online = useOnlineRoom(onlineUrl);
+  // Link de convite (?sala=ABCDE): abre a entrada já preenchida, uma vez.
+  const [invite, setInvite] = useState(() => (onlineEnabled ? inviteCodeFromUrl() : null));
+  useEffect(() => {
+    if (invite) window.history.replaceState(null, "", window.location.pathname);
+  }, [invite]);
+
+  const { create, join } = online;
+  const onCreateRoom = useCallback(
+    (name: string) => {
+      setInvite(null);
+      return create(name);
+    },
+    [create]
+  );
+  const onJoinRoom = useCallback(
+    (code: string, name: string) => {
+      setInvite(null);
+      return join(code, name);
+    },
+    [join]
+  );
+
+  const view = online.view;
+  return (
+    <>
+      {view?.status === "lobby" ? (
+        <LobbyScreen online={online} />
+      ) : view?.game ? (
+        <OnlineGameProvider online={online}>
+          <GameContent online={online} />
+        </OnlineGameProvider>
+      ) : (
+        <GameContent
+          online={online}
+          invite={invite}
+          onCreateRoom={onlineEnabled ? onCreateRoom : undefined}
+          onJoinRoom={onlineEnabled ? onJoinRoom : undefined}
+        />
+      )}
+      {view && !online.connected && <ConnectionBanner />}
+      {view && online.error && (
+        <p className="online-toast" role="alert">
+          {online.error}
+        </p>
+      )}
+    </>
+  );
+}
+
+interface AppProps {
+  /** Endereço do servidor online (testes). Sem ele, o mesmo domínio do jogo. */
+  onlineUrl?: string;
+  /** Mostrar o modo online (padrão: `ONLINE_ENABLED`). */
+  onlineEnabled?: boolean;
+}
+
+function App({ onlineUrl, onlineEnabled = ONLINE_ENABLED }: AppProps = {}) {
   return (
     // reducedMotion="user": respeita quem pede menos movimento no sistema.
     <MotionConfig reducedMotion="user">
       <GameProvider>
-        <GameContent />
+        <Root onlineUrl={onlineUrl} onlineEnabled={onlineEnabled} />
       </GameProvider>
     </MotionConfig>
   );

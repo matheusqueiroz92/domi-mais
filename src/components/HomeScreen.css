@@ -288,3 +288,23 @@
   gap: 8px;
   margin-left: auto;
 }
+
+/* Entrada do modo online. */
+.online-form__or {
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.online-form__code {
+  font-family: var(--font-head);
+  font-size: 20px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.online-form__error {
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+}

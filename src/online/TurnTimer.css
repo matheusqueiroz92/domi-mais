@@ -1,0 +1,25 @@
+.turn-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.turn-timer__value {
+  min-width: 3.2em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.turn-timer--warning .turn-timer__value {
+  border-color: var(--danger);
+  color: var(--danger);
+}

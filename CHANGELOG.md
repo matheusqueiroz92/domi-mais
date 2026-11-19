@@ -1,5 +1,21 @@
 # Changelog
 
+## Em desenvolvimento — modo online, fase 2 de 4 (telas)
+
+- **Telas do modo online:** entrada (criar sala ou entrar com código), link
+  de convite (`?sala=CÓDIGO`), sala de espera com código, copiar link,
+  compartilhar, lugares, completar com o computador e começar; partida online
+  na mesma tela das partidas locais, com a contagem dos 60 segundos, avisos e
+  a situação de cada adversário; "Jogar de novo" para o dono no fim.
+- **Conexão:** aviso no alto quando a conexão cai e volta automática para o
+  mesmo lugar; ao reabrir a página, a tela inicial oferece "Voltar" para a
+  sala guardada no aparelho.
+- O modo online só aparece em `npm run dev` ou em builds com
+  `VITE_ONLINE=on`: o site publicado continua com "Em breve" até o servidor
+  estar na VPS (fase 4).
+- 12 testes de tela novos, com o servidor de verdade rodando no teste (399 no
+  total).
+
 ## Em desenvolvimento — modo online, fase 1 de 4 (servidor)
 
 - **Servidor do modo online** (`server/`, Node + Socket.IO), ainda sem telas

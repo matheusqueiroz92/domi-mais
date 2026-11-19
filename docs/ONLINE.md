@@ -4,9 +4,32 @@ Partidas de 2 a 4 jogadores, cada um no seu aparelho, em uma sala aberta por
 código. Este documento descreve o servidor (`server/`), o protocolo e as
 decisões de funcionamento.
 
-Situação (18/11/2026): **fase 1 de 4 concluída** (servidor e partida
-sincronizada). Faltam as telas (fase 2), o chat (fase 3) e o deploy na VPS
-(fase 4).
+Situação (19/11/2026): **fases 1 e 2 de 4 concluídas** (servidor e telas).
+Faltam o chat (fase 3) e o deploy na VPS (fase 4). Até a fase 4, o site
+publicado mostra o modo online como "Em breve" (veja "Ligar o modo online").
+
+## Como se joga (telas)
+
+1. Na tela inicial, **Online com amigos** → nome → **Criar uma sala**, ou
+   nome + código → **Entrar na sala**. O nome fica lembrado no aparelho.
+2. **Sala de espera:** código grande, **Copiar link** e **Compartilhar**
+   (quando o aparelho oferece). O link (`domimais.com.br/?sala=K7M2Q`) abre o
+   jogo com o código já preenchido. O dono vê os botões de tirar jogadores, de
+   completar vagas com o computador (Fácil, Médio ou Difícil) e de **Começar
+   partida** (a partir de 2 lugares). Os outros veem "Aguardando ... começar".
+3. **Partida:** a mesma tela das partidas locais (mesa, monte, mão, dicas,
+   sons e animações). Mudam: a contagem dos 60 segundos ("Seu tempo" ou "Tempo
+   de Ana"), avisos como "Tempo esgotado para Ana" na linha de última jogada,
+   e a situação de cada adversário ("Sem conexão", "Computador jogando",
+   "Saiu da partida").
+4. **Fim:** o dono toca em **Jogar de novo** e todos voltam para a sala de
+   espera; os outros esperam ou saem.
+5. **Queda:** aparece no alto "Sem conexão. Tentando reconectar…"; ao voltar
+   a conexão, o jogo retorna sozinho para o mesmo lugar. Se a página for
+   fechada ou recarregada, a tela inicial mostra **Sala online K7M2Q** com
+   **Voltar** e **Sair da sala**.
+6. **Sair:** na partida, o jogo avisa que o computador vai jogar no lugar até
+   o fim e que não dá para voltar.
 
 ## Decisões (Matheus, 18/11/2026)
 
@@ -87,10 +110,44 @@ server/src/
 ├── masking.ts         O que cada jogador vê; apelidos das peças
 ├── names.ts           Limpeza de nomes e nomes repetidos
 └── __tests__/         Testes (sala com relógio simulado; clientes reais)
-src/online/protocol.ts Tipos e constantes compartilhados com o navegador
+src/online/
+├── protocol.ts            Tipos e constantes compartilhados com o servidor
+├── config.ts              ONLINE_ENABLED: o modo online aparece no jogo?
+├── useOnlineRoom.ts       Conexão: criar, entrar, voltar, sair, ações; sessão no aparelho
+├── OnlineGameProvider.tsx A tela da partida recebe o estado do servidor
+├── LobbyScreen.tsx        Tela da sala de espera
+├── OnlineLobby.tsx        Código, convite, lugares, computador, começar
+├── TurnTimer.tsx          Contagem dos 60 segundos
+└── ConnectionBanner.tsx   Aviso de conexão caída
 ```
 
+**A tela da partida é a mesma do jogo local.** O `OnlineGameProvider` entrega
+ao `GameContent` (em `App.tsx`) o estado que veio do servidor, no mesmo
+`GameContext` do jogo local, e transforma as ações em pedidos ao servidor.
+Só a peça selecionada na mão fica na tela de cada um. O `App` escolhe a tela
+pelo estado da sala: sala de espera (`status: 'lobby'`), partida online (há
+`game`) ou o jogo local.
+
+**Sessão no aparelho:** `domimais:online` guarda o código e o token da sala;
+`domimais:name`, o último nome usado. Sair da sala, ser tirado dela ou a sala
+fechar apagam a sessão.
+
+## Ligar o modo online
+
+`ONLINE_ENABLED` (`src/online/config.ts`) é verdadeiro em `npm run dev` e nos
+testes. No build de produção, só com a variável `VITE_ONLINE=on`:
+
+```bash
+VITE_ONLINE=on npm run build
+```
+
+Sem ela, a tela inicial mostra "Online com amigos — Em breve". Na fase 4, o
+build da VPS passa a usar `VITE_ONLINE=on`.
+
 ## Desenvolvimento
+
+Para testar com duas pessoas no computador, abra o jogo em duas janelas
+(uma delas anônima, para não dividir a sessão guardada):
 
 ```bash
 npm run dev:server    # servidor na porta 3001, reinicia ao salvar
@@ -112,6 +169,11 @@ se o jogo estiver em outro domínio).
   de verdade, cada jogador em uma conexão, jogando partidas inteiras; queda e
   volta com o token; sessão aberta em outro aparelho; erros.
 - `server/src/__tests__/masking.test.ts`: o que cada jogador vê e nomes.
+- `src/App.online.test.tsx`: as telas com o servidor de verdade rodando no
+  teste: criar e entrar em sala, link de convite, erros, completar com o
+  computador, partida inteira jogada pela tela até o "Jogar de novo",
+  situação dos adversários, aviso de conexão, voltar depois de recarregar,
+  ser tirado da sala e sair.
 
 Nas partidas de teste, as pessoas são simuladas com a tática do computador
 médio usando **só a visão recebida**, o que prova que ela basta para jogar.

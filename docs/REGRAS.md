@@ -152,6 +152,19 @@ isso o limite é 4.
 - Depois da primeira visita o jogo funciona sem internet, nos modos mesmo
   aparelho, contra o computador e tutorial.
 
+## Modo online
+
+- Cada jogador usa o próprio aparelho, em uma sala aberta por código. Quem
+  cria a sala começa a partida e pode completar as vagas com o computador.
+- As regras são exatamente as mesmas. Cada um vê a própria mão e, dos outros,
+  só as somas dos versos.
+- Cada jogada tem **60 segundos** (comprar e jogar juntos). Se o tempo acabar,
+  o jogo compra uma peça ao acaso e fica com ela; com o monte vazio, joga por
+  ele.
+- Quem perde a conexão tem **1 minuto** para voltar. Depois disso, o
+  computador (nível Médio) joga no lugar até a pessoa voltar.
+- Quem sai da partida pelo botão é substituído pelo computador até o fim.
+
 ## Jogo no mesmo dispositivo
 
 Enquanto existir o modo de dois jogadores no mesmo dispositivo, a troca de turno
@@ -173,6 +186,7 @@ tocar em **"Estou pronto"**.
 | 12/11/2026 | O monte fica em duas fileiras de 14 peças; cada peça mantém o seu lugar. |
 | 13/11/2026 | A partida fica salva no aparelho; no mesmo aparelho ela é retomada pela tela de troca de turno. |
 | 13/11/2026 | Atualização do jogo só com o toque em "Atualizar", nunca sozinha. |
+| 18/11/2026 | Modo online: 60 segundos por jogada; queda de conexão dá 1 minuto antes de o computador assumir; o dono pode completar vagas com o computador. |
 | 18/11/2026 | Mesa fechada (pontas iguais e as 7 peças desse número na mesa) encerra a partida na hora, mesmo com peças no monte. |
 | 16/11/2026 | Mão vazia nunca empata: se o monte acaba com mais de um jogador sem peças, vence quem ficou sem peças primeiro. |
 | 13/11/2026 | O modo "dica" usa só informação pública do jogador e fica desligado por padrão. |
