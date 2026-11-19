@@ -319,3 +319,75 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
   }
 }
+
+/* Chat no modo online: botão com contador e prévia da mensagem nova. */
+.chat-btn {
+  position: relative;
+}
+
+.chat-btn__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+
+.chat-toast {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 45;
+  max-width: min(calc(100vw - 32px), 320px);
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  animation: chat-toast 4s ease both;
+}
+
+@keyframes chat-toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  8%,
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Online no celular: seis botões no topo; ficam um pouco menores para caber. */
+@media (max-width: 440px) {
+  .game--online .game__actions {
+    gap: 4px;
+  }
+
+  .game--online .game__actions .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .game--online .wordmark {
+    font-size: 17px;
+  }
+}

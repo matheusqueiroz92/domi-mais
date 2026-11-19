@@ -164,6 +164,9 @@ isso o limite é 4.
 - Quem perde a conexão tem **1 minuto** para voltar. Depois disso, o
   computador (nível Médio) joga no lugar até a pessoa voltar.
 - Quem sai da partida pelo botão é substituído pelo computador até o fim.
+- Há um chat na sala, com mensagens rápidas e texto livre. Palavrões e
+  ofensas são bloqueados (a mensagem não chega a ninguém), cada um pode
+  silenciar outro jogador só para si e o dono da sala pode desligar o chat.
 
 ## Jogo no mesmo dispositivo
 

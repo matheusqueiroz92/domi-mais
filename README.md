@@ -126,8 +126,9 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 - [x] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [x] Tutorial interativo e modo "dica"
 - [x] PWA com partida salva para uso offline
-- [ ] Multiplayer online por sala com código, com chat (fases 1 e 2 de 4
-  prontas: servidor e telas; veja [docs/ONLINE.md](docs/ONLINE.md))
+- [ ] Multiplayer online por sala com código, com chat (fases 1, 2 e 3 de 4
+  prontas: servidor, telas e chat; falta o deploy; veja
+  [docs/ONLINE.md](docs/ONLINE.md))
 
 O modo no mesmo dispositivo será removido quando os modos
 contra o computador e online estiverem prontos.

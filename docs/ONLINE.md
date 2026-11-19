@@ -4,8 +4,8 @@ Partidas de 2 a 4 jogadores, cada um no seu aparelho, em uma sala aberta por
 código. Este documento descreve o servidor (`server/`), o protocolo e as
 decisões de funcionamento.
 
-Situação (19/11/2026): **fases 1 e 2 de 4 concluídas** (servidor e telas).
-Faltam o chat (fase 3) e o deploy na VPS (fase 4). Até a fase 4, o site
+Situação (19/11/2026): **fases 1, 2 e 3 de 4 concluídas** (servidor, telas e
+chat). Falta o deploy na VPS (fase 4). Até a fase 4, o site
 publicado mostra o modo online como "Em breve" (veja "Ligar o modo online").
 
 ## Como se joga (telas)
@@ -112,6 +112,7 @@ server/src/
 ├── room.ts            Uma sala: lugares, partida, tempo, computador, quedas
 ├── masking.ts         O que cada jogador vê; apelidos das peças
 ├── names.ts           Limpeza de nomes e nomes repetidos
+├── chat/filter.ts     Filtro de palavrões e ofensas (chat e nomes)
 └── __tests__/         Testes (sala com relógio simulado; clientes reais)
 src/online/
 ├── protocol.ts            Tipos e constantes compartilhados com o servidor
@@ -121,6 +122,7 @@ src/online/
 ├── LobbyScreen.tsx        Tela da sala de espera
 ├── OnlineLobby.tsx        Código, convite, lugares, computador, começar
 ├── TurnTimer.tsx          Contagem dos 60 segundos
+├── ChatPanel.tsx          Chat: conversa, mensagens rápidas, silenciar, ligar/desligar
 └── ConnectionBanner.tsx   Aviso de conexão caída
 ```
 
@@ -135,6 +137,38 @@ pelo estado da sala: sala de espera (`status: 'lobby'`), partida online (há
 **Sessão no aparelho:** `domimais:online` guarda o código e o token da sala;
 `domimais:name`, o último nome usado. Sair da sala, ser tirado dela ou a sala
 fechar apagam a sessão.
+
+## Chat
+
+- Fica na sala de espera (embaixo dos jogadores) e, na partida, no botão de
+  balão no topo, com o número de mensagens novas e uma prévia da última que
+  some sozinha.
+- **Mensagens rápidas:** "Oi, pessoal!", "Boa jogada!", "Pensando…", "Será
+  que é blefe?", "Ops!", "Haha!", "Sua vez!", "Boa partida!"
+  (`QUICK_MESSAGES` em `protocol.ts`).
+- **Texto livre:** até 200 letras. No máximo 5 mensagens a cada 10 segundos
+  por pessoa. A sala guarda as últimas 50 mensagens, inclusive depois do
+  "Jogar de novo".
+- **Filtro** (`server/src/chat/filter.ts`): o servidor confere cada mensagem
+  e cada nome de jogador. Mensagem com palavra proibida não é entregue a
+  ninguém; só quem enviou vê o aviso, e o texto continua no campo. O filtro
+  normaliza o texto antes de comparar (acentos, números no lugar de letras,
+  letras repetidas e separadas, "k" no lugar de "c") e tem testes de falso
+  positivo ("computador", "cuidado", "viaduto", "disputa", "por"...). Para
+  acrescentar um termo, veja o comentário no começo do arquivo.
+- **Silenciar:** cada jogador pode esconder as mensagens de outro só para si
+  ("Silenciar Beto" / "Ouvir Beto"). Vale até sair da sala.
+- **Desligar:** o dono da sala liga e desliga o chat para todos ("Chat ligado
+  para todos"); desligado, ninguém envia e todos veem o aviso.
+- Mensagens não mexem na partida: não atrasam o computador nem o tempo de
+  ninguém.
+
+| Evento (navegador → servidor) | Quem | O que faz |
+|---|---|---|
+| `chat:send { text }` ou `chat:send { quick }` | jogador | Envia mensagem livre ou rápida |
+| `chat:set-enabled { enabled }` | dono | Liga ou desliga o chat |
+
+A conversa vem em `RoomView.chat` (`enabled` e `messages`).
 
 ## Ligar o modo online
 
@@ -173,6 +207,10 @@ se o jogo estiver em outro domínio).
   de verdade, cada jogador em uma conexão, jogando partidas inteiras; queda e
   volta com o token; sessão aberta em outro aparelho; erros.
 - `server/src/__tests__/masking.test.ts`: o que cada jogador vê e nomes.
+- `server/src/chat/__tests__/filter.test.ts`: o que o filtro bloqueia (com
+  disfarces) e o que deixa passar (falsos positivos).
+- `server/src/__tests__/chat.test.ts`: chat na sala (rápidas, bloqueio,
+  limite, histórico, dono desliga, não atrasa o computador).
 - `src/App.online.test.tsx`: as telas com o servidor de verdade rodando no
   teste: criar e entrar em sala, link de convite, erros, completar com o
   computador, partida inteira jogada pela tela até o "Jogar de novo",

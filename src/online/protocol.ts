@@ -27,6 +27,44 @@ export const RECONNECT_GRACE_SECONDS = 60;
 /** Tamanho máximo do nome de um jogador. */
 export const MAX_NAME_LENGTH = 20;
 
+/** Chat: tamanho máximo de uma mensagem e quantas a sala guarda. */
+export const CHAT_MAX_LENGTH = 200;
+export const CHAT_HISTORY = 50;
+/** Chat: no máximo `messages` mensagens a cada `seconds` segundos por jogador. */
+export const CHAT_RATE = { messages: 5, seconds: 10 };
+
+/** Mensagens rápidas (botões prontos do chat). */
+export const QUICK_MESSAGES = {
+  oi: 'Oi, pessoal!',
+  boa: 'Boa jogada!',
+  pensando: 'Pensando…',
+  blefe: 'Será que é blefe?',
+  ops: 'Ops!',
+  haha: 'Haha!',
+  vez: 'Sua vez!',
+  gg: 'Boa partida!',
+} as const;
+
+export type QuickMessageId = keyof typeof QUICK_MESSAGES;
+
+export interface ChatMessage {
+  /** Número crescente dentro da sala. */
+  id: number;
+  /** Lugar de quem enviou. */
+  seatId: string;
+  name: string;
+  text: string;
+  /** Veio de um botão de mensagem rápida. */
+  quick: boolean;
+}
+
+export interface ChatView {
+  /** O dono da sala pode desligar o chat. */
+  enabled: boolean;
+  /** As últimas mensagens (no máximo `CHAT_HISTORY`). */
+  messages: ChatMessage[];
+}
+
 export type RoomStatus = 'lobby' | 'playing' | 'finished';
 
 /** Um lugar na mesa: uma pessoa ou o computador. */
@@ -67,6 +105,7 @@ export interface RoomView {
   serverNow: number;
   /** Aviso para todos, como "Tempo esgotado para Ana". */
   notice: string | null;
+  chat: ChatView;
 }
 
 /** Ações de jogo que um jogador envia. Os ids são os que vieram em `RoomView.game`. */
@@ -95,6 +134,10 @@ export interface ClientToServerEvents {
   'room:start': (ack: (res: Ack) => void) => void;
   'room:restart': (ack: (res: Ack) => void) => void;
   'game:action': (payload: { action: OnlineGameAction }, ack: (res: Ack) => void) => void;
+  /** Mensagem livre (`text`) ou rápida (`quick`). */
+  'chat:send': (payload: { text: string } | { quick: QuickMessageId }, ack: (res: Ack) => void) => void;
+  /** Só o dono da sala: liga ou desliga o chat. */
+  'chat:set-enabled': (payload: { enabled: boolean }, ack: (res: Ack) => void) => void;
 }
 
 export interface ServerToClientEvents {

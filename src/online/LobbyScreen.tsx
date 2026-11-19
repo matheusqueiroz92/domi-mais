@@ -3,6 +3,7 @@ import { useSound } from '../sound/useSound';
 import { SoundToggle } from '../components/SoundToggle';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { OnlineLobby } from './OnlineLobby';
+import { ChatPanel } from './ChatPanel';
 import type { OnlineRoom } from './useOnlineRoom';
 
 /** Tela da sala de espera do modo online. */
@@ -28,6 +29,9 @@ export function LobbyScreen({ online }: { online: OnlineRoom }) {
         onStart={() => void online.start()}
         onLeave={() => void online.leave()}
       />
+      <div className="lobby lobby__chat">
+        <ChatPanel view={online.view} online={online} compact />
+      </div>
     </main>
   );
 }

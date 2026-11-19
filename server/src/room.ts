@@ -15,12 +15,23 @@ import { getPlayableSides } from '../../src/game/logic/rules';
 import type { RandomFn } from '../../src/game/logic/pieces';
 import { BOT_NAMES, chooseBotAction } from '../../src/game/ai/bot';
 import {
+  CHAT_HISTORY,
+  CHAT_MAX_LENGTH,
+  CHAT_RATE,
   MAX_ROOM_PLAYERS,
   MIN_ROOM_PLAYERS,
+  QUICK_MESSAGES,
   RECONNECT_GRACE_SECONDS,
   TURN_SECONDS,
 } from '../../src/online/protocol';
-import type { OnlineGameAction, RoomStatus, RoomView } from '../../src/online/protocol';
+import type {
+  ChatMessage,
+  OnlineGameAction,
+  QuickMessageId,
+  RoomStatus,
+  RoomView,
+} from '../../src/online/protocol';
+import { isClean } from './chat/filter';
 import { createPieceMask, maskGameState } from './masking';
 import type { PieceMask } from './masking';
 import { uniqueName } from './names';
@@ -70,7 +81,15 @@ const ERRORS = {
   invalidMove: 'Jogada inválida.',
   notPlaying: 'Não há partida em andamento.',
   notInRoom: 'Você não faz mais parte desta sala.',
+  chatOff: 'O dono da sala desligou o chat.',
+  chatEmpty: 'Escreva uma mensagem.',
+  chatLong: `Mensagem longa demais (máximo de ${CHAT_MAX_LENGTH} letras).`,
+  chatBlocked: 'Essa mensagem não foi enviada: ela tem palavras que não são permitidas aqui.',
+  chatFast: 'Calma! Espere alguns segundos para mandar outra mensagem.',
 };
+
+/** Mensagem do chat como chega do jogador: texto livre ou um botão pronto. */
+export type ChatInput = { text: string } | { quick: QuickMessageId };
 
 export class Room {
   readonly code: string;
@@ -84,12 +103,17 @@ export class Room {
   lastActivity = Date.now();
   /** Última vez em que havia alguma pessoa conectada. */
   lastHumanSeen = Date.now();
+  chatEnabled = true;
+  messages: ChatMessage[] = [];
 
   private mask: PieceMask | null = null;
   private seatCounter = 0;
   private botTimer: Timer | null = null;
   private turnTimer: Timer | null = null;
   private graceTimers = new Map<string, Timer>();
+  private nextMessageId = 1;
+  /** Horários dos últimos envios de cada lugar (limite de mensagens). */
+  private chatTimes = new Map<string, number[]>();
   private readonly rng: RandomFn;
   private readonly botDelayMs: number;
   private readonly turnMs: number;
@@ -306,6 +330,51 @@ export class Room {
     return true;
   }
 
+  /* ------------------------------------------------------------- Chat */
+
+  /**
+   * Mensagem de uma pessoa da sala. Mensagem com palavra proibida não é
+   * entregue a ninguém: só quem enviou recebe o erro.
+   */
+  sendChat(seatId: string, input: ChatInput): Result {
+    const seat = this.seat(seatId);
+    if (this.closed || !seat || seat.kind !== 'human' || seat.left) return fail(ERRORS.notInRoom);
+    if (!this.chatEnabled) return fail(ERRORS.chatOff);
+
+    let text: string;
+    const quick = 'quick' in input;
+    if (quick) {
+      text = QUICK_MESSAGES[input.quick];
+    } else {
+      text = input.text.replace(/\p{C}/gu, '').replace(/\s+/g, ' ').trim();
+      if (!text) return fail(ERRORS.chatEmpty);
+      if ([...text].length > CHAT_MAX_LENGTH) return fail(ERRORS.chatLong);
+      if (!isClean(text)) return fail(ERRORS.chatBlocked);
+    }
+
+    const now = Date.now();
+    const windowMs = CHAT_RATE.seconds * 1000;
+    const recent = (this.chatTimes.get(seat.id) ?? []).filter((at) => now - at < windowMs);
+    if (recent.length >= CHAT_RATE.messages) return fail(ERRORS.chatFast);
+    this.chatTimes.set(seat.id, [...recent, now]);
+
+    this.messages = [
+      ...this.messages,
+      { id: this.nextMessageId++, seatId: seat.id, name: seat.name, text, quick },
+    ].slice(-CHAT_HISTORY);
+    this.notify();
+    return { ok: true };
+  }
+
+  /** Só o dono da sala: liga ou desliga o chat para todos. */
+  setChatEnabled(bySeatId: string, enabled: boolean): Result {
+    if (this.closed) return fail(ERRORS.notInRoom);
+    if (bySeatId !== this.hostId) return fail(ERRORS.notHost);
+    this.chatEnabled = enabled;
+    this.notify();
+    return { ok: true };
+  }
+
   /* --------------------------------------- Computador e tempo de jogada */
 
   /** Lugar que o computador controla agora (computador, pessoa que caiu ou saiu). */
@@ -420,6 +489,7 @@ export class Room {
       turnDeadline: this.turnDeadline,
       serverNow: Date.now(),
       notice: this.notice,
+      chat: { enabled: this.chatEnabled, messages: this.messages },
     };
   }
 
@@ -487,9 +557,18 @@ export class Room {
 
   private changed(): void {
     if (this.closed) return;
+    this.schedule();
+    this.notify();
+  }
+
+  /**
+   * Avisa a mudança sem reprogramar a partida. O chat usa este: uma mensagem
+   * não pode atrasar a jogada do computador nem mexer no tempo de ninguém.
+   */
+  private notify(): void {
+    if (this.closed) return;
     this.lastActivity = Date.now();
     if (this.hasConnectedHuman()) this.lastHumanSeen = this.lastActivity;
-    this.schedule();
     this.options.onChange?.(this);
   }
 }

@@ -47,6 +47,8 @@ import { OnlineGameProvider } from "./online/OnlineGameProvider";
 import { LobbyScreen } from "./online/LobbyScreen";
 import { TurnTimer } from "./online/TurnTimer";
 import { ConnectionBanner } from "./online/ConnectionBanner";
+import { ChatPanel } from "./online/ChatPanel";
+import { ChatIcon } from "./components/icons";
 import type { SeatView } from "./online/protocol";
 import { ONLINE_ENABLED } from "./online/config";
 import "./App.css";
@@ -401,6 +403,28 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   };
 
   const isHost = onlineView?.seats[onlineView.youIndex]?.isHost ?? false;
+
+  // Chat (online): mensagens novas dos outros desde a última vez que a janela abriu.
+  const chatMessages = onlineView?.chat.messages ?? [];
+  const lastChatId = chatMessages.length ? chatMessages[chatMessages.length - 1].id : 0;
+  const [chatSeen, setChatSeen] = useState(lastChatId);
+  const [showChat, setShowChat] = useState(false);
+  const yourSeatId = onlineView?.seats[onlineView.youIndex]?.id;
+  const unreadChat = showChat
+    ? []
+    : chatMessages.filter(
+        (message) =>
+          message.id > chatSeen && message.seatId !== yourSeatId && !online.muted.has(message.seatId)
+      );
+  const latestUnread = unreadChat.length ? unreadChat[unreadChat.length - 1] : null;
+  const openChat = () => {
+    setChatSeen(lastChatId);
+    setShowChat(true);
+  };
+  const closeChat = () => {
+    setChatSeen(lastChatId);
+    setShowChat(false);
+  };
   const onlineHost = onlineView?.seats.find((seat) => seat.isHost);
   const leaveOnline = () => {
     setShowExitModal(false);
@@ -482,13 +506,26 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         isFinished && "game--finished",
         hasGuide && "game--guided",
         inTutorial && "game--tutorial",
-        yourTurn && "game--your-turn"
+        yourTurn && "game--your-turn",
+        isOnline && "game--online"
       )}
     >
       {yourTurn && <TurnAlert key={turnKey} hint={turnHint(state)} />}
       <header className="game__header">
         <span className="wordmark">DomiMais</span>
         <div className="game__actions">
+          {isOnline && (
+            <button
+              type="button"
+              className="icon-btn chat-btn"
+              onClick={openChat}
+              aria-label={unreadChat.length ? `Chat: ${unreadChat.length} mensagens novas` : "Chat"}
+              title="Chat"
+            >
+              <ChatIcon />
+              {unreadChat.length > 0 && <span className="chat-btn__badge">{unreadChat.length}</span>}
+            </button>
+          )}
           {!inTutorial && <HintToggle hintsOn={hintsOn} onToggle={toggleHints} />}
           <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -693,6 +730,19 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           playerName={currentPlayer.name}
           onReady={() => dispatch({ type: "CONFIRM_READY" })}
         />
+      )}
+
+      {/* Prévia da mensagem nova do chat (some sozinha). */}
+      {latestUnread && (
+        <button type="button" key={latestUnread.id} className="chat-toast" onClick={openChat}>
+          <strong>{latestUnread.name}:</strong> {latestUnread.text}
+        </button>
+      )}
+
+      {onlineView && (
+        <Modal isOpen={showChat} onClose={closeChat} title="Chat da sala">
+          <ChatPanel view={onlineView} online={online} hideTitle />
+        </Modal>
       )}
 
       <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">

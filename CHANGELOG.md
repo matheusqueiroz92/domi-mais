@@ -15,6 +15,21 @@
   onde ela encaixa, sem precisar tocar nela na mão (como já acontecia nas
   partidas locais).
 
+## Em desenvolvimento — modo online, fase 3 de 4 (chat)
+
+- **Chat da sala**, na sala de espera e na partida (botão de balão com o
+  número de mensagens novas e uma prévia da última): mensagens rápidas,
+  texto livre de até 200 letras, limite de 5 mensagens a cada 10 segundos.
+- **Filtro de palavrões e ofensas** no servidor, que pega disfarces comuns
+  (acentos, números no lugar de letras, letras repetidas ou separadas).
+  Mensagem proibida não chega a ninguém; só quem mandou vê o aviso. O filtro
+  também vale para os nomes dos jogadores.
+- **Silenciar um jogador** (só para quem silencia) e **dono da sala liga e
+  desliga o chat** para todos.
+- No celular, no modo online, os botões do topo ficam um pouco menores para
+  caber o do chat.
+- 78 testes novos (489 no total), incluindo os de falso positivo do filtro.
+
 ## Em desenvolvimento — modo online, fase 2 de 4 (telas)
 
 - **Telas do modo online:** entrada (criar sala ou entrar com código), link

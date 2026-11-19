@@ -264,3 +264,83 @@ describe('modo online na tela', () => {
     await waitFor(() => expect(server.manager.rooms.size).toBe(0));
   });
 });
+
+describe('chat do modo online na tela', () => {
+  async function roomWithBeto() {
+    await createRoomOnScreen('Ana');
+    const beto = otherPlayer();
+    expect((await beto.ask('room:join', { code: roomCode(), name: 'Beto' })).ok).toBe(true);
+    await waitFor(() => expect(screen.getAllByTestId('lobby-seat')).toHaveLength(2));
+    return beto;
+  }
+  const chat = () => screen.getByRole('region', { name: 'Chat da sala' });
+
+  it('na sala de espera: mensagens dos dois lados e botões de mensagem rápida', async () => {
+    const beto = await roomWithBeto();
+    expect(within(chat()).getByText('Nenhuma mensagem ainda.')).toBeInTheDocument();
+
+    await beto.ask('chat:send', { quick: 'oi' });
+    expect(await within(chat()).findByText('Oi, pessoal!', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(within(chat()).getByText('Beto')).toBeInTheDocument();
+
+    fireEvent.change(within(chat()).getByLabelText('Mensagem'), { target: { value: 'Bora!' } });
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Enviar' }));
+    await waitFor(() => expect(beto.state.view?.chat.messages.at(-1)?.text).toBe('Bora!'), { timeout: 4000 });
+    // O campo fica vazio depois de enviar.
+    await waitFor(() => expect(within(chat()).getByLabelText('Mensagem')).toHaveValue(''));
+
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Boa jogada!' }));
+    await waitFor(() => expect(beto.state.view?.chat.messages.at(-1)?.text).toBe('Boa jogada!'), { timeout: 4000 });
+  });
+
+  it('mensagem com palavrão não sai, mostra o aviso e continua no campo', async () => {
+    await roomWithBeto();
+    fireEvent.change(within(chat()).getByLabelText('Mensagem'), { target: { value: 'que p0rr4' } });
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Enviar' }));
+    expect(await screen.findByText(/não foi enviada/, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(within(chat()).getByLabelText('Mensagem')).toHaveValue('que p0rr4');
+    expect(within(chat()).getByText('Nenhuma mensagem ainda.')).toBeInTheDocument();
+  });
+
+  it('silenciar esconde as mensagens daquele jogador só nesta tela', async () => {
+    const beto = await roomWithBeto();
+    await beto.ask('chat:send', { text: 'mensagem do Beto' });
+    expect(await within(chat()).findByText('mensagem do Beto', {}, { timeout: 4000 })).toBeInTheDocument();
+
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Silenciar Beto' }));
+    expect(within(chat()).queryByText('mensagem do Beto')).not.toBeInTheDocument();
+    // Para o resto da sala, a mensagem continua lá.
+    expect(beto.state.view?.chat.messages).toHaveLength(1);
+
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Ouvir Beto' }));
+    expect(within(chat()).getByText('mensagem do Beto')).toBeInTheDocument();
+  });
+
+  it('o dono desliga o chat; os outros veem o aviso e não têm onde escrever', async () => {
+    const beto = await roomWithBeto();
+    fireEvent.click(within(chat()).getByRole('checkbox', { name: 'Chat ligado para todos' }));
+    await waitFor(() => expect(beto.state.view?.chat.enabled).toBe(false), { timeout: 4000 });
+    expect(within(chat()).getByText('O chat está desligado pelo dono da sala.')).toBeInTheDocument();
+    expect(within(chat()).queryByLabelText('Mensagem')).not.toBeInTheDocument();
+  });
+
+  it('na partida: contador de mensagens novas, prévia e a janela do chat', async () => {
+    const beto = await roomWithBeto();
+    fireEvent.click(screen.getByRole('button', { name: 'Começar partida' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Pular animação' }, { timeout: 4000 }));
+    expect(screen.getByRole('button', { name: 'Chat' })).toBeInTheDocument();
+
+    await beto.ask('chat:send', { quick: 'boa' });
+    const button = await screen.findByRole('button', { name: 'Chat: 1 mensagens novas' }, { timeout: 4000 });
+    // Prévia da mensagem nova.
+    expect(screen.getByRole('button', { name: 'Beto: Boa jogada!' })).toBeInTheDocument();
+
+    fireEvent.click(button);
+    const dialog = screen.getByRole('dialog', { name: 'Chat da sala' });
+    // A mensagem está na conversa (o mesmo texto também é um botão de mensagem rápida).
+    expect(within(within(dialog).getByRole('list')).getByText('Boa jogada!')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: /Fechar/ }));
+    expect(screen.getByRole('button', { name: 'Chat' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Beto: Boa jogada!' })).not.toBeInTheDocument();
+  });
+});

@@ -8,7 +8,7 @@ import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
 import type { BotLevel } from '../../src/game/state/game-types';
-import { SOCKET_PATH } from '../../src/online/protocol';
+import { QUICK_MESSAGES, SOCKET_PATH } from '../../src/online/protocol';
 import type {
   Ack,
   ClientToServerEvents,
@@ -16,6 +16,8 @@ import type {
   ServerToClientEvents,
 } from '../../src/online/protocol';
 import { cleanName } from './names';
+import { isClean } from './chat/filter';
+import type { ChatInput } from './room';
 import { RoomManager } from './room-manager';
 import type { RoomManagerOptions } from './room-manager';
 import type { Room } from './room';
@@ -42,6 +44,16 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 const isShortString = (value: unknown, max = 64): value is string =>
   typeof value === 'string' && value.length > 0 && value.length <= max;
+
+/** Confere o formato de uma mensagem de chat vinda do navegador. */
+export function parseChat(value: unknown): ChatInput | null {
+  if (!isObject(value)) return null;
+  if (typeof value.quick === 'string') {
+    return Object.hasOwn(QUICK_MESSAGES, value.quick) ? { quick: value.quick as keyof typeof QUICK_MESSAGES } : null;
+  }
+  // Texto muito maior que o limite nem é examinado.
+  return typeof value.text === 'string' && value.text.length <= 1000 ? { text: value.text } : null;
+}
 
 /** Confere o formato de uma ação de jogo vinda do navegador. */
 export function parseAction(value: unknown): OnlineGameAction | null {
@@ -153,6 +165,7 @@ export function createDomiMaisServer(
 
   const NOT_IN_ROOM: Ack = { ok: false, error: 'Você não está em uma sala.' };
   const BAD_NAME: Ack = { ok: false, error: 'Digite um nome com pelo menos uma letra ou número.' };
+  const RUDE_NAME: Ack = { ok: false, error: 'Escolha outro nome: esse não é permitido aqui.' };
 
   /** Garante que `ack` é uma função antes de responder. */
   const safe = <A extends unknown[]>(handler: (...args: A) => void) =>
@@ -173,6 +186,7 @@ export function createDomiMaisServer(
       if (typeof ack !== 'function') return;
       const name = cleanName(isObject(payload) ? payload.name : null);
       if (!name) return ack(BAD_NAME);
+      if (!isClean(name)) return ack(RUDE_NAME);
       const created = manager.create(name);
       if (!created.ok) return ack(created);
       bind(socket, created.room, created.seat.id);
@@ -187,6 +201,7 @@ export function createDomiMaisServer(
       }
       const name = cleanName(payload.name);
       if (!name) return ack(BAD_NAME);
+      if (!isClean(name)) return ack(RUDE_NAME);
       const room = manager.get(payload.code);
       if (!room) return ack({ ok: false, error: 'Sala não encontrada. Confira o código.' });
       const joined = room.join(name);
@@ -256,6 +271,23 @@ export function createDomiMaisServer(
       const action = parseAction(isObject(payload) ? payload.action : null);
       if (!action) return ack({ ok: false, error: 'Jogada inválida.' });
       ack(at.room.act(at.seatId, action));
+    }));
+
+    socket.on('chat:send', safe((payload, ack) => {
+      if (typeof ack !== 'function') return;
+      const at = current(socket);
+      if (!at) return ack(NOT_IN_ROOM);
+      const input = parseChat(payload);
+      if (!input) return ack({ ok: false, error: 'Mensagem inválida.' });
+      ack(at.room.sendChat(at.seatId, input));
+    }));
+
+    socket.on('chat:set-enabled', safe((payload, ack) => {
+      if (typeof ack !== 'function') return;
+      const at = current(socket);
+      if (!at) return ack(NOT_IN_ROOM);
+      if (!isObject(payload) || typeof payload.enabled !== 'boolean') return ack({ ok: false, error: 'Pedido inválido.' });
+      ack(at.room.setChatEnabled(at.seatId, payload.enabled));
     }));
 
     socket.on('disconnect', () => unbind(socket, true));

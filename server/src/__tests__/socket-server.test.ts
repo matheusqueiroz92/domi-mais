@@ -13,7 +13,7 @@ import type {
   ServerToClientEvents,
   Session,
 } from '../../../src/online/protocol';
-import { createDomiMaisServer, parseAction } from '../socket-server';
+import { createDomiMaisServer, parseAction, parseChat } from '../socket-server';
 import type { DomiMaisServer } from '../socket-server';
 import { expectNoLeak, simulatedHumanAction } from './test-utils';
 
@@ -227,6 +227,66 @@ describe('servidor online (Socket.IO de verdade)', () => {
     const { host, session } = await createRoom('Ana');
     expect(await ask(host.socket, 'room:leave')).toEqual({ ok: true });
     expect(server.manager.get(session.code)).toBeUndefined();
+  });
+});
+
+describe('chat pela rede', () => {
+  it('a mensagem chega aos outros; a proibida volta como erro só para quem mandou', async () => {
+    const { host, session } = await createRoom('Ana');
+    const guest = client();
+    await ask(guest.socket, 'room:join', { code: session.code, name: 'Beto' });
+    await until(() => host.state.view?.seats.length === 2);
+
+    expect(await ask(guest.socket, 'chat:send', { text: 'Bora jogar!' })).toEqual({ ok: true });
+    expect(await ask(host.socket, 'chat:send', { quick: 'oi' })).toEqual({ ok: true });
+    await until(() => host.state.view?.chat.messages.length === 2 && guest.state.view?.chat.messages.length === 2);
+    expect(host.state.view!.chat.messages.map((m) => `${m.name}: ${m.text}`)).toEqual([
+      'Beto: Bora jogar!',
+      'Ana: Oi, pessoal!',
+    ]);
+
+    expect(await ask(guest.socket, 'chat:send', { text: 'vai se f0der' })).toEqual({
+      ok: false,
+      error: 'Essa mensagem não foi enviada: ela tem palavras que não são permitidas aqui.',
+    });
+    expect(await ask(guest.socket, 'chat:send', { quick: 'xingar' })).toEqual({ ok: false, error: 'Mensagem inválida.' });
+    expect(host.state.view!.chat.messages).toHaveLength(2);
+  });
+
+  it('o dono desliga o chat para todos', async () => {
+    const { host, session } = await createRoom('Ana');
+    const guest = client();
+    await ask(guest.socket, 'room:join', { code: session.code, name: 'Beto' });
+    expect(await ask(guest.socket, 'chat:set-enabled', { enabled: false })).toEqual({
+      ok: false,
+      error: 'Só quem criou a sala pode fazer isso.',
+    });
+    expect(await ask(host.socket, 'chat:set-enabled', { enabled: false })).toEqual({ ok: true });
+    await until(() => guest.state.view?.chat.enabled === false);
+    expect(await ask(guest.socket, 'chat:send', { quick: 'oi' })).toEqual({
+      ok: false,
+      error: 'O dono da sala desligou o chat.',
+    });
+  });
+
+  it('nome com palavrão é recusado ao criar e ao entrar', async () => {
+    const c = client();
+    const rude = { ok: false, error: 'Escolha outro nome: esse não é permitido aqui.' };
+    expect(await ask(c.socket, 'room:create', { name: 'Caralh0' })).toEqual(rude);
+    const { session } = await createRoom('Ana');
+    expect(await ask(c.socket, 'room:join', { code: session.code, name: 'idiota' })).toEqual(rude);
+  });
+});
+
+describe('formato das mensagens de chat (parseChat)', () => {
+  it('aceita texto ou um botão de mensagem rápida que existe', () => {
+    expect(parseChat({ text: 'oi' })).toEqual({ text: 'oi' });
+    expect(parseChat({ quick: 'boa' })).toEqual({ quick: 'boa' });
+    expect(parseChat({ quick: 'toString' })).toBeNull();
+    expect(parseChat({ quick: '__proto__' })).toBeNull();
+    expect(parseChat({ text: 'x'.repeat(5000) })).toBeNull();
+    expect(parseChat({ text: 42 })).toBeNull();
+    expect(parseChat('oi')).toBeNull();
   });
 });
 

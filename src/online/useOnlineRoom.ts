@@ -14,6 +14,7 @@ import type {
   Ack,
   ClientToServerEvents,
   OnlineGameAction,
+  QuickMessageId,
   RoomView,
   ServerToClientEvents,
   Session,
@@ -118,6 +119,13 @@ export interface OnlineRoom {
   start: () => Promise<boolean>;
   restart: () => Promise<boolean>;
   act: (action: OnlineGameAction) => Promise<boolean>;
+  /** Envia uma mensagem livre ou rápida no chat. */
+  sendChat: (message: { text: string } | { quick: QuickMessageId }) => Promise<boolean>;
+  /** Só o dono da sala: liga ou desliga o chat. */
+  setChatEnabled: (enabled: boolean) => Promise<boolean>;
+  /** Jogadores silenciados nesta tela (só quem silenciou deixa de ver). */
+  muted: ReadonlySet<string>;
+  toggleMute: (seatId: string) => void;
   clearError: () => void;
   dismissClosed: () => void;
 }
@@ -134,6 +142,7 @@ export function useOnlineRoom(url?: string): OnlineRoom {
   const [error, setError] = useState<string | null>(null);
   const [closedReason, setClosedReason] = useState<string | null>(null);
   const [savedSession, setSavedSession] = useState<Session | null>(() => readSession());
+  const [muted, setMuted] = useState<ReadonlySet<string>>(() => new Set());
 
   const socketRef = useRef<ClientSocket | null>(null);
   /** Sessão em uso (na sala agora); a reconexão automática usa esta. */
@@ -153,6 +162,7 @@ export function useOnlineRoom(url?: string): OnlineRoom {
   const dropRoom = useCallback((reason: string | null, forget: boolean) => {
     activeRef.current = null;
     setView(null);
+    setMuted(new Set());
     if (reason) setClosedReason(reason);
     if (forget) {
       writeSession(null);
@@ -331,6 +341,20 @@ export function useOnlineRoom(url?: string): OnlineRoom {
     start: useCallback(() => simple('room:start'), [simple]),
     restart: useCallback(() => simple('room:restart'), [simple]),
     act: useCallback((action: OnlineGameAction) => simple('game:action', { action }), [simple]),
+    sendChat: useCallback(
+      (message: { text: string } | { quick: QuickMessageId }) => simple('chat:send', message),
+      [simple]
+    ),
+    setChatEnabled: useCallback((enabled: boolean) => simple('chat:set-enabled', { enabled }), [simple]),
+    muted,
+    toggleMute: useCallback((seatId: string) => {
+      setMuted((current) => {
+        const next = new Set(current);
+        if (next.has(seatId)) next.delete(seatId);
+        else next.add(seatId);
+        return next;
+      });
+    }, []),
     clearError,
     dismissClosed,
   };
