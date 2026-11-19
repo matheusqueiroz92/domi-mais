@@ -82,6 +82,9 @@ npm run test:watch  # testes em modo interativo
 npm run lint        # linter
 npm run build       # checagem de tipos + build de produção
 npm run preview     # pré-visualiza o build
+
+npm run dev:server  # servidor do modo online (porta 3001)
+npm run build:server
 ```
 
 Antes de enviar uma alteração, rode `npm test`, `npm run lint` e
@@ -93,7 +96,8 @@ Antes de enviar uma alteração, rode `npm test`, `npm run lint` e
 domi-mais/
 ├── docs/
 │   ├── REGRAS.md          Regras oficiais (fonte de verdade)
-│   └── ARQUITETURA.md     Estado, ações, motor de regras e testes
+│   ├── ARQUITETURA.md     Estado, ações, motor de regras e testes
+│   └── ONLINE.md          Modo online: servidor, protocolo e decisões
 ├── public/                Arquivos estáticos (logo)
 ├── src/
 │   ├── game/
@@ -101,11 +105,13 @@ domi-mais/
 │   │   ├── ai/            Jogador controlado pelo computador
 │   │   └── state/         Tipos, reducer e contexto React
 │   ├── components/        Componentes visuais e cálculo do layout da mesa
+│   ├── online/            Protocolo do modo online (compartilhado com o servidor)
 │   ├── theme/             Tema escuro/claro
 │   ├── sound/             Sons do jogo
 │   ├── test/              Configuração dos testes
 │   ├── App.tsx            Tela da partida
 │   └── main.tsx           Ponto de entrada
+├── server/                Servidor do modo online (Node + Socket.IO)
 ├── CHANGELOG.md
 ├── deploy-notes.md        Como publicar na VPS
 └── package.json
@@ -120,7 +126,8 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 - [x] Modo contra o computador, em partidas de 2, 3 ou 4 jogadores
 - [x] Tutorial interativo e modo "dica"
 - [x] PWA com partida salva para uso offline
-- [ ] Multiplayer online por sala com código, com chat
+- [ ] Multiplayer online por sala com código, com chat (fase 1 de 4 pronta:
+  servidor; veja [docs/ONLINE.md](docs/ONLINE.md))
 
 O modo no mesmo dispositivo será removido quando os modos
 contra o computador e online estiverem prontos.

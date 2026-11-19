@@ -1,5 +1,19 @@
 # Changelog
 
+## Em desenvolvimento — modo online, fase 1 de 4 (servidor)
+
+- **Servidor do modo online** (`server/`, Node + Socket.IO), ainda sem telas
+  no jogo. Salas por código de 5 letras, 2 a 4 jogadores, vagas completáveis
+  com o computador, 60 segundos por jogada, computador no lugar de quem cai
+  por mais de 1 minuto ou sai. Decisões e protocolo em `docs/ONLINE.md`.
+- O servidor é o juiz: usa o mesmo motor de regras do jogo e envia a cada
+  jogador só o que ele pode ver, com ids de peça embaralhados por sala.
+- Novas dependências: `socket.io`, `socket.io-client`; para desenvolvimento,
+  `tsx` e `esbuild`. Novos scripts: `dev:server`, `build:server`,
+  `start:server`. Em `npm run dev`, `/socket/` é encaminhado ao servidor local.
+- 40 testes novos, incluindo partidas inteiras de 2, 3 e 4 jogadores com
+  clientes Socket.IO de verdade (387 no total).
+
 ## 0.9.1 — 18/11/2026
 
 - **Correção: mesa fechada com peças no monte.** Quando uma jogada deixava as

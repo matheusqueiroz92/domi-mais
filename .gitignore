@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Servidor do modo online (gerado por npm run build:server)
+server/dist

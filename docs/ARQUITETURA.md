@@ -22,6 +22,7 @@ src/
 │       ├── game-context.tsx       GameProvider (useReducer) e gravação da partida
 │       ├── saved-game.ts          Partida salva: gravar, ler, validar, retomar
 │       └── use-game.ts            Contexto e hook useGame
+├── online/             protocol.ts: tipos e constantes do modo online
 ├── pwa/                usePwa: service worker, aviso de versão nova, instalação
 ├── tutorial/           Roteiro da partida guiada e hook que o conduz
 ├── hooks/              usePersistentFlag (opção liga/desliga salva no navegador)
@@ -48,7 +49,11 @@ src/
 
 Princípio: **toda regra do jogo mora em `src/game/logic`**. Os componentes só
 leem o estado e disparam ações; o reducer só encaminha. Assim o mesmo motor
-servirá para o modo contra o computador e para o servidor do modo online.
+serve ao jogo no navegador e ao servidor do modo online (`server/`), que
+importa `src/game` diretamente. Por isso o código de `src/game/logic`,
+`src/game/state` (menos o contexto React) e `src/game/ai/bot.ts` não pode usar
+nada do navegador: o servidor roda no Node. O modo online está descrito em
+[ONLINE.md](ONLINE.md).
 
 ## Estado (`GameState`)
 
