@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.2 — 19/11/2026
+
+- **Aviso de "sua vez"** (contra o computador e no modo online): quando a vez
+  chega, aparece por alguns segundos a faixa "Sua vez!" dizendo o que fazer
+  ("Compre uma peça do monte"), a área da sua mão fica em destaque enquanto a
+  vez for sua, toca um som próprio (duas notas, diferente do estalo das
+  peças), o celular vibra (onde o navegador permite) e o título da aba vira
+  "● Sua vez — DomiMais". No mesmo aparelho a tela "Passe o dispositivo" já
+  faz esse papel, e no tutorial o cartão guia cada passo.
+- **Online: faltam 10 segundos** — a contagem fica vermelha e toca um aviso
+  curto, uma única vez por jogada.
+- **Online: a peça comprada já vem selecionada**, mostrando na hora as pontas
+  onde ela encaixa, sem precisar tocar nela na mão (como já acontecia nas
+  partidas locais).
+
 ## Em desenvolvimento — modo online, fase 2 de 4 (telas)
 
 - **Telas do modo online:** entrada (criar sala ou entrar com código), link

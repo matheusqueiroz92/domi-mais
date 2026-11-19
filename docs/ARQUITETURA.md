@@ -38,6 +38,7 @@ src/
 │   ├── HintPanel           Painel do modo "dica"
 │   ├── TutorialCoach       Cartão que conduz o tutorial
 │   ├── PwaNotice           Aviso de versão nova / pronto para uso sem internet
+│   ├── TurnAlert           Faixa "Sua vez!" (online e contra o computador)
 │   ├── TurnTransition      Tela "Passe o dispositivo"
 │   ├── DominoPiece         Peça aberta (pontos) ou virada (soma)
 │   └── table-layout.ts     Cálculo das fileiras da mesa e dos assentos

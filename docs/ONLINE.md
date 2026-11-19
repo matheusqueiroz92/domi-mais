@@ -21,7 +21,10 @@ publicado mostra o modo online como "Em breve" (veja "Ligar o modo online").
    sons e animações). Mudam: a contagem dos 60 segundos ("Seu tempo" ou "Tempo
    de Ana"), avisos como "Tempo esgotado para Ana" na linha de última jogada,
    e a situação de cada adversário ("Sem conexão", "Computador jogando",
-   "Saiu da partida").
+   "Saiu da partida"). Na sua vez aparece a faixa "Sua vez!" (com som,
+   vibração e o título da aba mudando); faltando 10 segundos, a contagem
+   fica vermelha e toca um aviso. A peça comprada já vem selecionada,
+   mostrando onde encaixa.
 4. **Fim:** o dono toca em **Jogar de novo** e todos voltam para a sala de
    espera; os outros esperam ou saem.
 5. **Queda:** aparece no alto "Sem conexão. Tentando reconectar…"; ao voltar
@@ -124,7 +127,8 @@ src/online/
 **A tela da partida é a mesma do jogo local.** O `OnlineGameProvider` entrega
 ao `GameContent` (em `App.tsx`) o estado que veio do servidor, no mesmo
 `GameContext` do jogo local, e transforma as ações em pedidos ao servidor.
-Só a peça selecionada na mão fica na tela de cada um. O `App` escolhe a tela
+Só a peça selecionada na mão fica na tela de cada um; sem escolha da pessoa,
+a peça que ela acabou de comprar vem selecionada, como nas partidas locais. O `App` escolhe a tela
 pelo estado da sala: sala de espera (`status: 'lobby'`), partida online (há
 `game`) ou o jogo local.
 

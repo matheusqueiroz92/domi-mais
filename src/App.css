@@ -291,3 +291,31 @@
   font-weight: 600;
   text-align: center;
 }
+
+/* Sua vez (online e contra o computador): a sua área fica em destaque. */
+.game--your-turn .hand {
+  border-color: var(--accent);
+  animation: your-turn-glow 1.8s ease-in-out infinite;
+}
+
+.game--your-turn .game__status {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+@keyframes your-turn-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game--your-turn .hand {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+}

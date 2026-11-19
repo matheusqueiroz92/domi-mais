@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './TurnTimer.css';
 
 interface TurnTimerProps {
@@ -8,6 +8,8 @@ interface TurnTimerProps {
   clockOffset: number;
   /** De quem é a vez ("Seu tempo" quando é de quem está olhando). */
   label: string;
+  /** Chamado uma vez quando o tempo chega a 10 segundos (só na sua vez). */
+  onWarning?: () => void;
 }
 
 /** Abaixo disto, o tempo aparece em destaque. */
@@ -18,13 +20,25 @@ function remainingSeconds(deadline: number, clockOffset: number): number {
 }
 
 /** Contagem regressiva da jogada (60 segundos no modo online). */
-export function TurnTimer({ deadline, clockOffset, label }: TurnTimerProps) {
+export function TurnTimer({ deadline, clockOffset, label, onWarning }: TurnTimerProps) {
   const [, setTick] = useState(0);
+  const warning = useRef(onWarning);
+  useEffect(() => {
+    warning.current = onWarning;
+  }, [onWarning]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setTick((tick) => tick + 1), 250);
+    // Avisa uma vez por prazo, e só se a contagem começou acima de 10 s.
+    let armed = remainingSeconds(deadline, clockOffset) > TIMER_WARNING_SECONDS;
+    const timer = window.setInterval(() => {
+      setTick((tick) => tick + 1);
+      if (armed && remainingSeconds(deadline, clockOffset) <= TIMER_WARNING_SECONDS) {
+        armed = false;
+        warning.current?.();
+      }
+    }, 250);
     return () => window.clearInterval(timer);
-  }, [deadline]);
+  }, [deadline, clockOffset]);
 
   const seconds = remainingSeconds(deadline, clockOffset);
   return (

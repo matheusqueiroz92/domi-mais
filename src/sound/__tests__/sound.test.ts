@@ -76,6 +76,16 @@ describe('sons', () => {
     expect(created.noises).toBeGreaterThan(8);
   });
 
+  it('"sua vez" e "tempo acabando" são notas, não estalos de peça', () => {
+    const created = installFakeAudio();
+    playSound('turn');
+    expect(created.noises).toBe(0);
+    expect(created.oscillators).toBe(2);
+    playSound('warning');
+    expect(created.noises).toBe(0);
+    expect(created.oscillators).toBe(4);
+  });
+
   it('uma falha de áudio nunca vira erro para o jogo', () => {
     vi.stubGlobal(
       'AudioContext',

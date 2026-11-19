@@ -24,15 +24,20 @@ const momentKey = (game: GameState) =>
  */
 export function OnlineGameProvider({ online, children }: { online: OnlineRoom; children: ReactNode }) {
   const game = online.view?.game as GameState;
+  const youIndex = online.view?.youIndex ?? -1;
   const [selection, setSelection] = useState<Selection>({ pieceId: null, key: '' });
   const key = momentKey(game);
 
   const state = useMemo<GameState>(() => {
-    const selectedPieceId = selection.key === key ? selection.pieceId : null;
+    // Sem escolha da pessoa neste momento: a peça que ela acabou de comprar já
+    // vem selecionada (como nas partidas locais), mostrando onde encaixa.
+    const ownDrawn =
+      game.currentPlayerIndex === youIndex && game.turnStep === 'play' ? game.drawnPieceId : null;
+    const selectedPieceId = selection.key === key ? selection.pieceId : ownDrawn;
     // A seleção só vale se o motor aceitar (vez dele, etapa de jogar, peça na mão).
     const base = { ...game, selectedPieceId: null };
     return selectedPieceId ? selectPiece(base, selectedPieceId) : base;
-  }, [game, selection, key]);
+  }, [game, selection, key, youIndex]);
 
   const { act } = online;
   const value = useMemo<GameContextType>(

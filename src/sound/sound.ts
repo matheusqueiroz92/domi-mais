@@ -3,7 +3,7 @@
  * Tudo aqui é tolerante a falhas: sem suporte a áudio, as funções não fazem nada.
  */
 
-export type SoundName = 'place' | 'draw' | 'shuffle';
+export type SoundName = 'place' | 'draw' | 'shuffle' | 'turn' | 'warning';
 
 export const SOUND_STORAGE_KEY = 'domimais:sound';
 
@@ -92,7 +92,44 @@ function clack(ctx: AudioContext, { delay = 0, volume, tone, length }: Clack): v
   thump.stop(start + length);
 }
 
-const RECIPES: Record<SoundName, Clack[]> = {
+interface Tone {
+  delay?: number;
+  /** Frequência em Hz. */
+  freq: number;
+  volume: number;
+  length: number;
+}
+
+/** Uma nota curta e suave (avisos, diferentes do estalo das peças). */
+function tone(ctx: AudioContext, { delay = 0, freq, volume, length }: Tone): void {
+  const start = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, start);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + length);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + length + 0.02);
+}
+
+/** Avisos: notas, não estalos. */
+const TONES: Partial<Record<SoundName, Tone[]>> = {
+  // Sua vez: duas notas subindo.
+  turn: [
+    { freq: 659, volume: 0.22, length: 0.16 },
+    { delay: 0.13, freq: 988, volume: 0.22, length: 0.26 },
+  ],
+  // Faltam 10 segundos: duas batidas agudas e curtas.
+  warning: [
+    { freq: 1175, volume: 0.16, length: 0.08 },
+    { delay: 0.14, freq: 1175, volume: 0.16, length: 0.08 },
+  ],
+};
+
+const RECIPES: Partial<Record<SoundName, Clack[]>> = {
   // Peça colocada na mesa: estalo firme, com um leve repique.
   place: [
     { volume: 0.5, tone: 1800, length: 0.09 },
@@ -114,7 +151,8 @@ export function playSound(name: SoundName): void {
   try {
     const ctx = getContext();
     if (!ctx) return;
-    for (const part of RECIPES[name]) clack(ctx, part);
+    for (const part of RECIPES[name] ?? []) clack(ctx, part);
+    for (const part of TONES[name] ?? []) tone(ctx, part);
   } catch {
     // Som é enfeite: uma falha de áudio nunca pode atrapalhar a partida.
   }

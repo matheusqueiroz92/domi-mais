@@ -28,6 +28,7 @@ import { SoundToggle } from "./components/SoundToggle";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TurnTransition } from "./components/TurnTransition";
 import { TutorialCoach } from "./components/TutorialCoach";
+import { TurnAlert } from "./components/TurnAlert";
 import { PwaNotice } from "./components/PwaNotice";
 import { usePwa } from "./pwa/usePwa";
 import { loadSavedGame } from "./game/state/saved-game";
@@ -128,6 +129,21 @@ function onlineSeatNote(seat: SeatView | undefined): string | undefined {
 
 const prefersReducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+/** Quantos turnos já começaram (cada um registra "Vez de ..."). */
+function turnNumber(state: GameState): number {
+  return state.logs.reduce((count, log) => (log.startsWith("Vez de ") ? count + 1 : count), 0);
+}
+
+/** O que fazer agora, na faixa "Sua vez!". */
+function turnHint(state: GameState): string {
+  if (state.phase === "choosing-initial") return "Escolha a peça inicial no monte";
+  if (mustDraw(state)) return "Compre uma peça do monte";
+  return canKeepPiece(state) ? "Jogue ou fique com a peça" : "Jogue uma peça que encaixe";
+}
+
+/** Título da aba do navegador fora da sua vez. */
+const DEFAULT_TITLE = "DomiMais";
 
 /** Chave da preferência do modo "dica" no navegador. */
 export const HINTS_STORAGE_KEY = "domimais:hints";
@@ -290,6 +306,38 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       ? ""
       : `Jogo fechado: as duas pontas são ${closedEnd} e todas as peças com ${closedEnd} já estão na mesa. `;
   const hasGuide = !isFinished && (inTutorial || hintsOn);
+
+  // Aviso de "sua vez": online e contra o computador, onde há uma só pessoa na
+  // tela. No mesmo aparelho a tela de troca de turno já faz esse papel, e no
+  // tutorial o cartão guia cada passo.
+  const turnAlerts = (isOnline || hasBots) && !inTutorial;
+  const yourTurn =
+    turnAlerts &&
+    isViewerTurn &&
+    (isPlaying || state.phase === "choosing-initial") &&
+    !isShuffling;
+  const turnKey = turnNumber(state);
+  const playRef = useRef(play);
+  useEffect(() => {
+    playRef.current = play;
+  }, [play]);
+  useEffect(() => {
+    if (!yourTurn) return;
+    playRef.current("turn");
+    // Celular: uma vibração curta (onde o navegador permite).
+    try {
+      navigator.vibrate?.([120, 60, 120]);
+    } catch {
+      // Sem vibração: o aviso na tela basta.
+    }
+  }, [yourTurn, turnKey]);
+  useEffect(() => {
+    // Quem trocou de aba vê no título que é a vez dele.
+    document.title = yourTurn ? `● Sua vez — ${DEFAULT_TITLE}` : DEFAULT_TITLE;
+  }, [yourTurn]);
+  useEffect(() => () => {
+    document.title = DEFAULT_TITLE;
+  }, []);
   const hasSideSeats = seats.left !== null || seats.right !== null;
 
   const handleResumeGame = () => {
@@ -433,9 +481,11 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         "game",
         isFinished && "game--finished",
         hasGuide && "game--guided",
-        inTutorial && "game--tutorial"
+        inTutorial && "game--tutorial",
+        yourTurn && "game--your-turn"
       )}
     >
+      {yourTurn && <TurnAlert key={turnKey} hint={turnHint(state)} />}
       <header className="game__header">
         <span className="wordmark">DomiMais</span>
         <div className="game__actions">
@@ -553,6 +603,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
                 deadline={onlineView.turnDeadline}
                 clockOffset={online.clockOffset}
                 label={isViewerTurn ? "Seu tempo" : `Tempo de ${currentPlayer.name}`}
+                onWarning={isViewerTurn ? () => play("warning") : undefined}
               />
             )}
 
