@@ -26,7 +26,7 @@ const clients: Client[] = [];
 beforeEach(async () => {
   const http = createServer();
   // Pausas curtas: a partida inteira roda em poucos segundos.
-  server = createDomiMaisServer(http, { botDelayMs: 5, graceMs: 300 });
+  server = createDomiMaisServer(http, { botDelayMs: 5, graceMs: 300, lobbyGraceMs: 300 });
   await new Promise<void>((resolve) => http.listen(0, '127.0.0.1', resolve));
   url = `http://127.0.0.1:${(http.address() as AddressInfo).port}`;
 });

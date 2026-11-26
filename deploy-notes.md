@@ -101,6 +101,42 @@ construído com o `Dockerfile` antigo, que não liga o modo online.
   troque `VITE_ONLINE: "on"` por `"off"` e rode
   `docker compose up -d --build frontend`.
 
+## Versão 0.11.0: contador de partidas (uma vez só)
+
+O `deploy/docker-compose.yml` ganhou a rota `/api/` no Traefik e um volume
+(`domi-mais-data`) para o contador de partidas. Copie o compose novo antes de
+publicar:
+
+```bash
+cd /var/www/domi-mais && git pull origin main
+
+cd /opt/apps/domi-mais
+cp docker-compose.yml docker-compose.yml.antes-contador
+cp /var/www/domi-mais/deploy/docker-compose.yml docker-compose.yml
+docker compose up -d --build
+```
+
+Conferir:
+
+```bash
+curl -s https://domimais.com.br/api/stats
+# {"matches":5000}   ← começa em 5.000 e sobe a cada partida terminada
+
+docker logs domi-mais-server
+# [domimais] partidas jogadas: 5000
+```
+
+O total fica no volume `domi-mais-data` (arquivo `stats.json`) e sobrevive a
+deploys e reinícios. Para ver ou corrigir o número:
+
+```bash
+docker exec domi-mais-server cat /data/stats.json
+```
+
+Não apague o volume (`docker compose down -v` apaga): o contador voltaria a
+5.000. Voltar atrás: restaure o `docker-compose.yml.antes-contador` e rode
+`docker compose up -d --build` (o contador some da tela inicial).
+
 ## Publicar (depois da primeira vez)
 
 ```bash

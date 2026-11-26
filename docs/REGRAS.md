@@ -161,8 +161,9 @@ isso o limite é 4.
 - Cada jogada tem **60 segundos** (comprar e jogar juntos). Se o tempo acabar,
   o jogo compra uma peça ao acaso e fica com ela; com o monte vazio, joga por
   ele.
-- Quem perde a conexão tem **1 minuto** para voltar. Depois disso, o
-  computador (nível Médio) joga no lugar até a pessoa voltar.
+- Quem perde a conexão durante a partida tem **1 minuto** para voltar. Depois
+  disso, o computador (nível Médio) joga no lugar até a pessoa voltar. Na sala
+  de espera, antes de começar, o lugar fica guardado por **30 minutos**.
 - Quem sai da partida pelo botão é substituído pelo computador até o fim.
 - Há um chat na sala, com mensagens rápidas e texto livre. Palavrões e
   ofensas são bloqueados (a mensagem não chega a ninguém), cada um pode
@@ -191,6 +192,7 @@ tocar em **"Estou pronto"**.
 | 13/11/2026 | Atualização do jogo só com o toque em "Atualizar", nunca sozinha. |
 | 18/11/2026 | Modo online: 60 segundos por jogada; queda de conexão dá 1 minuto antes de o computador assumir; o dono pode completar vagas com o computador. |
 | 18/11/2026 | Mesa fechada (pontas iguais e as 7 peças desse número na mesa) encerra a partida na hora, mesmo com peças no monte. |
+| 25/11/2026 | Modo online: na sala de espera, quem perde a conexão tem 30 minutos para voltar (dá tempo de mandar o link). |
 | 16/11/2026 | Mão vazia nunca empata: se o monte acaba com mais de um jogador sem peças, vence quem ficou sem peças primeiro. |
 | 13/11/2026 | O modo "dica" usa só informação pública do jogador e fica desligado por padrão. |
 | 12/11/2026 | Sem jogada possível, o botão do jogador passa a ser "Passar a vez". |

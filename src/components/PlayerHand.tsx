@@ -11,6 +11,8 @@ interface PlayerHandProps {
   /** As peças só podem ser selecionadas na etapa de jogada. */
   canSelect: boolean;
   onSelectPiece: (pieceId: string) => void;
+  /** Celular: peças um pouco menores, para sobrar espaço para a mesa e o monte. */
+  compact?: boolean;
 }
 
 /** Mão do jogador da vez, aberta, na parte de baixo da tela. */
@@ -20,11 +22,14 @@ export function PlayerHand({
   drawnPieceId,
   canSelect,
   onSelectPiece,
+  compact = false,
 }: PlayerHandProps) {
   const count = player.hand.length;
   const drawn = player.hand.find((piece) => piece.id === drawnPieceId);
   // Mãos grandes usam peças menores para caber na tela.
-  const half = count > 10 ? 30 : count > 6 ? 36 : 44;
+  const half = compact
+    ? count > 10 ? 26 : count > 7 ? 30 : 36
+    : count > 10 ? 30 : count > 6 ? 36 : 44;
 
   return (
     <section className="hand" aria-label={`Mão de ${player.name}`} data-testid="hand">

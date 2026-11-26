@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
-import { DominoPiece } from './DominoPiece';
 import { RulesContent } from './RulesContent';
 import { SoundToggle } from './SoundToggle';
 import { ThemeToggle } from './ThemeToggle';
-import { ChevronIcon, CpuIcon, GlobeIcon, UsersIcon } from './icons';
+import { BagIcon, ChevronIcon, CpuIcon, GlobeIcon, UsersIcon } from './icons';
+import { PartnersFooter } from './PartnersFooter';
+import { PHYSICAL_GAME } from '../home/physical-game';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../game/logic/rules';
 import { BOT_LEVEL_LABELS, BOT_NAMES } from '../game/ai/bot';
-import type { BotLevel, DominoPiece as DominoPieceType } from '../game/state/game-types';
+import type { BotLevel } from '../game/state/game-types';
 import type { Theme } from '../theme/theme';
+import { formatMatchCount } from '../stats/match-stats';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
@@ -45,17 +47,9 @@ interface HomeScreenProps {
   savedRoomCode?: string | null;
   onResumeRoom?: () => void;
   onLeaveSavedRoom?: () => void;
+  /** Total de partidas jogadas no DomiMais (`null` = ainda não carregou ou sem servidor). */
+  matchCount?: number | null;
 }
-
-// Peças do exemplo "soma 7 pode ser...", só ilustrativas.
-const example = (left: number, right: number): DominoPieceType => ({
-  id: `exemplo-${left}-${right}`,
-  left,
-  right,
-  sum: left + right,
-  isFaceUp: true,
-});
-const EXAMPLE_PIECES = [example(1, 6), example(2, 5), example(3, 4)];
 
 export function HomeScreen({
   onStartGame,
@@ -79,9 +73,11 @@ export function HomeScreen({
   savedRoomCode = null,
   onResumeRoom,
   onLeaveSavedRoom,
+  matchCount = null,
 }: HomeScreenProps) {
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showShop, setShowShop] = useState(false);
   const [showBotModal, setShowBotModal] = useState(openBotSetup);
   const [soloName, setSoloName] = useState('');
   const [botCount, setBotCount] = useState(1);
@@ -130,6 +126,12 @@ export function HomeScreen({
         </div>
       </div>
 
+      {/*
+        Celular: uma coluna, nesta ordem. Telas grandes (a partir de 900 px): grade
+        de duas colunas (25/11/2026). Em cima, a imagem e os três modos de jogo com a
+        mesma altura; embaixo, a chamada e o contador ao lado de Tutorial, Como jogar
+        e Dominó físico, também com a mesma altura.
+      */}
       <div className="home__layout">
         <img
           className="home__logo"
@@ -139,103 +141,104 @@ export function HomeScreen({
           height={853}
         />
 
-        <div className="home__content">
-          <div className="home__intro">
-            <h1 className="home__title">Blefe. Deduza. Vença.</h1>
-            <p className="home__subtitle">
-              O verso de cada peça entrega só a soma. O resto é com você.
+        <div className="home__intro">
+          <h1 className="home__title">Blefe. Deduza. Vença.</h1>
+          <p className="home__subtitle">
+            O verso de cada peça entrega só a soma. O resto é com você.
+          </p>
+          {matchCount != null && (
+            <p className="home__counter" aria-live="polite">
+              <strong>{formatMatchCount(matchCount)}</strong> partidas jogadas
             </p>
-          </div>
-
-          <div className="home__example" aria-label="Exemplo: uma peça de soma 7 pode ser 1|6, 2|5 ou 3|4">
-            <DominoPiece piece={{ ...EXAMPLE_PIECES[0], isFaceUp: false }} isFaceUp={false} back="md" />
-            <span className="home__example-text">pode ser</span>
-            {EXAMPLE_PIECES.map((piece) => (
-              <DominoPiece key={piece.id} piece={piece} isFaceUp half={19} orientation="vertical" />
-            ))}
-          </div>
-
-          {savedRoomCode && (
-            <section className="resume" aria-label="Sala online">
-              <div className="resume__text">
-                <span className="resume__title">Sala online {savedRoomCode}</span>
-                <span className="resume__desc">Você estava nesta sala</span>
-              </div>
-              <div className="resume__actions">
-                <button type="button" className="btn" onClick={onLeaveSavedRoom} disabled={onlineBusy}>
-                  Sair da sala
-                </button>
-                <button type="button" className="btn btn--primary" onClick={onResumeRoom} disabled={onlineBusy}>
-                  Voltar
-                </button>
-              </div>
-            </section>
           )}
+        </div>
 
-          {savedGame && (
-            <section className="resume" aria-label="Partida em andamento">
-              <div className="resume__text">
-                <span className="resume__title">Partida em andamento</span>
-                <span className="resume__desc">
-                  {savedGame.playerNames.join(', ')} ·{' '}
-                  {savedGame.pileCount === 1
-                    ? '1 peça no monte'
-                    : `${savedGame.pileCount} peças no monte`}
-                </span>
-              </div>
-              <div className="resume__actions">
-                <button type="button" className="btn" onClick={onDiscardSavedGame}>
-                  Descartar
-                </button>
-                <button type="button" className="btn btn--primary" onClick={onResumeGame}>
-                  Continuar
-                </button>
-              </div>
-            </section>
-          )}
+        {(savedRoomCode || savedGame) && (
+          <div className="home__resume">
+            {savedRoomCode && (
+              <section className="resume" aria-label="Sala online">
+                <div className="resume__text">
+                  <span className="resume__title">Sala online {savedRoomCode}</span>
+                  <span className="resume__desc">Você estava nesta sala</span>
+                </div>
+                <div className="resume__actions">
+                  <button type="button" className="btn" onClick={onLeaveSavedRoom} disabled={onlineBusy}>
+                    Sair da sala
+                  </button>
+                  <button type="button" className="btn btn--primary" onClick={onResumeRoom} disabled={onlineBusy}>
+                    Voltar
+                  </button>
+                </div>
+              </section>
+            )}
 
-          <div className="home__modes">
-            <button
-              type="button"
-              className="mode mode--primary"
-              onClick={() => setShowPlayerModal(true)}
-            >
-              <UsersIcon size={28} />
-              <span className="mode__text">
-                <span className="mode__title">Mesmo aparelho</span>
-                <span className="mode__desc">De 2 a 4 jogadores, cada um por si</span>
-              </span>
-              <ChevronIcon />
-            </button>
-            <button type="button" className="mode mode--button" onClick={() => setShowBotModal(true)}>
-              <CpuIcon size={28} />
-              <span className="mode__text">
-                <span className="mode__title">Contra o computador</span>
-                <span className="mode__desc">Jogue sozinho, com 1 a 3 adversários</span>
-              </span>
-              <ChevronIcon />
-            </button>
-            {onlineEnabled ? (
-              <button type="button" className="mode mode--button" onClick={() => setShowOnlineModal(true)}>
-                <GlobeIcon size={28} />
-                <span className="mode__text">
-                  <span className="mode__title">Online com amigos</span>
-                  <span className="mode__desc">Sala por código, cada um no seu aparelho</span>
-                </span>
-                <ChevronIcon />
-              </button>
-            ) : (
-              <div className="mode">
-                <GlobeIcon size={28} />
-                <span className="mode__text">
-                  <span className="mode__title">Online com amigos</span>
-                  <span className="mode__desc">Sala por código, sem cadastro</span>
-                </span>
-                <span className="mode__soon">Em breve</span>
-              </div>
+            {savedGame && (
+              <section className="resume" aria-label="Partida em andamento">
+                <div className="resume__text">
+                  <span className="resume__title">Partida em andamento</span>
+                  <span className="resume__desc">
+                    {savedGame.playerNames.join(', ')} ·{' '}
+                    {savedGame.pileCount === 1
+                      ? '1 peça no monte'
+                      : `${savedGame.pileCount} peças no monte`}
+                  </span>
+                </div>
+                <div className="resume__actions">
+                  <button type="button" className="btn" onClick={onDiscardSavedGame}>
+                    Descartar
+                  </button>
+                  <button type="button" className="btn btn--primary" onClick={onResumeGame}>
+                    Continuar
+                  </button>
+                </div>
+              </section>
             )}
           </div>
+        )}
 
+        <div className="home__modes">
+          <button
+            type="button"
+            className="mode mode--primary"
+            onClick={() => setShowPlayerModal(true)}
+          >
+            <UsersIcon size={28} />
+            <span className="mode__text">
+              <span className="mode__title">Mesmo aparelho</span>
+              <span className="mode__desc">De 2 a 4 jogadores, cada um por si</span>
+            </span>
+            <ChevronIcon />
+          </button>
+          <button type="button" className="mode mode--button" onClick={() => setShowBotModal(true)}>
+            <CpuIcon size={28} />
+            <span className="mode__text">
+              <span className="mode__title">Contra o computador</span>
+              <span className="mode__desc">Jogue sozinho, com 1 a 3 adversários</span>
+            </span>
+            <ChevronIcon />
+          </button>
+          {onlineEnabled ? (
+            <button type="button" className="mode mode--button" onClick={() => setShowOnlineModal(true)}>
+              <GlobeIcon size={28} />
+              <span className="mode__text">
+                <span className="mode__title">Online com amigos</span>
+                <span className="mode__desc">Sala por código, cada um no seu aparelho</span>
+              </span>
+              <ChevronIcon />
+            </button>
+          ) : (
+            <div className="mode">
+              <GlobeIcon size={28} />
+              <span className="mode__text">
+                <span className="mode__title">Online com amigos</span>
+                <span className="mode__desc">Sala por código, sem cadastro</span>
+              </span>
+              <span className="mode__soon">Em breve</span>
+            </div>
+          )}
+        </div>
+
+        <div className="home__more">
           <div className="home__learn">
             <button type="button" className="btn" onClick={onStartTutorial}>
               Tutorial
@@ -245,6 +248,16 @@ export function HomeScreen({
             </button>
           </div>
 
+          <button type="button" className="shop" onClick={() => setShowShop(true)}>
+            <BagIcon size={24} />
+            <span className="mode__text">
+              <span className="shop__title">Dominó físico</span>
+              <span className="mode__desc">Para jogar na mesa</span>
+            </span>
+            {!PHYSICAL_GAME.buyUrl && <span className="mode__soon">Em breve</span>}
+            <ChevronIcon />
+          </button>
+
           {canInstall && (
             <button type="button" className="btn btn--block" onClick={onInstall}>
               Instalar no aparelho
@@ -252,6 +265,43 @@ export function HomeScreen({
           )}
         </div>
       </div>
+
+      <footer className="home__footer">
+        <PartnersFooter />
+
+        <div className="credits">
+          <p>© {new Date().getFullYear()} DomiMais. Todos os direitos reservados.</p>
+          <p>
+            Jogo criado por <strong>Cassiano Ribeiro</strong>. Versão digital desenvolvida por{' '}
+            <a href="https://matheusqueiroz.dev.br" target="_blank" rel="noopener noreferrer">
+              Matheus Queiroz
+            </a>
+            .
+          </p>
+        </div>
+      </footer>
+
+      <Modal isOpen={showShop} onClose={() => setShowShop(false)} title="Dominó físico">
+        <div className="shop-modal">
+          <img className="shop-modal__image" src={PHYSICAL_GAME.image} alt={PHYSICAL_GAME.imageAlt} />
+          {PHYSICAL_GAME.buyUrl ? (
+            <>
+              <p>O DomiMais também existe em peças de verdade, para jogar na mesa com a família e os amigos.</p>
+              <a className="btn btn--primary btn--block" href={PHYSICAL_GAME.buyUrl} target="_blank" rel="noopener noreferrer">
+                Comprar
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="shop-modal__soon">Em breve!</p>
+              <p>
+                Estamos finalizando a fabricação do DomiMais em peças de verdade. Em breve as vendas estarão
+                disponíveis aqui.
+              </p>
+            </>
+          )}
+        </div>
+      </Modal>
 
       <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
         <RulesContent />

@@ -21,7 +21,8 @@
 }
 
 .home__layout,
-.home__content {
+.home__resume,
+.home__more {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -50,24 +51,6 @@
 }
 
 .home__subtitle {
-  color: var(--muted);
-}
-
-.home__example {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 68px;
-  padding: 8px 14px;
-  border-radius: 18px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-}
-
-.home__example-text {
-  font-family: var(--font-head);
-  font-size: 18px;
-  font-weight: 700;
   color: var(--muted);
 }
 
@@ -223,22 +206,44 @@
     padding: 20px 32px 32px;
   }
 
+  /* Duas colunas: imagem | modos de jogo; chamada e contador | outras ações. */
   .home__layout {
     flex: 1;
-    flex-direction: row;
-    align-items: center;
-    gap: 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-areas:
+      'resume resume'
+      'logo modes'
+      'intro more';
+    align-content: center;
+    column-gap: 40px;
+    row-gap: 18px;
   }
 
+  .home__resume {
+    grid-area: resume;
+  }
+
+  /* A imagem define a altura da linha; os três modos se espalham nela. */
   .home__logo {
-    flex: 1;
-    min-width: 0;
+    grid-area: logo;
+    align-self: start;
     aspect-ratio: 3 / 2;
   }
 
-  .home__content {
-    width: 420px;
-    flex: none;
+  .home__modes {
+    grid-area: modes;
+    justify-content: space-between;
+  }
+
+  /* Chamada e contador com a mesma altura de Tutorial/Como jogar/Dominó físico. */
+  .home__intro {
+    grid-area: intro;
+    justify-content: space-between;
+  }
+
+  .home__more {
+    grid-area: more;
   }
 
   .home__title {
@@ -307,4 +312,116 @@
   color: var(--danger);
   font-size: 14px;
   font-weight: 600;
+}
+
+/* Contador de partidas jogadas */
+.home__counter {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.home__counter strong {
+  font-family: var(--font-head);
+  font-size: 16px;
+  color: var(--accent);
+}
+
+/* Dominó físico: cartão na tela inicial e pop-up "Em breve". */
+.shop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 16px;
+  border-radius: 18px;
+  border: 1px dashed var(--accent);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shop:hover,
+.shop:focus-visible {
+  background: var(--panel);
+}
+
+.shop svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.shop .mode__soon,
+.shop svg:last-child {
+  color: var(--muted);
+}
+
+.shop__title {
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.shop-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shop-modal__image {
+  display: block;
+  width: 100%;
+  max-height: 46vh;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.shop-modal__soon {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Rodapé: parceiros e, abaixo, créditos e direitos reservados. */
+.home__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+}
+
+.credits {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.credits strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.credits a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

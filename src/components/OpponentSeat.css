@@ -92,3 +92,40 @@
   font-weight: 600;
   color: var(--accent);
 }
+
+/* Celular: os adversários ficam lado a lado acima da mesa (a mesa usa a largura toda). */
+@media (max-width: 699px) {
+  .board--sides .seat {
+    grid-area: auto;
+    grid-row: 1;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+    justify-self: stretch;
+    width: auto;
+    gap: 3px;
+    padding: 6px 4px 8px;
+  }
+
+  .board--sides .seat--left {
+    order: 0;
+  }
+
+  .board--sides .seat--top {
+    order: 1;
+  }
+
+  .board--sides .seat--right {
+    order: 2;
+  }
+
+  .seat__tiles {
+    gap: 3px;
+  }
+
+  .seat .domino-back--sm {
+    width: 20px;
+    height: 26px;
+    font-size: 11px;
+  }
+}

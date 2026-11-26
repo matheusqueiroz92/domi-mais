@@ -238,7 +238,9 @@ export function maxHalfForWidth(width: number): number {
   if (width >= 1000) return 44;
   if (width >= 760) return 38;
   if (width >= 520) return 32;
-  if (width >= 360) return 28;
+  // Celular: a mesa usa a largura toda e as peças podem ser maiores.
+  if (width >= 340) return 32;
+  if (width >= 300) return 28;
   if (width >= 260) return 24;
   return 20;
 }

@@ -21,6 +21,7 @@
 }
 
 .pile__title {
+  white-space: nowrap;
   font-family: var(--font-head);
   font-size: 15px;
   font-weight: 700;
@@ -79,4 +80,19 @@
   50% {
     outline-offset: 5px;
   }
+}
+
+/* Celular: 4 fileiras de 7, peças quase quadradas e números grandes (fáceis de tocar). */
+.pile__grid--compact {
+  gap: 5px;
+}
+
+.pile__grid--compact .pile__slot {
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+}
+
+.pile__grid--compact .domino-back--fill {
+  border-radius: 8px;
+  font-size: 19px;
 }

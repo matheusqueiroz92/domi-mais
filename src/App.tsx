@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { MotionConfig } from "framer-motion";
 import clsx from "clsx";
 import { GameProvider } from "./game/state/game-context";
@@ -47,6 +48,7 @@ import { OnlineGameProvider } from "./online/OnlineGameProvider";
 import { LobbyScreen } from "./online/LobbyScreen";
 import { TurnTimer } from "./online/TurnTimer";
 import { ConnectionBanner } from "./online/ConnectionBanner";
+import { useMatchCount } from "./stats/match-stats";
 import { ChatPanel } from "./online/ChatPanel";
 import { ChatIcon } from "./components/icons";
 import type { SeatView } from "./online/protocol";
@@ -152,6 +154,10 @@ export const HINTS_STORAGE_KEY = "domimais:hints";
 
 /** Telas grandes: a partida ocupa a janela inteira, sem rolagem. */
 const WIDE_SCREEN = "(min-width: 1024px) and (min-height: 640px)";
+/** Celular (de pé): monte em 4 fileiras, adversários lado a lado em cima. */
+const PHONE = "(max-width: 699px)";
+/** Celular com altura para a partida caber inteira na tela, sem rolar. */
+const TALL_PHONE = "(max-width: 699px) and (min-height: 760px)";
 
 interface GameContentProps {
   online: OnlineRoom;
@@ -170,6 +176,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   const { theme, toggleTheme } = useTheme();
   const { soundOn, toggleSound, play } = useSound();
   const isWide = useMediaQuery(WIDE_SCREEN);
+  const isPhone = useMediaQuery(PHONE);
+  const isTallPhone = useMediaQuery(TALL_PHONE);
   // Trajetos da animação de embaralhar; `null` quando ela não está em andamento.
   // No online, a partida que acabou de começar abre com a mistura das peças.
   const [shuffle, setShuffle] = useState<ScatterPoint[][] | null>(() =>
@@ -308,6 +316,10 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       ? ""
       : `Jogo fechado: as duas pontas são ${closedEnd} e todas as peças com ${closedEnd} já estão na mesa. `;
   const hasGuide = !isFinished && (inTutorial || hintsOn);
+  // Celular: a partida ocupa a altura exata da tela e a mesa fica com o que
+  // sobrar (as peças da mesa se ajustam a ela). Com tutorial ou dicas abertas,
+  // a tela volta a rolar para o cartão caber.
+  const fitPhone = isTallPhone && !hasGuide && !isFinished;
 
   // Aviso de "sua vez": online e contra o computador, onde há uma só pessoa na
   // tela. No mesmo aparelho a tela de troca de turno já faz esse papel, e no
@@ -341,6 +353,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
     document.title = DEFAULT_TITLE;
   }, []);
   const hasSideSeats = seats.left !== null || seats.right !== null;
+  const opponentCount = [seats.top, seats.left, seats.right].filter((seat) => seat !== null).length;
 
   const handleResumeGame = () => {
     if (!resumeGame()) {
@@ -454,6 +467,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- relê quando a versão muda
   }, [onHome, savedGameVersion]);
+  // Contador de partidas: relido sempre que a tela inicial aparece.
+  const matchCount = useMatchCount(onHome);
 
   if (onHome) {
     return (
@@ -480,6 +495,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         savedRoomCode={onCreateRoom ? (online.savedSession?.code ?? null) : null}
         onResumeRoom={() => void online.resume()}
         onLeaveSavedRoom={() => void online.leaveSaved()}
+        matchCount={matchCount}
       />
       <Modal
         isOpen={online.closedReason !== null}
@@ -507,7 +523,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         hasGuide && "game--guided",
         inTutorial && "game--tutorial",
         yourTurn && "game--your-turn",
-        isOnline && "game--online"
+        isOnline && "game--online",
+        fitPhone && "game--fit"
       )}
     >
       {yourTurn && <TurnAlert key={turnKey} hint={turnHint(state)} />}
@@ -552,7 +569,10 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         </div>
       </header>
 
-      <div className={`board ${hasSideSeats ? "board--sides" : ""}`}>
+      <div
+        className={`board ${hasSideSeats ? "board--sides" : ""}`}
+        style={{ "--seats": opponentCount } as CSSProperties}
+      >
         {showHands &&
           (["top", "left", "right"] as const).map((position) => {
             const index = seats[position];
@@ -570,7 +590,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         <GameTable
           table={state.table}
           initialPieceId={state.initialPieceId}
-          fitHeight={isWide && !isFinished}
+          fitHeight={(isWide || fitPhone) && !isFinished}
           shuffle={shuffle ? { pieces: state.drawPile, paths: shuffle } : null}
           lastPlayedId={lastPlayed?.pieceId ?? null}
           flipPieceId={flipPieceId}
@@ -623,6 +643,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
               onlyPieceId={tutorial.pilePieceId}
               hideTiles={isShuffling}
               onSelectPiece={handlePilePiece}
+              columns={isPhone ? 7 : 14}
+              collapseEmptyRows={isPhone}
             />
           </div>
 
@@ -663,6 +685,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
                   (!inTutorial || expected?.type === "PLAY_PIECE")
                 }
                 onSelectPiece={(pieceId) => act({ type: "SELECT_PIECE", pieceId })}
+                compact={isPhone}
               />
             )}
 
@@ -903,7 +926,7 @@ function Root({ onlineUrl, onlineEnabled }: { onlineUrl?: string; onlineEnabled:
           onJoinRoom={onlineEnabled ? onJoinRoom : undefined}
         />
       )}
-      {view && !online.connected && <ConnectionBanner />}
+      {view && !online.connected && <ConnectionBanner inLobby={view.status === 'lobby'} />}
       {view && online.error && (
         <p className="online-toast" role="alert">
           {online.error}

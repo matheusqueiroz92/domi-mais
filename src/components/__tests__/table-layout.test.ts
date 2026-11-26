@@ -291,7 +291,10 @@ describe('layoutSnake (cobrinha com curvas em ângulo reto)', () => {
 describe('tamanho das peças (fitSnake)', () => {
   it('mesas largas usam peças maiores', () => {
     expect(maxHalfForWidth(220)).toBe(20);
-    expect(maxHalfForWidth(340)).toBe(24);
+    expect(maxHalfForWidth(280)).toBe(24);
+    expect(maxHalfForWidth(310)).toBe(28);
+    // Celular: a mesa com a largura toda (sem adversários dos lados) ganha peças maiores.
+    expect(maxHalfForWidth(350)).toBe(32);
     expect(maxHalfForWidth(600)).toBe(32);
     expect(maxHalfForWidth(1100)).toBe(44);
     expect(maxHalfForWidth(1500)).toBe(52);
@@ -301,7 +304,8 @@ describe('tamanho das peças (fitSnake)', () => {
   it('sem limite de altura, usa o maior tamanho que a largura permite', () => {
     const { table, initialPieceId } = buildTable(28, 1);
     expect(fitSnake(table.pieces, initialPieceId, { width: 1100 }).half).toBe(44);
-    expect(fitSnake(table.pieces, initialPieceId, { width: 300 }).half).toBe(24);
+    expect(fitSnake(table.pieces, initialPieceId, { width: 280 }).half).toBe(24);
+    expect(fitSnake(table.pieces, initialPieceId, { width: 350 }).half).toBe(32);
   });
 
   it('com altura fixa, diminui as peças até a linha caber', () => {

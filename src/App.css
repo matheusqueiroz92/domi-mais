@@ -172,6 +172,93 @@
   font-weight: 600;
 }
 
+/* Celular: adversários numa fileira em cima e a mesa com a largura toda. */
+@media (max-width: 699px) {
+  .board--sides {
+    grid-template-columns: repeat(var(--seats, 3), minmax(0, 1fr));
+    grid-template-areas: none;
+    gap: 6px;
+  }
+
+  .board--sides .game-table {
+    grid-area: auto;
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  .game-table {
+    padding: 12px 6px;
+  }
+}
+
+/* Celular com altura suficiente: a partida cabe inteira na tela, sem rolar.
+   A mesa fica com a altura que sobra e as peças dela se ajustam. */
+@media (max-width: 699px) {
+  .game--fit {
+    display: grid;
+    grid-template-rows: auto minmax(150px, 1fr) auto;
+    height: 100dvh;
+    min-height: 0;
+    gap: 8px;
+    padding: 8px 12px 10px;
+  }
+
+  .game--fit .board {
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .game--fit .game-table {
+    min-height: 0;
+    gap: 6px;
+    padding: 10px 6px 8px;
+    border-radius: 22px;
+  }
+
+  .game--fit .game-table__area {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .game--fit .game__bottom {
+    gap: 8px;
+  }
+
+  /* Aviso e última jogada numa linha cada. */
+  .game--fit .game__status {
+    min-height: 1.5em;
+  }
+
+  .game--fit .game__last-action {
+    display: block;
+    min-height: 1.4em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .game--fit .pile {
+    gap: 6px;
+    padding: 8px 10px 10px;
+  }
+
+  .game--fit .hand {
+    padding: 8px 12px 10px;
+  }
+
+  .game--fit .hand__pieces {
+    gap: 10px;
+    padding-top: 12px;
+  }
+
+  /* O lugar do botão fica reservado: a mesa não muda de tamanho quando ele aparece. */
+  .game--fit .game__keep,
+  .game--fit .game__keep:empty {
+    display: block;
+    min-height: 48px;
+  }
+}
+
 /* Tablets */
 /* Tutorial no celular: a mesa tem poucas peças e cede espaço ao cartão. */
 .game--tutorial .game-table {

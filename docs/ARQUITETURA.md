@@ -276,14 +276,40 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
 
 ### Tamanhos de tela
 
-- **Celular e tablet:** coluna única; a página rola se precisar e a mesa
-  cresce para baixo.
+- **Celular** (até 699 px de largura): monte em 4 fileiras de 7 (peças
+  quase quadradas; fileira toda vazia some), adversários lado a lado acima da
+  mesa (`--seats` no `.board`), mesa com a largura toda e mão com peças menores
+  (`compact`). Com pelo menos 760 px de altura e sem tutorial ou dicas, a
+  partida recebe `game--fit`: ocupa a altura exata da tela, a mesa fica com o
+  que sobra (`fitHeight`) e o lugar do botão de encerrar o turno fica
+  reservado.
+- **Tablet:** coluna única; a página rola se precisar e a mesa cresce para
+  baixo.
 - **Telas grandes** (a partir de 1024 × 640): a partida ocupa a janela
   inteira, sem rolagem. Em cima ficam a mesa e os adversários, usando toda a
   altura que sobra; embaixo, o monte à esquerda e, à direita, o aviso, a mão do
   jogador e o botão de encerrar o turno, cujo espaço fica reservado para a tela
   não mudar de altura. Nesse modo a mesa recebe `fitHeight` e as peças diminuem,
   se necessário, para a linha caber.
+
+### Tela inicial
+
+- Contador de partidas: `src/stats/match-stats.ts` (detalhes em
+  `docs/ONLINE.md`).
+- Parceiros: `src/home/partners.ts` (lista com nome, logo em
+  `public/parceiros/` e link) e `PartnersFooter`. Para incluir ou trocar um
+  parceiro, basta editar a lista.
+- Layout: no celular, uma coluna (imagem, chamada com contador, partida
+  salva/sala, modos, outras ações). A partir de 900 px, grade com as áreas
+  `resume resume` / `logo modes` / `intro more`: a imagem define a altura da
+  linha e os modos se espalham nela (`space-between`); a chamada e o
+  contador (`home__intro`) se espalham na altura de Tutorial, Como jogar e
+  Dominó físico (`home__more`). O rodapé `home__footer` junta os parceiros e
+  os créditos (direitos reservados, Cassiano Ribeiro e a versão digital de
+  Matheus Queiroz, com link para matheusqueiroz.dev.br).
+- O exemplo "soma 7 pode ser..." fica em `RulesContent` ("Como jogar").
+- Dominó físico: `src/home/physical-game.ts` (foto e link de compra; sem link,
+  o pop-up mostra "Em breve").
 
 ## Tutorial e modo "dica"
 

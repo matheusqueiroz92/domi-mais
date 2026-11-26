@@ -23,6 +23,12 @@ export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const TURN_SECONDS = 60;
 /** Tempo que o servidor espera alguém reconectar antes de o computador assumir. */
 export const RECONNECT_GRACE_SECONDS = 60;
+/**
+ * Na sala de espera, a espera é bem maior: quem criou a sala costuma sair para
+ * o WhatsApp mandar o link, e o celular desliga a conexão nesse meio tempo
+ * (pedido de 25/11/2026).
+ */
+export const LOBBY_RECONNECT_GRACE_SECONDS = 30 * 60;
 
 /** Tamanho máximo do nome de um jogador. */
 export const MAX_NAME_LENGTH = 20;

@@ -22,3 +22,24 @@
   gap: 6px;
   padding-left: 18px;
 }
+
+/* Exemplo "soma 7 pode ser..." (veio da tela inicial em 25/11/2026). */
+.rules__example {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.rules__example-text {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+}
+

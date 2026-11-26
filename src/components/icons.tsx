@@ -135,3 +135,12 @@ export function ChatIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function BagIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6 7h12l1 13H5L6 7z" />
+      <path d="M9 7a3 3 0 0 1 6 0" />
+    </Svg>
+  );
+}

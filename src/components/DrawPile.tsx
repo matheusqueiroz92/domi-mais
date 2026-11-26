@@ -17,6 +17,10 @@ interface DrawPileProps {
   onSelectPiece?: (pieceId: string) => void;
   /** Tutorial: só esta peça fica clicável, com destaque. */
   onlyPieceId?: string | null;
+  /** Peças por fileira: 14 (2 fileiras) ou 7 no celular (4 fileiras, peças maiores). */
+  columns?: number;
+  /** Fileira que ficou toda vazia some, para sobrar espaço para a mesa (celular). */
+  collapseEmptyRows?: boolean;
 }
 
 const HINTS: Record<PileMode, string> = {
@@ -26,8 +30,9 @@ const HINTS: Record<PileMode, string> = {
 };
 
 /**
- * Monte: duas fileiras de 14 peças viradas, mostrando só a soma.
- * Cada peça fica sempre no mesmo lugar; quando é comprada, o lugar fica vazio.
+ * Monte: duas fileiras de 14 peças viradas (quatro de 7 no celular), mostrando
+ * só a soma. Cada peça fica sempre no mesmo lugar; quando é comprada, o lugar
+ * fica vazio.
  */
 export function DrawPile({
   order,
@@ -36,9 +41,15 @@ export function DrawPile({
   hideTiles = false,
   onSelectPiece,
   onlyPieceId = null,
+  columns = 14,
+  collapseEmptyRows = false,
 }: DrawPileProps) {
   const byId = new Map(pieces.map((piece) => [piece.id, piece]));
   const interactive = mode !== 'idle' && !hideTiles;
+  const rows: string[][] = [];
+  for (let i = 0; i < order.length; i += columns) rows.push(order.slice(i, i + columns));
+  const visibleRows =
+    collapseEmptyRows && !hideTiles ? rows.filter((row) => row.some((id) => byId.has(id))) : rows;
 
   return (
     <section className={`pile ${interactive ? 'pile--active' : ''}`} aria-label="Monte">
@@ -46,8 +57,11 @@ export function DrawPile({
         <h2 className="pile__title">Monte · {pieces.length} peças</h2>
         <span className="pile__hint">{HINTS[mode]}</span>
       </div>
-      <div className="pile__grid">
-        {order.map((id) => {
+      <div
+        className={`pile__grid ${columns < 14 ? 'pile__grid--compact' : ''}`}
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      >
+        {visibleRows.flat().map((id) => {
           const piece = byId.get(id);
           const clickable = interactive && (onlyPieceId === null || onlyPieceId === id);
           const highlighted = interactive && onlyPieceId === id;

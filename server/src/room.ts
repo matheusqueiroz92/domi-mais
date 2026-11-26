@@ -21,6 +21,7 @@ import {
   MAX_ROOM_PLAYERS,
   MIN_ROOM_PLAYERS,
   QUICK_MESSAGES,
+  LOBBY_RECONNECT_GRACE_SECONDS,
   RECONNECT_GRACE_SECONDS,
   TURN_SECONDS,
 } from '../../src/online/protocol';
@@ -61,12 +62,16 @@ export interface RoomOptions {
   botDelayMs?: number;
   turnMs?: number;
   graceMs?: number;
+  /** Espera de reconexão na sala de espera. */
+  lobbyGraceMs?: number;
   /** Algo mudou: enviar a nova visão a todos. */
   onChange?: (room: Room) => void;
   /** Uma pessoa deixou de fazer parte da sala (removida por quem criou, ou caiu antes da partida). */
   onSeatRemoved?: (room: Room, seat: Seat, reason: string) => void;
   /** A sala fechou. */
   onClosed?: (room: Room, reason: string) => void;
+  /** Uma partida da sala terminou (contador de partidas). */
+  onGameFinished?: (room: Room) => void;
 }
 
 type Timer = ReturnType<typeof setTimeout>;
@@ -118,6 +123,7 @@ export class Room {
   private readonly botDelayMs: number;
   private readonly turnMs: number;
   private readonly graceMs: number;
+  private readonly lobbyGraceMs: number;
   private readonly options: RoomOptions;
 
   constructor(code: string, options: RoomOptions = {}) {
@@ -127,6 +133,7 @@ export class Room {
     this.botDelayMs = options.botDelayMs ?? ONLINE_BOT_DELAY_MS;
     this.turnMs = options.turnMs ?? TURN_SECONDS * 1000;
     this.graceMs = options.graceMs ?? RECONNECT_GRACE_SECONDS * 1000;
+    this.lobbyGraceMs = options.lobbyGraceMs ?? LOBBY_RECONNECT_GRACE_SECONDS * 1000;
   }
 
   /* --------------------------------------------------------- Lugares */
@@ -167,15 +174,22 @@ export class Room {
     return { ok: true, seat };
   }
 
-  /** A conexão caiu. Espera `graceMs` antes de agir. */
+  /**
+   * A conexão caiu. Espera antes de agir: `lobbyGraceMs` na sala de espera,
+   * `graceMs` durante a partida.
+   */
   disconnect(seatId: string): void {
     const seat = this.seat(seatId);
     if (!seat || seat.kind !== 'human' || this.closed) return;
     seat.connected = false;
-    this.clearGrace(seat.id);
-    const timer = setTimeout(() => this.graceExpired(seat.id), this.graceMs);
-    this.graceTimers.set(seat.id, timer);
+    this.startGrace(seat.id);
     this.changed();
+  }
+
+  private startGrace(seatId: string): void {
+    this.clearGrace(seatId);
+    const ms = this.status === 'lobby' ? this.lobbyGraceMs : this.graceMs;
+    this.graceTimers.set(seatId, setTimeout(() => this.graceExpired(seatId), ms));
   }
 
   private graceExpired(seatId: string): void {
@@ -277,6 +291,10 @@ export class Room {
     this.status = 'playing';
     this.turnDeadline = null;
     this.notice = null;
+    // Quem estava sem conexão na sala de espera passa a ter a espera da partida.
+    for (const seat of this.seats) {
+      if (seat.kind === 'human' && !seat.connected && !seat.left) this.startGrace(seat.id);
+    }
     this.changed();
     return { ok: true };
   }
@@ -326,7 +344,10 @@ export class Room {
     this.notice = null;
     // Comprar não encerra o turno; as outras ações encerram.
     if (action.type !== 'DRAW_PIECE') this.turnDeadline = null;
-    if (next.phase === 'finished') this.status = 'finished';
+    if (next.phase === 'finished' && this.status !== 'finished') {
+      this.status = 'finished';
+      this.options.onGameFinished?.(this);
+    }
     return true;
   }
 

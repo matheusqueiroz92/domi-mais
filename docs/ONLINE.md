@@ -42,7 +42,7 @@ publicado mostra o modo online como "Em breve" (veja "Ligar o modo online").
 | Entrar na sala | Código de 5 letras, sem login. Quem cria é o dono da sala. |
 | Lugares vazios | O dono pode completar com o computador (Fácil, Médio ou Difícil). |
 | Tempo de jogada | 60 segundos por turno (compra e jogada juntas). Ao esgotar, o jogo compra uma peça ao acaso e fica com ela; com o monte vazio, joga por ele (jogar é obrigatório). |
-| Queda de conexão | O servidor espera 1 minuto. Depois, o computador (nível Médio) joga no lugar até a pessoa voltar. |
+| Queda de conexão | Na partida, o servidor espera 1 minuto; depois, o computador (nível Médio) joga no lugar até a pessoa voltar. Na sala de espera, o lugar fica guardado por 30 minutos (25/11/2026: quem criou a sala sai para o WhatsApp mandar o link e o celular desliga a conexão). Se a partida começar com alguém ainda sem conexão, vale o 1 minuto a partir do início. |
 | Sair pelo botão | Na partida, o computador termina por ela; não dá para voltar. Na sala de espera, a pessoa simplesmente sai. |
 | Chat (fase 3) | Filtro de palavrões e ofensas no servidor (mensagem proibida não é entregue), silenciar jogador, dono da sala desliga o chat, mensagens rápidas prontas. |
 
@@ -73,7 +73,7 @@ ou saíram, jogam pelo mesmo `chooseBotAction` do modo contra o computador, com
 pausa de 0,9 s entre as ações (`ONLINE_BOT_DELAY_MS`).
 
 **Salas na memória.** Não há banco de dados. Uma sala fecha quando todos saem,
-depois de 10 minutos sem nenhuma pessoa conectada ou de 3 horas sem nenhuma
+depois de 30 minutos sem nenhuma pessoa conectada ou de 3 horas sem nenhuma
 ação. Reiniciar o servidor encerra as partidas em andamento.
 
 ## Protocolo (`src/online/protocol.ts`)
@@ -192,8 +192,27 @@ novo sem mexer no código, troque `VITE_ONLINE: "on"` por `"off"` no
 - O Traefik manda `domimais.com.br/socket/` (e `www.`) para o servidor, com
   prioridade sobre o site; o resto vai para o Nginx. WebSocket passa pelo
   Traefik sem configuração extra.
+- O Traefik também manda `/api/` para o servidor (contador de partidas, veja
+  abaixo).
 - O servidor responde `GET /health` dentro do contêiner (usado pelo
   `HEALTHCHECK` do Docker); essa rota não é publicada.
+
+## Contador de partidas (`server/src/stats`, `src/stats`)
+
+- `MatchCounter` guarda o total em `$DATA_DIR/stats.json` (volume
+  `domi-mais-data` no compose), gravado 2 s depois da última partida e no
+  desligamento, sempre por troca de arquivo. Sem arquivo, começa em
+  `MATCH_COUNT_START` (5.000).
+- Partida online terminada: a sala chama `onGameFinished` e o servidor soma.
+  Contra o computador e mesmo aparelho: o `GameProvider` chama
+  `reportMatchFinished` uma vez por partida (`POST /api/matches`, com
+  `keepalive`). Tutorial não conta.
+- `GET /api/stats` devolve `{ matches }` (cache de 30 s); a tela inicial lê ao
+  aparecer (`useMatchCount`). `POST /api/matches` aceita 60 avisos a cada 10
+  minutos por endereço (`X-Forwarded-For`), folgado para uma sala de aula
+  inteira atrás do mesmo endereço.
+- O contador só fala com o servidor onde o modo online existe
+  (`STATS_ENABLED`); nos testes, fica desligado.
 - Publicar uma versão nova reinicia o servidor e **encerra as partidas online
   em andamento** (as salas ficam só na memória). Publique fora do horário de
   uso.

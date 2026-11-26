@@ -21,24 +21,35 @@ services:
       - "traefik.http.routers.domi-mais.tls.certresolver=letsencrypt"
       - "traefik.http.services.domi-mais.loadbalancer.server.port=80"
 
-  # Servidor do modo online: recebe só o caminho /socket/ do mesmo domínio.
+  # Servidor do modo online e do contador de partidas: recebe só os caminhos
+  # /socket/ e /api/ do mesmo domínio.
   server:
     build:
       context: /var/www/domi-mais
       dockerfile: deploy/server.Dockerfile
     container_name: domi-mais-server
     restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+      # Só vale enquanto o contador ainda não tem arquivo (primeira vez).
+      MATCH_COUNT_START: "5000"
+    volumes:
+      # Guarda o contador de partidas entre deploys e reinícios.
+      - domi-mais-data:/data
     networks:
       - traefik-public
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
-      - "traefik.http.routers.domi-mais-socket.rule=(Host(`domimais.com.br`) || Host(`www.domimais.com.br`)) && PathPrefix(`/socket/`)"
+      - "traefik.http.routers.domi-mais-socket.rule=(Host(`domimais.com.br`) || Host(`www.domimais.com.br`)) && (PathPrefix(`/socket/`) || PathPrefix(`/api/`))"
       - "traefik.http.routers.domi-mais-socket.entrypoints=websecure"
       - "traefik.http.routers.domi-mais-socket.tls.certresolver=letsencrypt"
       # Mais prioridade que o site, para /socket/ não cair no Nginx.
       - "traefik.http.routers.domi-mais-socket.priority=100"
       - "traefik.http.services.domi-mais-socket.loadbalancer.server.port=3001"
+
+volumes:
+  domi-mais-data:
 
 networks:
   traefik-public:

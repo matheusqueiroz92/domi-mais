@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { seededRandom } from '../../../src/game/logic/__tests__/helpers';
-import { RECONNECT_GRACE_SECONDS, TURN_SECONDS } from '../../../src/online/protocol';
+import { LOBBY_RECONNECT_GRACE_SECONDS, RECONNECT_GRACE_SECONDS, TURN_SECONDS } from '../../../src/online/protocol';
 import type { RoomView } from '../../../src/online/protocol';
 import { ONLINE_BOT_DELAY_MS, Room } from '../room';
 import type { RoomOptions } from '../room';
@@ -9,6 +9,7 @@ import { expectNoLeak, simulatedHumanAction } from './test-utils';
 
 const TURN_MS = TURN_SECONDS * 1000;
 const GRACE_MS = RECONNECT_GRACE_SECONDS * 1000;
+const LOBBY_GRACE_MS = LOBBY_RECONNECT_GRACE_SECONDS * 1000;
 
 /** Sala com registro de tudo o que seria enviado a cada jogador. */
 function makeRoom(options: RoomOptions = {}) {
@@ -119,17 +120,27 @@ describe('sala de espera', () => {
     expect(closed).toEqual(['Todos saíram da sala.']);
   });
 
-  it('quem cai na sala de espera tem 1 minuto para voltar; depois sai da sala', () => {
+  it('quem cai na sala de espera tem 30 minutos para voltar; depois sai da sala', () => {
     const { room, removed } = makeRoom();
     const [ana, beto] = joinAll(room, ['Ana', 'Beto']);
     room.disconnect(beto.id);
-    wait(GRACE_MS - 1);
+    // Bem mais que o 1 minuto da partida: dá tempo de mandar o link no WhatsApp.
+    wait(LOBBY_GRACE_MS - 1);
     expect(room.resume(beto.token).ok).toBe(true);
     room.disconnect(beto.id);
-    wait(GRACE_MS);
+    wait(LOBBY_GRACE_MS);
     expect(room.seats.map((s) => s.id)).toEqual([ana.id]);
     expect(removed).toEqual(['Beto: Você ficou muito tempo sem conexão e saiu da sala.']);
     expect(room.resume(beto.token)).toEqual({ ok: false, error: 'Você não faz mais parte desta sala.' });
+  });
+  it('quem estava sem conexão quando a partida começa passa a ter 1 minuto', () => {
+    const { room } = makeRoom();
+    const [ana, beto] = joinAll(room, ['Ana', 'Beto']);
+    room.disconnect(beto.id);
+    wait(10 * 60 * 1000);
+    expect(room.start(ana.id).ok).toBe(true);
+    wait(GRACE_MS);
+    expect(room.seats.find((s) => s.id === beto.id)?.takenOver).toBe(true);
   });
 });
 
@@ -310,7 +321,7 @@ describe('gerenciador de salas', () => {
     expect(manager.create('Beto').ok).toBe(false);
   });
 
-  it('fecha salas vazias depois de 10 minutos e salas paradas depois de 3 horas', () => {
+  it('fecha salas vazias depois de 30 minutos e salas paradas depois de 3 horas', () => {
     const closed: string[] = [];
     const manager = new RoomManager({ onClosed: (room) => closed.push(room.code) });
     const empty = manager.create('Ana');
@@ -318,10 +329,11 @@ describe('gerenciador de salas', () => {
     if (!empty.ok || !busy.ok) throw new Error('sala');
     empty.room.disconnect(empty.seat.id);
 
-    wait(9 * 60 * 1000);
+    wait(29 * 60 * 1000);
     expect(manager.sweep()).toBe(0);
+    expect(closed).toEqual([]);
     wait(60 * 1000);
-    // Na sala de espera, quem caiu já saiu depois de 1 minuto e a sala fechou sozinha.
+    // Na sala de espera, quem caiu sai depois de 30 minutos e a sala fecha sozinha.
     expect(closed).toContain(empty.room.code);
     expect(manager.rooms.has(empty.room.code)).toBe(false);
 
@@ -330,14 +342,16 @@ describe('gerenciador de salas', () => {
     expect(manager.rooms.size).toBe(0);
   });
 
-  it('partida em que todos caíram fecha depois de 10 minutos', () => {
+  it('partida em que todos caíram fecha depois de 30 minutos', () => {
     const manager = new RoomManager();
     const created = manager.create('Ana');
     if (!created.ok) throw new Error('sala');
     created.room.addBot(created.seat.id, 'easy');
     created.room.start(created.seat.id);
     created.room.disconnect(created.seat.id);
-    wait(10 * 60 * 1000);
+    wait(29 * 60 * 1000);
+    expect(manager.sweep()).toBe(0);
+    wait(60 * 1000);
     expect(manager.sweep()).toBe(1);
     expect(created.room.closed).toBe(true);
   });

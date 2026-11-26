@@ -14,6 +14,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 COPY --from=build /app/server/dist/server.cjs ./server.cjs
+# Pasta do contador de partidas (volume no docker-compose), do usuário node.
+RUN mkdir -p /data && chown node:node /data
+ENV DATA_DIR=/data
 USER node
 EXPOSE 3001
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \

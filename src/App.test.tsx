@@ -93,7 +93,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
     it('com o modo online desligado (site publicado antes do servidor), ele aparece como "Em breve"', () => {
       render(<App onlineEnabled={false} />);
       expect(screen.getByText('Online com amigos')).toBeInTheDocument();
-      expect(screen.getByText('Em breve')).toBeInTheDocument();
+      expect(screen.getByText('Online com amigos').closest('.mode')).toHaveTextContent('Em breve');
       expect(screen.queryByRole('button', { name: /Online com amigos/ })).toBeNull();
     });
 
@@ -102,7 +102,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(screen.getByRole('button', { name: SAME_DEVICE })).toBeEnabled();
       expect(screen.getByRole('button', { name: VS_COMPUTER })).toBeEnabled();
       expect(screen.getByRole('button', { name: /Online com amigos/ })).toBeEnabled();
-      expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Online com amigos/ })).not.toHaveTextContent('Em breve');
     });
 
     it('"Como jogar" abre as regras', () => {

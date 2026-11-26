@@ -1,5 +1,71 @@
 # Changelog
 
+## 0.11.0 — 25/11/2026 — celular, parceiros e contador
+
+> **Deploy:** o `deploy/docker-compose.yml` mudou (rota `/api/` e volume do
+> contador). Copie de novo para `/opt/apps/domi-mais` (veja `deploy-notes.md`).
+
+### Partida no celular
+
+- **Peças maiores no celular** (até 699 px de largura). Monte em 4 fileiras de 7
+  com peças quase quadradas e números grandes: de 19×32 px para 43×43 px num
+  celular de 390 px. Fileira que fica toda vazia some, e a mesa ganha o espaço.
+- **Adversários lado a lado em cima da mesa**, em vez de colunas nos lados: a
+  mesa usa a largura toda e as peças dela crescem (meia peça de até 32 px em
+  mesas a partir de 340 px de largura; antes, 24).
+- **A partida cabe inteira na tela** em celulares com pelo menos 760 px de
+  altura (a maioria dos atuais), sem rolar: a mesa fica com a altura que sobra
+  e as peças dela se ajustam. Em celulares mais baixos, ou com tutorial ou dicas
+  abertas, a tela continua rolando. O lugar do botão "Ficar com a peça" fica
+  reservado para a mesa não mudar de tamanho.
+- Mão um pouco mais baixa no celular (peças de 38×75 px) para sobrar espaço.
+- Tablets e computadores não mudam.
+
+### Tela inicial
+
+- **Contador de partidas jogadas** ("5.342 partidas jogadas"). É real: soma
+  cada partida terminada contra o computador, no mesmo aparelho e online (o
+  tutorial não conta), a partir de 5.000 (estimativa das partidas da fase de
+  testes). O total fica no servidor, num arquivo que sobrevive a deploys.
+  Sem internet, a partida não entra na conta e o contador não aparece.
+- **Rodapé "Parceiros"** com as logos dos patrocinadores, cada uma com link
+  para o site da empresa. A lista fica em `src/home/partners.ts` e as imagens em
+  `public/parceiros/` (por enquanto, 5 lugares reservados).
+- **Telas grandes alinhadas em grade:** à esquerda, a imagem e, embaixo
+  dela, a chamada ("Blefe. Deduza. Vença."), a frase de apoio e o contador.
+  À direita, os três modos de jogo ocupam exatamente a altura da imagem (topo
+  do "Mesmo aparelho" alinhado ao topo da imagem, base do "Online com amigos"
+  à base dela); embaixo, Tutorial, Como jogar e Dominó físico têm a mesma
+  altura da chamada e do contador. A partida salva ou a sala online, quando
+  existem, aparecem numa faixa acima das duas colunas. No celular a ordem
+  continua em uma coluna.
+- O exemplo "7 pode ser 1|6, 2|5, 3|4" saiu da tela inicial e foi para
+  "Como jogar", junto da explicação do verso das peças.
+- **Rodapé de créditos**, abaixo dos parceiros: "© 2026 DomiMais. Todos os
+  direitos reservados. Jogo criado por Cassiano Ribeiro. Versão digital
+  desenvolvida por Matheus Queiroz", com link para matheusqueiroz.dev.br. O
+  ano é o atual.
+- **Dominó físico:** cartão "Dominó físico — Em breve" que abre um pop-up com
+  foto e o aviso de que as vendas começam em breve. Quando a loja existir,
+  basta preencher o link em `src/home/physical-game.ts`.
+
+### Modo online
+
+- **A sala de espera guarda o lugar por 30 minutos** quando a conexão cai
+  (antes, 1 minuto). Quem criou a sala saía para o WhatsApp mandar o link, o
+  celular desligava a conexão e, em 1 minuto, a pessoa era tirada e a sala
+  fechava. Durante a partida continua 1 minuto até o computador assumir.
+- Sala sem ninguém conectado fecha depois de 30 minutos (antes, 10).
+- O aviso de conexão caída na sala de espera agora diz que o lugar fica
+  guardado por 30 minutos.
+
+### Servidor
+
+- Rotas novas: `GET /api/stats` (total) e `POST /api/matches` (uma partida
+  terminou no navegador), com limite de 60 avisos a cada 10 minutos por
+  endereço. O Traefik passa a mandar `/api/` também para o servidor.
+- Variáveis `DATA_DIR` (pasta do `stats.json`) e `MATCH_COUNT_START`.
+
 ## 0.10.0 — 19/11/2026 — modo online
 
 Partidas de 2 a 4 jogadores, cada um no seu aparelho, em salas por código,

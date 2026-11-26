@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.11.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -129,6 +129,9 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 - [x] PWA com partida salva para uso offline
 - [x] Multiplayer online por sala com código, com chat (veja
   [docs/ONLINE.md](docs/ONLINE.md))
+- [x] Peças maiores no celular, parceiros, contador de partidas e dominó físico
+  ("Em breve")
+- [ ] Logos reais dos parceiros e foto do dominó físico
 - [ ] Retirar o modo "mesmo aparelho" depois do teste com alunos
 
 O modo no mesmo dispositivo será removido quando os modos

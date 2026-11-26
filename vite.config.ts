@@ -41,17 +41,23 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
         // O servidor do modo online não é página do jogo.
-        navigateFallbackDenylist: [/^\/socket\//, /^\/health$/],
+        navigateFallbackDenylist: [/^\/socket\//, /^\/api\//, /^\/health$/],
       },
     }),
   ],
   // Modo online: em desenvolvimento, /socket/ vai para o servidor local
   // (npm run dev:server, porta 3001). Em produção, o Traefik faz esse papel.
   server: {
-    proxy: { '/socket': { target: 'http://localhost:3001', ws: true } },
+    proxy: {
+      '/socket': { target: 'http://localhost:3001', ws: true },
+      '/api': { target: 'http://localhost:3001' },
+    },
   },
   preview: {
-    proxy: { '/socket': { target: 'http://localhost:3001', ws: true } },
+    proxy: {
+      '/socket': { target: 'http://localhost:3001', ws: true },
+      '/api': { target: 'http://localhost:3001' },
+    },
   },
   test: {
     environment: 'jsdom',

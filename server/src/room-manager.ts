@@ -3,12 +3,15 @@
  * código e fecha as abandonadas.
  */
 import { randomInt } from 'node:crypto';
-import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, normalizeRoomCode } from '../../src/online/protocol';
+import { LOBBY_RECONNECT_GRACE_SECONDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, normalizeRoomCode } from '../../src/online/protocol';
 import { Room } from './room';
 import type { Result, RoomOptions, Seat } from './room';
 
-/** Sala sem nenhuma pessoa conectada fecha depois deste tempo. */
-export const EMPTY_ROOM_MS = 10 * 60 * 1000;
+/**
+ * Sala sem nenhuma pessoa conectada fecha depois deste tempo. Igual à espera
+ * de reconexão da sala de espera (30 minutos).
+ */
+export const EMPTY_ROOM_MS = LOBBY_RECONNECT_GRACE_SECONDS * 1000;
 /** Sala sem nenhuma ação fecha depois deste tempo, mesmo com gente conectada. */
 export const IDLE_ROOM_MS = 3 * 60 * 60 * 1000;
 /** Limite de salas abertas ao mesmo tempo (protege a memória do servidor). */
