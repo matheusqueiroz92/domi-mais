@@ -1,3 +1,7 @@
+import { useI18n } from "./i18n/useI18n";
+import type { Messages } from "./i18n/messages";
+import { translateQuickMessage, translateServerText } from "./i18n/translate";
+import { LanguageToggle } from "./components/LanguageToggle";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { MotionConfig } from "framer-motion";
@@ -69,52 +73,42 @@ function getViewerIndex(state: GameState): number {
 }
 
 /** Mensagem que orienta o jogador da vez sobre o que fazer agora. */
-function getStatusMessage(state: GameState, viewerIndex: number): string | null {
+function getStatusMessage(state: GameState, viewerIndex: number, m: Messages): string | null {
   const player = getCurrentPlayer(state);
   const isViewerTurn = state.currentPlayerIndex === viewerIndex;
+  const g = m.game;
 
   if (state.phase === "choosing-initial") {
-    return isViewerTurn
-      ? `${player.name}, escolha a peça inicial do monte`
-      : `${player.name} está escolhendo a peça inicial…`;
+    return isViewerTurn ? g.chooseInitial(player.name) : g.choosingInitial(player.name);
   }
   if (state.phase !== "playing") return null;
 
-  const passedCount = state.autoPassedPlayerIndexes.length;
-  const passed = state.autoPassedPlayerIndexes
-    .map((index) => state.players[index].name)
-    .join(" e ");
-  const passNotice = passed
-    ? `${passed} ${passedCount > 1 ? "não têm" : "não tem"} peça que encaixa e ${
-        passedCount > 1 ? "passaram" : "passou"
-      } a vez. `
-    : "";
+  const passed = state.autoPassedPlayerIndexes.map((index) => state.players[index].name);
+  const passNotice = passed.length ? g.passed(passed) : "";
 
   if (!isViewerTurn) {
     // Vez do computador: nada aqui revela se a peça dele encaixa.
     return mustDraw(state)
-      ? `${passNotice}${player.name} está comprando uma peça…`
-      : `${passNotice}${player.name} está decidindo a jogada…`;
+      ? `${passNotice}${g.drawing(player.name)}`
+      : `${passNotice}${g.deciding(player.name)}`;
   }
 
   if (mustDraw(state)) {
-    return `${passNotice}${player.name}, compre uma peça do monte`;
+    return `${passNotice}${g.draw(player.name)}`;
   }
   if (canKeepPiece(state)) {
     // Só o próprio jogador vê esta mensagem: ela não é registrada no histórico.
-    return currentPlayerCanPlay(state)
-      ? `${player.name}, jogue uma peça em uma das pontas ou fique com a peça comprada`
-      : `${player.name}, nenhuma peça da sua mão encaixa na mesa`;
+    return currentPlayerCanPlay(state) ? g.playOrKeep(player.name) : g.nothingFits(player.name);
   }
-  return `${passNotice}Monte vazio: ${player.name}, jogue uma peça que encaixe`;
+  return `${passNotice}${g.emptyPile(player.name)}`;
 }
 
 /** Situação de um adversário no modo online, mostrada junto do nome. */
-function onlineSeatNote(seat: SeatView | undefined): string | undefined {
+function onlineSeatNote(seat: SeatView | undefined, m: Messages): string | undefined {
   if (!seat) return undefined;
-  if (seat.left) return "Saiu da partida";
-  if (seat.takenOver) return "Computador jogando";
-  if (seat.kind === "human" && !seat.connected) return "Sem conexão";
+  if (seat.left) return m.game.seatLeft;
+  if (seat.takenOver) return m.game.seatTakenOver;
+  if (seat.kind === "human" && !seat.connected) return m.game.seatOffline;
   return undefined;
 }
 
@@ -127,10 +121,10 @@ function turnNumber(state: GameState): number {
 }
 
 /** O que fazer agora, na faixa "Sua vez!". */
-function turnHint(state: GameState): string {
-  if (state.phase === "choosing-initial") return "Escolha a peça inicial no monte";
-  if (mustDraw(state)) return "Compre uma peça do monte";
-  return canKeepPiece(state) ? "Jogue ou fique com a peça" : "Jogue uma peça que encaixe";
+function turnHint(state: GameState, m: Messages): string {
+  if (state.phase === "choosing-initial") return m.game.hintChooseInitial;
+  if (mustDraw(state)) return m.game.hintDraw;
+  return canKeepPiece(state) ? m.game.hintPlayOrKeep : m.game.hintPlay;
 }
 
 /** Título da aba do navegador fora da sua vez. */
@@ -161,6 +155,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   const isOnline = onlineView !== null;
   const pwa = usePwa();
   const { theme, toggleTheme } = useTheme();
+  const { m } = useI18n();
   const { soundOn, toggleSound, play } = useSound();
   const isWide = useMediaQuery(WIDE_SCREEN);
   const isPhone = useMediaQuery(PHONE);
@@ -208,8 +203,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   // As mãos só aparecem durante o turno. Na troca de turno ninguém vê nada.
   const showHands = isPlaying || state.phase === "choosing-initial";
   const statusMessage = isShuffling
-    ? "Embaralhando as peças…"
-    : getStatusMessage(state, viewerIndex);
+    ? m.game.shuffling
+    : getStatusMessage(state, viewerIndex, m);
   const canKeep = isViewerTurn && canKeepPiece(state);
   const lastPlayed = state.lastPlayed;
   // A peça abre ao chegar à mesa quando vem virada: do monte (peça inicial)
@@ -231,7 +226,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   }, [isShuffling]);
   const winners = getWinners(state);
   const winner = winners.length === 1 ? winners[0] : null;
-  const tiedNames = winners.map((player) => player.name).join(" e ");
+  const tiedNames = winners.map((player) => player.name);
   // Quem está olhando para a tela fica embaixo; os outros, em volta da mesa.
   const seats = seatOpponents(state.players.length, viewerIndex);
 
@@ -272,7 +267,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   // jogaram fica no histórico (botão do relógio).
   const pileMessage = inTutorial
     ? null
-    : [isShuffling ? null : onlineView?.notice, statusMessage].filter(Boolean).join(" ") || null;
+    : [isShuffling || !onlineView?.notice ? null : translateServerText(onlineView.notice, m), statusMessage].filter(Boolean).join(" ") || null;
   const expected = tutorial.expected;
   /** Ação da pessoa: no tutorial passa pelo roteiro; fora dele vai direto ao jogo. */
   const act = (action: GameAction) => (inTutorial ? tutorial.perform(action) : dispatch(action));
@@ -286,7 +281,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         className={`btn ${isPhone ? "btn--small" : "btn--block"} ${inTutorial ? "btn--target" : ""}`}
         onClick={() => act({ type: "KEEP_PIECE" })}
       >
-        {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
+        {hasPlayablePiece ? m.game.keep : m.game.pass}
       </button>
     ) : null;
 
@@ -315,7 +310,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   const closedNote =
     closedEnd === undefined
       ? ""
-      : `Jogo fechado: as duas pontas são ${closedEnd} e todas as peças com ${closedEnd} já estão na mesa. `;
+      : m.game.closedNote(closedEnd);
   const hasGuide = !isFinished && (inTutorial || hintsOn);
   // Celular: a partida ocupa a altura exata da tela e a mesa fica com o que
   // sobrar (as peças da mesa se ajustam a ela). Com tutorial ou dicas abertas,
@@ -348,8 +343,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   }, [yourTurn, turnKey]);
   useEffect(() => {
     // Quem trocou de aba vê no título que é a vez dele.
-    document.title = yourTurn ? `● Sua vez — ${DEFAULT_TITLE}` : DEFAULT_TITLE;
-  }, [yourTurn]);
+    document.title = yourTurn ? `● ${m.game.yourTurnTitle} — ${DEFAULT_TITLE}` : DEFAULT_TITLE;
+  }, [yourTurn, m]);
   useEffect(() => () => {
     document.title = DEFAULT_TITLE;
   }, []);
@@ -376,7 +371,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
 
   const handleStartTutorial = () => {
     // Monte em ordem fixa e sem animação de embaralhar: o roteiro começa na hora.
-    initializeGame(TUTORIAL_PLAYERS, [null, "easy"], createTutorialSetup());
+    initializeGame([m.tutorial.you, TUTORIAL_PLAYERS[1]], [null, "easy"], createTutorialSetup());
     dispatch({ type: "START_GAME" });
     setResultDismissed(false);
     setShuffle(null);
@@ -501,13 +496,13 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       <Modal
         isOpen={online.closedReason !== null}
         onClose={online.dismissClosed}
-        title="Você saiu da sala"
+        title={m.game.leftRoomTitle}
         showCloseButton={false}
       >
-        <p>{online.closedReason}</p>
+        <p>{online.closedReason && translateServerText(online.closedReason, m)}</p>
         <div className="modal__actions">
           <button type="button" className="btn btn--primary" onClick={online.dismissClosed}>
-            Entendi
+            {m.common.understood}
           </button>
         </div>
       </Modal>
@@ -528,7 +523,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         fitPhone && "game--fit"
       )}
     >
-      {yourTurn && <TurnAlert key={turnKey} hint={turnHint(state)} />}
+      {yourTurn && <TurnAlert key={turnKey} hint={turnHint(state, m)} />}
       <header className="game__header">
         <Wordmark />
         <div className="game__actions">
@@ -537,8 +532,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
               type="button"
               className="icon-btn chat-btn"
               onClick={openChat}
-              aria-label={unreadChat.length ? `Chat: ${unreadChat.length} mensagens novas` : "Chat"}
-              title="Chat"
+              aria-label={unreadChat.length ? m.game.chatUnread(unreadChat.length) : m.game.chat}
+              title={m.game.chat}
             >
               <ChatIcon />
               {unreadChat.length > 0 && <span className="chat-btn__badge">{unreadChat.length}</span>}
@@ -547,12 +542,13 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           {!inTutorial && <HintToggle hintsOn={hintsOn} onToggle={toggleHints} />}
           <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <LanguageToggle />
           {!inTutorial && (
             <button
               type="button"
               className="icon-btn"
-              aria-label="Histórico de jogadas"
-              title="Histórico de jogadas"
+              aria-label={m.game.history}
+              title={m.game.history}
               onClick={() => setShowHistory(true)}
             >
               <HistoryIcon />
@@ -561,8 +557,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           <button
             type="button"
             className="icon-btn"
-            aria-label="Como jogar"
-            title="Como jogar"
+            aria-label={m.home.howToPlay}
+            title={m.home.howToPlay}
             onClick={() => setShowRules(true)}
           >
             <HelpIcon />
@@ -570,8 +566,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           <button
             type="button"
             className="icon-btn"
-            aria-label="Sair da partida"
-            title="Sair da partida"
+            aria-label={m.game.exit}
+            title={m.game.exit}
             onClick={
               isFinished ? (isOnline ? leaveOnline : () => backToHome()) : () => setShowExitModal(true)
             }
@@ -594,7 +590,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
                 player={state.players[index]}
                 position={position}
                 active={isPlaying && !isShuffling && index === state.currentPlayerIndex}
-                note={onlineSeatNote(onlineView?.seats[index])}
+                note={onlineSeatNote(onlineView?.seats[index], m)}
                 testId={`seat-${index}`}
               />
             );
@@ -645,7 +641,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           <div className="game__pile-col">
             {isShuffling && (
               <button type="button" className="btn btn--block game__skip" onClick={() => setShuffle(null)}>
-                Pular animação
+                {m.game.skipAnimation}
               </button>
             )}
             <DrawPile
@@ -668,7 +664,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
               <TurnTimer
                 deadline={onlineView.turnDeadline}
                 clockOffset={online.clockOffset}
-                label={isViewerTurn ? "Seu tempo" : `Tempo de ${currentPlayer.name}`}
+                label={isViewerTurn ? m.game.yourTime : m.game.timeOf(currentPlayer.name)}
                 onWarning={isViewerTurn ? () => play("warning") : undefined}
               />
             )}
@@ -702,20 +698,20 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
 
       {/* Fim de jogo: todas as mãos abertas, com a soma de cada jogador */}
       {state.result && (
-        <section className="final" aria-label="Resultado">
-          <h2 className="final__title">Resultado</h2>
+        <section className="final" aria-label={m.game.result}>
+          <h2 className="final__title">{m.game.result}</h2>
           {state.players.map((player, index) => (
             <div className="final__player" key={player.id} data-testid={`final-${index}`}>
               <div className="final__row">
                 <span className="final__name">{player.name}</span>
                 {state.result?.winnerIndexes.includes(index) && (
-                  <span className="final__badge">{winner ? "Venceu" : "Empatou"}</span>
+                  <span className="final__badge">{winner ? m.game.won : m.game.tied}</span>
                 )}
-                <span className="final__sum">Soma {state.result?.scores[index]}</span>
+                <span className="final__sum">{m.game.sum(state.result?.scores[index])}</span>
               </div>
               <div className="final__pieces">
                 {player.hand.length === 0 ? (
-                  <span className="final__none">Sem peças na mão</span>
+                  <span className="final__none">{m.game.noPieces}</span>
                 ) : (
                   player.hand.map((piece) => (
                     <DominoPiece key={piece.id} piece={piece} isFaceUp half={18} />
@@ -726,6 +722,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           ))}
           {isOnline ? (
             <OnlineFinishActions
+              m={m}
               isHost={isHost}
               hostName={onlineHost?.name}
               onRestart={() => void online.restart()}
@@ -733,7 +730,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
             />
           ) : (
             <button type="button" className="btn btn--primary btn--block" onClick={() => backToHome()}>
-              Nova partida
+              {m.common.newGame}
             </button>
           )}
         </section>
@@ -750,20 +747,21 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       {/* Prévia da mensagem nova do chat (some sozinha). */}
       {latestUnread && (
         <button type="button" key={latestUnread.id} className="chat-toast" onClick={openChat}>
-          <strong>{latestUnread.name}:</strong> {latestUnread.text}
+          <strong>{latestUnread.name}:</strong>{" "}
+          {latestUnread.quick ? translateQuickMessage(latestUnread.text, m) : latestUnread.text}
         </button>
       )}
 
       {onlineView && (
-        <Modal isOpen={showChat} onClose={closeChat} title="Chat da sala">
+        <Modal isOpen={showChat} onClose={closeChat} title={m.game.chatTitle}>
           <ChatPanel view={onlineView} online={online} hideTitle />
         </Modal>
       )}
 
-      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="Histórico de jogadas">
+      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title={m.game.history}>
         <HistoryPanel logs={state.logs} />
       </Modal>
-      <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
+      <Modal isOpen={showRules} onClose={() => setShowRules(false)} title={m.home.howToPlay}>
         <RulesContent />
       </Modal>
 
@@ -771,7 +769,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       <Modal
         isOpen={isFinished && !resultDismissed}
         onClose={() => setResultDismissed(true)}
-        title={winner ? "Fim de jogo!" : "Empate!"}
+        title={winner ? m.game.endTitle : m.game.tieTitle}
         showCloseButton={false}
       >
         {state.result && (
@@ -781,12 +779,12 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
               {state.result.reason === "empty-hand"
                 ? winner
                   ? severalEmptyHands
-                    ? `${closedNote ? "Mais de um jogador estava sem peças." : "O monte acabou com mais de um jogador sem peças."} ${winner.name} venceu: ficou sem peças primeiro!`
-                    : `${winner.name} venceu: ficou sem peças na mão!`
-                  : `Empate entre ${tiedNames}: ficaram sem peças na mão.`
+                    ? `${closedNote ? m.game.severalEmptyClosed : m.game.severalEmpty} ${m.game.wonFirstEmpty(winner.name)}`
+                    : m.game.wonEmpty(winner.name)
+                  : m.game.tieEmpty(tiedNames)
                 : winner
-                  ? `${closedNote ? "" : "Jogo fechado. "}${winner.name} venceu com a menor soma!`
-                  : `${closedNote ? "" : "Jogo fechado. "}Empate entre ${tiedNames}, com a menor soma.`}
+                  ? `${closedNote ? "" : m.game.closedPrefix}${m.game.wonLowest(winner.name)}`
+                  : `${closedNote ? "" : m.game.closedPrefix}${m.game.tieLowest(tiedNames)}`}
             </p>
             <p className="result-scores">
               {state.players
@@ -795,19 +793,19 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
             </p>
             <div className="modal__actions">
               <button type="button" className="btn" onClick={() => setResultDismissed(true)}>
-                Ver a mesa
+                {m.game.seeTable}
               </button>
               {!isOnline ? (
                 <button type="button" className="btn btn--primary" onClick={() => backToHome()}>
-                  Nova partida
+                  {m.common.newGame}
                 </button>
               ) : isHost ? (
                 <button type="button" className="btn btn--primary" onClick={() => void online.restart()}>
-                  Jogar de novo
+                  {m.common.playAgain}
                 </button>
               ) : (
                 <button type="button" className="btn btn--primary" onClick={leaveOnline}>
-                  Sair da sala
+                  {m.common.leaveRoom}
                 </button>
               )}
             </div>
@@ -819,24 +817,22 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
       <Modal
         isOpen={showExitModal}
         onClose={() => setShowExitModal(false)}
-        title="Sair da partida?"
+        title={m.game.exitTitle}
         showCloseButton={false}
       >
         <p>
-          {isOnline
-            ? "O computador vai jogar no seu lugar até o fim, e você não poderá voltar para esta partida."
-            : "Todo o progresso desta partida será perdido."}
+          {isOnline ? m.game.exitOnline : m.game.exitLocal}
         </p>
         <div className="modal__actions">
           <button type="button" className="btn" onClick={() => setShowExitModal(false)}>
-            Continuar jogando
+            {m.game.keepPlaying}
           </button>
           <button
             type="button"
             className="btn btn--danger"
             onClick={isOnline ? leaveOnline : () => backToHome()}
           >
-            Sim, sair
+            {m.game.yesExit}
           </button>
         </div>
       </Modal>
@@ -847,11 +843,13 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
 
 /** Fim da partida online: o dono volta todos para a sala; os outros esperam ou saem. */
 function OnlineFinishActions({
+  m,
   isHost,
   hostName,
   onRestart,
   onLeave,
 }: {
+  m: Messages;
   isHost: boolean;
   hostName?: string;
   onRestart: () => void;
@@ -860,15 +858,15 @@ function OnlineFinishActions({
   return (
     <div className="final__online">
       {!isHost && (
-        <p className="final__wait">Aguardando {hostName ?? "o dono da sala"} começar outra partida…</p>
+        <p className="final__wait">{m.game.waitHost(hostName)}</p>
       )}
       <div className="modal__actions">
         <button type="button" className="btn" onClick={onLeave}>
-          Sair da sala
+          {m.common.leaveRoom}
         </button>
         {isHost && (
           <button type="button" className="btn btn--primary" onClick={onRestart}>
-            Jogar de novo
+            {m.common.playAgain}
           </button>
         )}
       </div>
@@ -882,6 +880,7 @@ function OnlineFinishActions({
  */
 function Root({ onlineUrl, onlineEnabled }: { onlineUrl?: string; onlineEnabled: boolean }) {
   const online = useOnlineRoom(onlineUrl);
+  const { m } = useI18n();
   // Link de convite (?sala=ABCDE): abre a entrada já preenchida, uma vez.
   const [invite, setInvite] = useState(() => (onlineEnabled ? inviteCodeFromUrl() : null));
   useEffect(() => {
@@ -924,7 +923,7 @@ function Root({ onlineUrl, onlineEnabled }: { onlineUrl?: string; onlineEnabled:
       {view && !online.connected && <ConnectionBanner inLobby={view.status === 'lobby'} />}
       {view && online.error && (
         <p className="online-toast" role="alert">
-          {online.error}
+          {translateServerText(online.error, m)}
         </p>
       )}
     </>

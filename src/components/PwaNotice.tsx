@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import { useEffect } from 'react';
 import type { Pwa } from '../pwa/usePwa';
 import './PwaNotice.css';
@@ -8,6 +9,7 @@ export const OFFLINE_NOTICE_MS = 8000;
 
 export function PwaNotice({ pwa }: { pwa: Pwa }) {
   const { offlineReady, needRefresh, dismiss } = pwa;
+  const { m } = useI18n();
 
   // O aviso de "pronto" é só informativo: some sozinho para não cobrir a tela.
   useEffect(() => {
@@ -19,13 +21,13 @@ export function PwaNotice({ pwa }: { pwa: Pwa }) {
   if (pwa.needRefresh) {
     return (
       <div className="pwa-notice" role="status">
-        <p>Há uma versão nova do DomiMais. A partida em andamento fica salva.</p>
+        <p>{m.pwa.update}</p>
         <div className="pwa-notice__actions">
           <button type="button" className="btn" onClick={pwa.dismiss}>
-            Depois
+            {m.pwa.later}
           </button>
           <button type="button" className="btn btn--primary" onClick={pwa.update}>
-            Atualizar
+            {m.pwa.updateNow}
           </button>
         </div>
       </div>
@@ -35,10 +37,10 @@ export function PwaNotice({ pwa }: { pwa: Pwa }) {
   if (pwa.offlineReady) {
     return (
       <div className="pwa-notice" role="status">
-        <p>Pronto: o DomiMais já funciona neste aparelho sem internet.</p>
+        <p>{m.pwa.offline}</p>
         <div className="pwa-notice__actions">
           <button type="button" className="btn" onClick={pwa.dismiss}>
-            Entendi
+            {m.common.understood}
           </button>
         </div>
       </div>

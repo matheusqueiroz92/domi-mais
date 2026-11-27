@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import type { TutorialStep } from '../tutorial/script';
 import './TutorialCoach.css';
 
@@ -25,22 +26,25 @@ export function TutorialCoach({
   onExit,
   onPlayComputer,
 }: TutorialCoachProps) {
-  const paragraphs = step.bot && !botBusy && step.after ? step.after : step.text;
+  const { m } = useI18n();
+  // Textos do passo no idioma atual (as ações continuam vindo de `step`).
+  const words = m.tutorial.steps[stepIndex] ?? step;
+  const paragraphs = step.bot && !botBusy && words.after ? words.after : words.text;
   const waitingUser = step.expect !== undefined;
 
   return (
-    <section className="coach" aria-label="Tutorial">
+    <section className="coach" aria-label={m.tutorial.label}>
       <div className="coach__top">
         <span className="coach__progress">
-          Passo {stepIndex + 1} de {totalSteps}
+          {m.tutorial.step(stepIndex + 1, totalSteps)}
         </span>
         {!isLastStep && (
           <button type="button" className="coach__exit" onClick={onExit}>
-            Sair do tutorial
+            {m.tutorial.exit}
           </button>
         )}
       </div>
-      <h2 className="coach__title">{step.title}</h2>
+      <h2 className="coach__title">{words.title}</h2>
       {/* role="status": leitores de tela anunciam cada novo passo. */}
       <div className="coach__text" role="status">
         {paragraphs.map((paragraph) => (
@@ -50,20 +54,20 @@ export function TutorialCoach({
       {isLastStep ? (
         <div className="coach__actions">
           <button type="button" className="btn" onClick={onExit}>
-            Voltar ao início
+            {m.tutorial.backHome}
           </button>
           <button type="button" className="btn btn--primary" onClick={onPlayComputer}>
-            Jogar contra o computador
+            {m.tutorial.playComputer}
           </button>
         </div>
       ) : waitingUser ? (
-        <p className="coach__cue">Sua vez de agir</p>
+        <p className="coach__cue">{m.tutorial.yourAction}</p>
       ) : botBusy ? (
-        <p className="coach__cue">A Bia está jogando…</p>
+        <p className="coach__cue">{m.tutorial.botPlaying}</p>
       ) : (
         <div className="coach__actions">
           <button type="button" className="btn btn--primary" onClick={onNext}>
-            Continuar
+            {m.common.continue}
           </button>
         </div>
       )}

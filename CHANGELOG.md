@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.14.0 — 27/11/2026 — inglês, espanhol e chinês
+
+O jogo agora fala **português, inglês, espanhol e chinês simplificado**, para
+jogadores da América do Sul, dos Estados Unidos e da China.
+
+- **Seletor de idioma** (globo, com a sigla do idioma) no topo da tela, ao
+  lado do som e do tema: na tela inicial, na sala online e na partida. Cada
+  idioma aparece escrito nele mesmo (Português, English, Español, 中文). A
+  troca vale na hora, inclusive no meio da partida.
+- **Idioma inicial:** na primeira visita, o do celular ou navegador (pt, es,
+  zh; qualquer outro abre em inglês). Depois vale a escolha salva no
+  aparelho (`domimais:lang`).
+- **Tudo traduzido:** tela inicial, formulários, partida, resultado, regras
+  ("Como jogar"), tutorial, dicas, histórico de jogadas, avisos do aplicativo,
+  sala online, chat e avisos e erros do servidor online.
+- **Online com idiomas misturados:** o servidor continua mandando os textos
+  em português, e cada aparelho os mostra no seu idioma. As mensagens rápidas
+  do chat aparecem no idioma de quem lê. A partida salva não mudou.
+- **Filtro do chat** com palavrões em inglês, espanhol e chinês.
+- **Ícone da aba e do app:** a marca da logomarca (dominó, "+" e cérebro),
+  sem o nome. Favicon em `.ico` (16, 32 e 48 px) e PNG de 64 px; ícones do
+  app instalado e do iPhone sobre o fundo azul-marinho.
+- Os textos ficam em `src/i18n/messages/` (um arquivo por idioma). As
+  traduções foram feitas sem revisão nativa: vale revisar o chinês antes de
+  divulgar na China.
+
 ## 0.13.0 — 27/11/2026 — cores da logomarca
 
 As cores do jogo passam a seguir a logomarca (tokens em `src/index.css`):

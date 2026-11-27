@@ -70,6 +70,9 @@ const EXACT = [
   'porra', 'porras', 'burro', 'burra', 'burros', 'burras', 'burrice',
   'viado', 'viadinho', 'viadao', 'bicha', 'sapatao', 'boiola', 'traveco', 'corno', 'cornos',
   'macaco', 'macaca', 'macacos', 'shit', 'bitch',
+  // Inglês e espanhol (27/11/2026: jogadores dos Estados Unidos e da América do Sul).
+  'shits', 'bitches', 'cunt', 'cunts', 'dick', 'dicks', 'asshole', 'assholes', 'faggot', 'faggots',
+  'nigger', 'niggers', 'nigga', 'niggas', 'pinche', 'verga', 'culo', 'puto', 'putos',
 ];
 
 /** Começos de palavra proibidos (pegam as variações). */
@@ -78,7 +81,11 @@ const PREFIX = [
   'imbecil', 'idiot', 'retardad', 'estupid', 'cretin', 'escrot', 'vagabund', 'desgrac',
   'safad', 'mongol', 'bucet', 'xoxot', 'xerec', 'piroc', 'punhet', 'siriric', 'chifrud',
   'crioul', 'fuck', 'bastard', 'nojent',
+  'motherf', 'whor', 'slut', 'pendej', 'cabron', 'chinga', 'mierd', 'gilipoll', 'culer',
 ];
+
+/** Termos em chinês, procurados no texto sem espaços (a normalização acima só guarda a-z). */
+const CJK = ['傻逼', '煞笔', '操你', '肏', '他妈的', '草泥马', '狗日', '贱人', '婊子', '王八蛋'];
 
 /** Termos proibidos em qualquer lugar do texto, mesmo colados a outras palavras. */
 const EMBEDDED = [
@@ -102,6 +109,10 @@ const ALLOWED = new Set(
  * pode passar.
  */
 export function findBlocked(text: string): string | null {
+  const compact = text.replace(/\s+/g, '');
+  const cjk = CJK.find((term) => compact.includes(term));
+  if (cjk) return cjk;
+
   const words = normalizeWords(text);
   if (words.length === 0) return null;
 

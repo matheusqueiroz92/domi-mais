@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { DominoPiece } from './DominoPiece';
@@ -30,8 +31,6 @@ interface GameTableProps {
   shuffle?: { pieces: DominoPieceType[]; paths: ScatterPoint[][] } | null;
 }
 
-const SIDE_LABEL: Record<TableSide, string> = { left: 'esquerda', right: 'direita' };
-
 /** Tamanho usado antes da primeira medição (e nos testes, que não medem layout). */
 const FALLBACK_SIZE = { width: 300, height: 0 };
 
@@ -51,6 +50,7 @@ export function GameTable({
 }: GameTableProps) {
   const areaRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(FALLBACK_SIZE);
+  const { m } = useI18n();
 
   // Acompanha o tamanho real da área da mesa para posicionar a linha de peças.
   useEffect(() => {
@@ -87,10 +87,10 @@ export function GameTable({
                   type="button"
                   className="game-table__slot"
                   style={{ left: item.x, top: item.y, width: item.w, height: item.h }}
-                  aria-label={`Jogar na ponta ${SIDE_LABEL[item.side ?? 'left']}`}
+                  aria-label={m.table.playAt(m.common.side[item.side ?? 'left'])}
                   onClick={() => item.side && onPlayPiece?.(item.side)}
                 >
-                  Jogar
+                  {m.table.play}
                 </button>
               ) : (
                 item.piece && (
@@ -116,7 +116,7 @@ export function GameTable({
             )}
           </div>
         ) : (
-          !shuffle && <p className="game-table__empty">Nenhuma peça na mesa ainda</p>
+          !shuffle && <p className="game-table__empty">{m.table.empty}</p>
         )}
       </div>
 
@@ -146,10 +146,10 @@ export function GameTable({
 
       <span className="game-table__label">
         {shuffle
-          ? 'Embaralhando as peças…'
+          ? m.game.shuffling
           : hasPieces
-            ? `Pontas da mesa: ${table.leftEnd} e ${table.rightEnd}`
-            : 'Escolha a peça inicial no monte'}
+            ? m.table.ends(table.leftEnd, table.rightEnd)
+            : m.table.chooseInitial}
       </span>
     </section>
   );

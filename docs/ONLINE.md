@@ -146,7 +146,11 @@ fechar apagam a sessão.
   some sozinha.
 - **Mensagens rápidas:** "Oi, pessoal!", "Boa jogada!", "Pensando…", "Será
   que é blefe?", "Ops!", "Haha!", "Sua vez!", "Boa partida!"
-  (`QUICK_MESSAGES` em `protocol.ts`).
+  (`QUICK_MESSAGES` em `protocol.ts`). O servidor guarda o texto em
+  português; cada aparelho mostra a mensagem rápida no idioma de quem lê.
+- **Idiomas:** avisos e erros do servidor também vão em português e são
+  traduzidos no aparelho (`src/i18n/translate.ts`). Ao mudar um texto do
+  servidor, mude também `server` em `src/i18n/messages/pt.ts`.
 - **Texto livre:** até 200 letras. No máximo 5 mensagens a cada 10 segundos
   por pessoa. A sala guarda as últimas 50 mensagens, inclusive depois do
   "Jogar de novo".
@@ -155,7 +159,9 @@ fechar apagam a sessão.
   ninguém; só quem enviou vê o aviso, e o texto continua no campo. O filtro
   normaliza o texto antes de comparar (acentos, números no lugar de letras,
   letras repetidas e separadas, "k" no lugar de "c") e tem testes de falso
-  positivo ("computador", "cuidado", "viaduto", "disputa", "por"...). Para
+  positivo ("computador", "cuidado", "viaduto", "disputa", "por"...). Desde
+  a 0.14.0 também tem termos em inglês, espanhol e chinês (o chinês é
+  procurado no texto sem espaços). Para
   acrescentar um termo, veja o comentário no começo do arquivo.
 - **Silenciar:** cada jogador pode esconder as mensagens de outro só para si
   ("Silenciar Beto" / "Ouvir Beto"). Vale até sair da sala.

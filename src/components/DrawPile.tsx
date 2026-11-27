@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import { DominoPiece } from './DominoPiece';
 import { PieceMotion } from './PieceMotion';
 import type { DominoPiece as DominoPieceType } from '../game/state/game-types';
@@ -31,11 +32,6 @@ interface DrawPileProps {
   messageActive?: boolean;
 }
 
-const HINTS: Record<PileMode, string> = {
-  idle: 'O número é a soma dos dois lados',
-  draw: 'Toque em uma peça para comprar',
-  'choose-initial': 'Toque na peça inicial da mesa',
-};
 
 /**
  * Monte: duas fileiras de 14 peças viradas (quatro de 7 no celular), mostrando
@@ -54,6 +50,8 @@ export function DrawPile({
   message = null,
   messageActive = false,
 }: DrawPileProps) {
+  const { m } = useI18n();
+  const HINTS: Record<PileMode, string> = { idle: m.pile.idle, draw: m.pile.draw, 'choose-initial': m.pile.chooseInitial };
   const byId = new Map(pieces.map((piece) => [piece.id, piece]));
   const interactive = mode !== 'idle' && !hideTiles;
   const rows: string[][] = [];
@@ -64,7 +62,7 @@ export function DrawPile({
   return (
     <section
       className={`pile ${interactive ? 'pile--active' : ''}`}
-      aria-label={`Monte, ${pieces.length} ${pieces.length === 1 ? 'peça' : 'peças'}`}
+      aria-label={m.pile.label(pieces.length)}
     >
       <div className="pile__header">
         {message ? (
@@ -73,7 +71,7 @@ export function DrawPile({
           </p>
         ) : (
           <>
-            <h2 className="pile__title">Monte</h2>
+            <h2 className="pile__title">{m.pile.title}</h2>
             <span className="pile__hint">{HINTS[mode]}</span>
           </>
         )}

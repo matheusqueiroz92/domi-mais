@@ -218,6 +218,41 @@ definidos em `src/index.css` (`--bg`, `--panel`, `--table`, `--piece`,
 
 Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
 
+### Idiomas (`src/i18n`)
+
+Português (referência), inglês, espanhol e chinês simplificado (27/11/2026).
+
+- `messages/pt.ts` tem todos os textos da interface, agrupados por tela
+  (`home`, `game`, `hints`, `tutorial`, `rules`, `lobby`, `chat`...). Textos
+  com partes variáveis são funções (`game.draw(name)`), assim cada idioma
+  monta a frase na sua ordem e com seu plural. `en.ts`, `es.ts` e `zh.ts`
+  têm o tipo `Messages` (a forma do português): o TypeScript acusa chave que
+  falte, e um teste compara as quatro formas.
+- `lang.ts` guarda o idioma atual (sem Provider: uma loja simples lida com
+  `useSyncExternalStore`), salva a escolha em `localStorage`
+  (`domimais:lang`) e atualiza `<html lang>`. Primeira visita: idioma do
+  navegador (`langFromNavigator`), com inglês para os não suportados. Nos
+  testes, o padrão é português.
+- `useI18n()` devolve `{ lang, m, setLang }`; componentes usam `m.home.title`
+  etc. O botão é o `LanguageToggle`.
+- **O que continua em português de propósito:** o histórico (`GameState.logs`,
+  gerado pelo motor, salvo no aparelho e enviado aos jogadores online) e os
+  avisos e erros do servidor. `translate.ts` reconhece esses textos
+  (`translateLog`, `translateServerText`, `translateQuickMessage`) e os
+  mostra no idioma de quem olha a tela. Ao mudar uma frase do motor ou do
+  servidor, mude também `log`/`server` em `pt.ts` e, se tiver parte
+  variável, a regra em `translate.ts`. Os testes jogam partidas inteiras e
+  conferem que nenhuma linha do histórico e nenhum texto fixo do servidor
+  fica sem tradução.
+- As dicas (`logic/hints.ts`) recebem os textos como parâmetro (`m`), com
+  português por padrão.
+- O tutorial mantém as ações em `tutorial/script.ts`; os textos de cada passo
+  vêm de `m.tutorial.steps` (mesma ordem; o teste confere que as peças citadas
+  são as mesmas em todos os idiomas). Na partida guiada, a pessoa se chama
+  "Você"/"You"/"Tú"/"你".
+- Para acrescentar um idioma: crie `messages/<código>.ts` com o tipo
+  `Messages`, registre em `messages/index.ts` e em `LANGS` (`lang.ts`).
+
 ### Tela da partida
 
 - O **jogador da vez** fica embaixo, com a mão aberta (`PlayerHand`).
@@ -379,7 +414,9 @@ telas grandes, para a altura da partida não mudar.
 - O `vite-plugin-pwa` gera no build o `manifest.webmanifest` e o service
   worker (`sw.js`, Workbox), que guarda todos os arquivos do jogo no aparelho.
   Ícones em `public/` (`pwa-192.png`, `pwa-512.png`, `pwa-maskable-512.png`,
-  `apple-touch-icon.png`).
+  `apple-touch-icon.png`), feitos com a marca da logomarca (dominó, "+" e
+  cérebro, sem o nome) sobre o fundo `#111724`. O ícone da aba é
+  `favicon.ico` (16, 32 e 48 px, fundo transparente) e `favicon-64.png`.
 - As fontes vêm dos pacotes `@fontsource` (importadas em `main.tsx`); o jogo
   não chama nenhum outro site.
 - `registerType: 'prompt'`: a versão nova é baixada em segundo plano e só

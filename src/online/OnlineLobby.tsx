@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n/useI18n';
+import type { Messages } from '../i18n/messages';
 import { useState } from 'react';
 import type { BotLevel } from '../game/state/game-types';
 import { BOT_LEVEL_LABELS } from '../game/ai/bot';
@@ -17,17 +19,18 @@ interface OnlineLobbyProps {
 }
 
 /** Selo de cada lugar: dono, você, computador, sem conexão. */
-function seatTags(seat: SeatView): string[] {
+function seatTags(seat: SeatView, m: Messages): string[] {
   const tags: string[] = [];
-  if (seat.isYou) tags.push('Você');
-  if (seat.isHost) tags.push('Dono da sala');
-  if (seat.kind === 'bot' && seat.botLevel) tags.push(`Computador · ${BOT_LEVEL_LABELS[seat.botLevel]}`);
-  if (seat.kind === 'human' && !seat.connected) tags.push('Sem conexão');
+  if (seat.isYou) tags.push(m.lobby.you);
+  if (seat.isHost) tags.push(m.lobby.host);
+  if (seat.kind === 'bot' && seat.botLevel) tags.push(m.lobby.computer(m.bots.levels[seat.botLevel]));
+  if (seat.kind === 'human' && !seat.connected) tags.push(m.lobby.offline);
   return tags;
 }
 
 /** Sala de espera: código para convidar, lugares e o botão de começar. */
 export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStart, onLeave }: OnlineLobbyProps) {
+  const { m } = useI18n();
   const [level, setLevel] = useState<BotLevel>('medium');
   const [copied, setCopied] = useState(false);
   const you = view.seats[view.youIndex];
@@ -50,25 +53,25 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
 
   const share = () => {
     void navigator
-      .share({ title: 'DomiMais', text: `Vem jogar DomiMais comigo! Sala ${view.code}`, url: link })
+      .share({ title: 'DomiMais', text: m.lobby.shareText(view.code), url: link })
       .catch(() => undefined);
   };
 
   return (
-    <section className="lobby" aria-label="Sala de espera">
+    <section className="lobby" aria-label={m.lobby.label}>
       <div className="lobby__code-box">
-        <span className="lobby__label">Código da sala</span>
-        <span className="lobby__code" aria-label={`Código da sala: ${view.code.split('').join(' ')}`}>
+        <span className="lobby__label">{m.lobby.code}</span>
+        <span className="lobby__code" aria-label={m.lobby.codeLabel(view.code.split('').join(' '))}>
           {view.code}
         </span>
-        <p className="lobby__hint">Envie o código ou o link para os amigos entrarem.</p>
+        <p className="lobby__hint">{m.lobby.hint}</p>
         <div className="lobby__share">
           <button type="button" className="btn" onClick={copyLink}>
-            {copied ? 'Link copiado!' : 'Copiar link'}
+            {copied ? m.lobby.copied : m.lobby.copy}
           </button>
           {canShare && (
             <button type="button" className="btn" onClick={share}>
-              Compartilhar
+              {m.lobby.share}
             </button>
           )}
         </div>
@@ -76,7 +79,7 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
 
       <div className="lobby__seats">
         <h2 className="lobby__title">
-          Jogadores ({view.seats.length} de {MAX_ROOM_PLAYERS})
+          {m.lobby.players(view.seats.length, MAX_ROOM_PLAYERS)}
         </h2>
         <ol className="lobby__list">
           {view.seats.map((seat) => (
@@ -86,7 +89,7 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
                 {seat.name}
               </span>
               <span className="lobby__tags">
-                {seatTags(seat).map((tag) => (
+                {seatTags(seat, m).map((tag) => (
                   <span key={tag} className="lobby__tag">
                     {tag}
                   </span>
@@ -97,17 +100,17 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
                   type="button"
                   className="lobby__remove"
                   onClick={() => onRemoveSeat(seat.id)}
-                  aria-label={`Tirar ${seat.name} da sala`}
+                  aria-label={m.lobby.removeLabel(seat.name)}
                   disabled={busy}
                 >
-                  Tirar
+                  {m.lobby.remove}
                 </button>
               )}
             </li>
           ))}
           {Array.from({ length: free }, (_, index) => (
             <li key={`free-${index}`} className="lobby__seat lobby__seat--free">
-              Vaga livre
+              {m.lobby.free}
             </li>
           ))}
         </ol>
@@ -115,7 +118,7 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
         {isHost && free > 0 && (
           <div className="lobby__bot">
             <fieldset className="player-count">
-              <legend className="player-form__label">Completar uma vaga com o computador</legend>
+              <legend className="player-form__label">{m.lobby.fillWithBot}</legend>
               <div className="player-count__options">
                 {(Object.keys(BOT_LEVEL_LABELS) as BotLevel[]).map((option) => (
                   <label
@@ -129,13 +132,13 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
                       checked={level === option}
                       onChange={() => setLevel(option)}
                     />
-                    {BOT_LEVEL_LABELS[option]}
+                    {m.bots.levels[option]}
                   </label>
                 ))}
               </div>
             </fieldset>
             <button type="button" className="btn btn--block" onClick={() => onAddBot(level)} disabled={busy}>
-              Adicionar computador
+              {m.lobby.addBot}
             </button>
           </div>
         )}
@@ -144,18 +147,18 @@ export function OnlineLobby({ view, busy = false, onAddBot, onRemoveSeat, onStar
       <p className="lobby__status" role="status">
         {isHost
           ? canStart
-            ? 'Todos prontos? Comece quando quiser.'
-            : 'Chame pelo menos mais um jogador ou adicione o computador.'
-          : `Aguardando ${host?.name ?? 'o dono da sala'} começar a partida…`}
+            ? m.lobby.allReady
+            : m.lobby.needPlayers
+          : m.lobby.waiting(host?.name)}
       </p>
 
       <div className="lobby__actions">
         <button type="button" className="btn" onClick={onLeave}>
-          Sair da sala
+          {m.common.leaveRoom}
         </button>
         {isHost && (
           <button type="button" className="btn btn--primary" onClick={onStart} disabled={!canStart || busy}>
-            Começar partida
+            {m.lobby.start}
           </button>
         )}
       </div>

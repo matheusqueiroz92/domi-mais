@@ -1,3 +1,5 @@
+import { pt } from '../../i18n/messages/pt';
+import type { Messages } from '../../i18n/messages';
 /**
  * Modo "dica": explica ao jogador da vez o raciocínio do jogo.
  * Usa só o que ele mesmo pode ver (`getPlayerView`): nunca revela uma peça virada.
@@ -71,7 +73,7 @@ export interface PlayHints {
  * mais peças da própria mão encaixando depois; no empate, a que tira mais
  * pontos da mão (buchas primeiro).
  */
-export function getPlayHints(state: GameState, playerIndex: number): PlayHints {
+export function getPlayHints(state: GameState, playerIndex: number, m: Messages = pt): PlayHints {
   const { hand } = state.players[playerIndex];
   const table = state.table;
   const view = getPlayerView(state, playerIndex);
@@ -102,20 +104,17 @@ export function getPlayHints(state: GameState, playerIndex: number): PlayHints {
         let reason: string;
         const mine = rest.reduce((total, other) => total + other.sum, 0);
         if (closes === 'lose') {
-          reason = 'é a única que encaixa, mas fecha o jogo e você perde pela soma';
+          reason = m.hints.reason.closesLose;
         } else if (closes === 'tie') {
-          reason = `fecha o jogo e você empata com a menor soma (${mine})`;
+          reason = m.hints.reason.closesTie(mine);
         } else if (closes === 'win' && rest.length > 0) {
-          reason = `fecha o jogo e você vence com a menor soma (${mine})`;
+          reason = m.hints.reason.closesWin(mine);
         } else if (rest.length === 0) {
-          reason = 'é a sua última peça';
+          reason = m.hints.reason.last;
         } else if (stillFitting > 0) {
-          reason =
-            stillFitting === 1
-              ? 'depois dela, outra peça sua continua encaixando'
-              : `depois dela, outras ${stillFitting} peças suas continuam encaixando`;
+          reason = m.hints.reason.stillFitting(stillFitting);
         } else {
-          reason = `é a que tira mais pontos da sua mão (soma ${piece.sum})`;
+          reason = m.hints.reason.mostPoints(piece.sum);
         }
         best = {
           score,
@@ -129,19 +128,15 @@ export function getPlayHints(state: GameState, playerIndex: number): PlayHints {
 }
 
 /** Escreve as peças possíveis de uma soma: "1|6, 2|5 ou 3|4". */
-export function formatCandidates(candidates: readonly Candidate[]): string {
-  const names = candidates.map((piece) => `${piece.left}|${piece.right}`);
-  if (names.length <= 1) return names.join('');
-  return `${names.slice(0, -1).join(', ')} ou ${names[names.length - 1]}`;
+export function formatCandidates(candidates: readonly Candidate[], m: Messages = pt): string {
+  return m.common.orList(candidates.map((piece) => `${piece.left}|${piece.right}`));
 }
 
 /** Escreve quantas das peças possíveis encaixam: "1 de 3 encaixa". */
-export function formatFitting(hint: Pick<SumHint, 'candidates' | 'fitting'>): string {
+export function formatFitting(hint: Pick<SumHint, 'candidates' | 'fitting'>, m: Messages = pt): string {
   const total = hint.candidates.length;
-  if (hint.fitting === 0) return total === 1 ? 'não encaixa' : 'nenhuma encaixa';
-  if (hint.fitting === total) {
-    if (total === 1) return 'encaixa com certeza';
-    return total === 2 ? 'as duas encaixam' : `as ${total} encaixam`;
-  }
-  return `${hint.fitting} de ${total} ${hint.fitting === 1 ? 'encaixa' : 'encaixam'}`;
+  const texts = m.hints.fitting;
+  if (hint.fitting === 0) return texts.none(total);
+  if (hint.fitting === total) return total === 1 ? texts.sure : texts.all(total);
+  return texts.some(hint.fitting, total);
 }

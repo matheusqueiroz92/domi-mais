@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import type { ReactNode } from 'react';
 import { DominoPiece } from './DominoPiece';
 import { PieceMotion } from './PieceMotion';
@@ -31,6 +32,7 @@ export function PlayerHand({
   compact = false,
   action = null,
 }: PlayerHandProps) {
+  const { m } = useI18n();
   const count = player.hand.length;
   const drawn = player.hand.find((piece) => piece.id === drawnPieceId);
   // Mãos grandes usam peças menores para caber na tela.
@@ -41,23 +43,23 @@ export function PlayerHand({
   return (
     <section
       className={`hand ${compact ? 'hand--compact' : ''}`}
-      aria-label={`Mão de ${player.name}`}
+      aria-label={m.hand.label(player.name)}
       data-testid="hand"
     >
       {compact ? (
         // Celular: a contagem e a peça comprada já se veem nas próprias peças.
         <div className="hand__header">
-          <span className="hand__label">Sua mão</span>
+          <span className="hand__label">{m.hand.yours}</span>
           {action}
         </div>
       ) : (
         <div className="hand__header">
           <span>
-            Sua mão · {count} {count === 1 ? 'peça' : 'peças'}
+            {m.hand.yours} · {m.common.pieces(count)}
           </span>
           {drawn && (
             <span className="hand__drawn">
-              {drawn.left}|{drawn.right} comprada agora
+              {m.hand.drawnNow(`${drawn.left}|${drawn.right}`)}
             </span>
           )}
         </div>
@@ -79,7 +81,7 @@ export function PlayerHand({
           ))}
         </div>
       ) : (
-        <p className="hand__empty">Você ainda não tem peças.</p>
+        <p className="hand__empty">{m.hand.empty}</p>
       )}
     </section>
   );

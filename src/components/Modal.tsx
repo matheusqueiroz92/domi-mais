@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import clsx from 'clsx';
@@ -22,6 +23,7 @@ export function Modal({
   showCloseButton = true,
   autoClose,
 }: ModalProps) {
+  const { m } = useI18n();
   useEffect(() => {
     if (isOpen && autoClose && onClose) {
       const timer = setTimeout(() => {
@@ -56,7 +58,7 @@ export function Modal({
             <div className="modal__content">{children}</div>
             {showCloseButton && onClose && (
               <button type="button" className="modal__close" onClick={onClose}>
-                Fechar
+                {m.common.close}
               </button>
             )}
           </motion.div>

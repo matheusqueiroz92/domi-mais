@@ -14,7 +14,7 @@ export default defineConfig({
       // (src/pwa), para nunca recarregar a página no meio de uma jogada.
       registerType: 'prompt',
       injectRegister: null,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'logo-domi-mais.jpeg'],
+      includeAssets: ['favicon.ico', 'favicon-64.png', 'apple-touch-icon.png', 'logo-domi-mais.jpeg'],
       manifest: {
         name: 'DomiMais',
         short_name: 'DomiMais',
@@ -35,7 +35,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpeg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpeg,webp,ico,woff2}'],
         // Fontes: só os arquivos woff2 entram no pacote offline.
         globIgnores: ['**/*.woff'],
         cleanupOutdatedCaches: true,

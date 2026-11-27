@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import './TurnAlert.css';
 
 interface TurnAlertProps {
@@ -13,9 +14,10 @@ export const TURN_ALERT_SECONDS = 2.6;
  * (com `key` diferente) a cada turno para ela aparecer de novo.
  */
 export function TurnAlert({ hint }: TurnAlertProps) {
+  const { m } = useI18n();
   return (
     <div className="turn-alert" role="alert" aria-live="assertive">
-      <span className="turn-alert__title">Sua vez!</span>
+      <span className="turn-alert__title">{m.game.yourTurn}</span>
       <span className="turn-alert__hint">{hint}</span>
     </div>
   );

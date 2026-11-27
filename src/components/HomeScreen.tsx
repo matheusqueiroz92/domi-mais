@@ -3,11 +3,14 @@ import { Modal } from './Modal';
 import { RulesContent } from './RulesContent';
 import { SoundToggle } from './SoundToggle';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageToggle } from './LanguageToggle';
+import { useI18n } from '../i18n/useI18n';
 import { BagIcon, ChevronIcon, CpuIcon, GlobeIcon, UsersIcon } from './icons';
 import { PartnersFooter } from './PartnersFooter';
 import { PHYSICAL_GAME } from '../home/physical-game';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../game/logic/rules';
 import { BOT_LEVEL_LABELS, BOT_NAMES } from '../game/ai/bot';
+import { translateServerText } from '../i18n/translate';
 import type { BotLevel } from '../game/state/game-types';
 import type { Theme } from '../theme/theme';
 import { formatMatchCount } from '../stats/match-stats';
@@ -76,6 +79,7 @@ export function HomeScreen({
   onLeaveSavedRoom,
   matchCount = null,
 }: HomeScreenProps) {
+  const { m } = useI18n();
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showShop, setShowShop] = useState(false);
@@ -124,6 +128,7 @@ export function HomeScreen({
         <div className="home__actions">
           <SoundToggle soundOn={soundOn} onToggle={onToggleSound} />
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <LanguageToggle />
         </div>
       </div>
 
@@ -137,19 +142,19 @@ export function HomeScreen({
         <img
           className="home__logo"
           src="/logo-domi-mais.jpeg"
-          alt="DomiMais: o nome do jogo montado com peças de dominó sobre feltro verde"
+          alt={m.home.logoAlt}
           width={1280}
           height={853}
         />
 
         <div className="home__intro">
-          <h1 className="home__title">Blefe. Deduza. Vença.</h1>
-          <p className="home__subtitle">
-            O verso de cada peça entrega só a soma. O resto é com você.
-          </p>
+          <h1 className="home__title">{m.home.title}</h1>
+          <p className="home__subtitle">{m.home.subtitle}</p>
           {matchCount != null && (
             <p className="home__counter" aria-live="polite">
-              <strong>{formatMatchCount(matchCount)}</strong> partidas jogadas
+              {m.home.matches.before}
+              <strong>{formatMatchCount(matchCount)}</strong>
+              {m.home.matches.after}
             </p>
           )}
         </div>
@@ -157,39 +162,37 @@ export function HomeScreen({
         {(savedRoomCode || savedGame) && (
           <div className="home__resume">
             {savedRoomCode && (
-              <section className="resume" aria-label="Sala online">
+              <section className="resume" aria-label={m.home.roomLabel}>
                 <div className="resume__text">
-                  <span className="resume__title">Sala online {savedRoomCode}</span>
-                  <span className="resume__desc">Você estava nesta sala</span>
+                  <span className="resume__title">{m.home.roomTitle(savedRoomCode)}</span>
+                  <span className="resume__desc">{m.home.roomDesc}</span>
                 </div>
                 <div className="resume__actions">
                   <button type="button" className="btn" onClick={onLeaveSavedRoom} disabled={onlineBusy}>
-                    Sair da sala
+                    {m.common.leaveRoom}
                   </button>
                   <button type="button" className="btn btn--primary" onClick={onResumeRoom} disabled={onlineBusy}>
-                    Voltar
+                    {m.home.back}
                   </button>
                 </div>
               </section>
             )}
 
             {savedGame && (
-              <section className="resume" aria-label="Partida em andamento">
+              <section className="resume" aria-label={m.home.gameLabel}>
                 <div className="resume__text">
-                  <span className="resume__title">Partida em andamento</span>
+                  <span className="resume__title">{m.home.gameLabel}</span>
                   <span className="resume__desc">
                     {savedGame.playerNames.join(', ')} ·{' '}
-                    {savedGame.pileCount === 1
-                      ? '1 peça no monte'
-                      : `${savedGame.pileCount} peças no monte`}
+                    {m.home.pileCount(savedGame.pileCount)}
                   </span>
                 </div>
                 <div className="resume__actions">
                   <button type="button" className="btn" onClick={onDiscardSavedGame}>
-                    Descartar
+                    {m.home.discard}
                   </button>
                   <button type="button" className="btn btn--primary" onClick={onResumeGame}>
-                    Continuar
+                    {m.common.continue}
                   </button>
                 </div>
               </section>
@@ -205,16 +208,16 @@ export function HomeScreen({
           >
             <UsersIcon size={28} />
             <span className="mode__text">
-              <span className="mode__title">Mesmo aparelho</span>
-              <span className="mode__desc">De 2 a 4 jogadores, cada um por si</span>
+              <span className="mode__title">{m.home.sameDevice}</span>
+              <span className="mode__desc">{m.home.sameDeviceDesc}</span>
             </span>
             <ChevronIcon />
           </button>
           <button type="button" className="mode mode--button" onClick={() => setShowBotModal(true)}>
             <CpuIcon size={28} />
             <span className="mode__text">
-              <span className="mode__title">Contra o computador</span>
-              <span className="mode__desc">Jogue sozinho, com 1 a 3 adversários</span>
+              <span className="mode__title">{m.home.vsComputer}</span>
+              <span className="mode__desc">{m.home.vsComputerDesc}</span>
             </span>
             <ChevronIcon />
           </button>
@@ -222,8 +225,8 @@ export function HomeScreen({
             <button type="button" className="mode mode--button" onClick={() => setShowOnlineModal(true)}>
               <GlobeIcon size={28} />
               <span className="mode__text">
-                <span className="mode__title">Online com amigos</span>
-                <span className="mode__desc">Sala por código, cada um no seu aparelho</span>
+                <span className="mode__title">{m.home.online}</span>
+                <span className="mode__desc">{m.home.onlineDesc}</span>
               </span>
               <ChevronIcon />
             </button>
@@ -231,10 +234,10 @@ export function HomeScreen({
             <div className="mode">
               <GlobeIcon size={28} />
               <span className="mode__text">
-                <span className="mode__title">Online com amigos</span>
-                <span className="mode__desc">Sala por código, sem cadastro</span>
+                <span className="mode__title">{m.home.online}</span>
+                <span className="mode__desc">{m.home.onlineSoonDesc}</span>
               </span>
-              <span className="mode__soon">Em breve</span>
+              <span className="mode__soon">{m.common.soon}</span>
             </div>
           )}
         </div>
@@ -242,26 +245,26 @@ export function HomeScreen({
         <div className="home__more">
           <div className="home__learn">
             <button type="button" className="btn" onClick={onStartTutorial}>
-              Tutorial
+              {m.home.tutorial}
             </button>
             <button type="button" className="btn" onClick={() => setShowRules(true)}>
-              Como jogar
+              {m.home.howToPlay}
             </button>
           </div>
 
           <button type="button" className="shop" onClick={() => setShowShop(true)}>
             <BagIcon size={24} />
             <span className="mode__text">
-              <span className="shop__title">Dominó físico</span>
-              <span className="mode__desc">Para jogar na mesa</span>
+              <span className="shop__title">{m.home.physical}</span>
+              <span className="mode__desc">{m.home.physicalDesc}</span>
             </span>
-            {!PHYSICAL_GAME.buyUrl && <span className="mode__soon">Em breve</span>}
+            {!PHYSICAL_GAME.buyUrl && <span className="mode__soon">{m.common.soon}</span>}
             <ChevronIcon />
           </button>
 
           {canInstall && (
             <button type="button" className="btn btn--block" onClick={onInstall}>
-              Instalar no aparelho
+              {m.home.install}
             </button>
           )}
         </div>
@@ -271,47 +274,45 @@ export function HomeScreen({
         <PartnersFooter />
 
         <div className="credits">
-          <p>© {new Date().getFullYear()} DomiMais. Todos os direitos reservados.</p>
+          <p>{m.home.rights(new Date().getFullYear())}</p>
           <p>
-            Jogo criado por <strong>Cassiano Ribeiro</strong>. Versão digital desenvolvida por{' '}
+            {m.home.createdBy} <strong>Cassiano Ribeiro</strong>
+            {m.home.end} {m.home.developedBy}{' '}
             <a href="https://matheusqueiroz.dev.br" target="_blank" rel="noopener noreferrer">
               Matheus Queiroz
             </a>
-            .
+            {m.home.end}
           </p>
         </div>
       </footer>
 
-      <Modal isOpen={showShop} onClose={() => setShowShop(false)} title="Dominó físico">
+      <Modal isOpen={showShop} onClose={() => setShowShop(false)} title={m.home.physical}>
         <div className="shop-modal">
-          <img className="shop-modal__image" src={PHYSICAL_GAME.image} alt={PHYSICAL_GAME.imageAlt} />
+          <img className="shop-modal__image" src={PHYSICAL_GAME.image} alt={m.home.physicalAlt} />
           {PHYSICAL_GAME.buyUrl ? (
             <>
-              <p>O DomiMais também existe em peças de verdade, para jogar na mesa com a família e os amigos.</p>
+              <p>{m.home.physicalText}</p>
               <a className="btn btn--primary btn--block" href={PHYSICAL_GAME.buyUrl} target="_blank" rel="noopener noreferrer">
-                Comprar
+                {m.home.buy}
               </a>
             </>
           ) : (
             <>
-              <p className="shop-modal__soon">Em breve!</p>
-              <p>
-                Estamos finalizando a fabricação do DomiMais em peças de verdade. Em breve as vendas estarão
-                disponíveis aqui.
-              </p>
+              <p className="shop-modal__soon">{m.home.soonTitle}</p>
+              <p>{m.home.soonText}</p>
             </>
           )}
         </div>
       </Modal>
 
-      <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
+      <Modal isOpen={showRules} onClose={() => setShowRules(false)} title={m.home.howToPlay}>
         <RulesContent />
       </Modal>
 
       <Modal
         isOpen={showOnlineModal}
         onClose={() => setShowOnlineModal(false)}
-        title="Jogar online"
+        title={m.forms.onlineTitle}
         showCloseButton={false}
       >
         <form
@@ -323,13 +324,13 @@ export function HomeScreen({
         >
           <div className="player-form__field">
             <label htmlFor="online-name" className="player-form__label">
-              Seu nome
+              {m.forms.yourName}
             </label>
             <input
               id="online-name"
               type="text"
               className="player-form__input"
-              placeholder="Como os outros vão ver você"
+              placeholder={m.forms.onlineNamePlaceholder}
               value={onlineName}
               maxLength={20}
               autoComplete="nickname"
@@ -344,20 +345,20 @@ export function HomeScreen({
             disabled={!hasOnlineName || onlineBusy}
             onClick={() => void onCreateRoom?.(onlineName)}
           >
-            Criar uma sala
+            {m.forms.createRoom}
           </button>
 
-          <p className="online-form__or">ou entre na sala de um amigo</p>
+          <p className="online-form__or">{m.forms.orJoin}</p>
 
           <div className="player-form__field">
             <label htmlFor="room-code" className="player-form__label">
-              Código da sala
+              {m.forms.roomCode}
             </label>
             <input
               id="room-code"
               type="text"
               className="player-form__input online-form__code"
-              placeholder="Ex.: K7M2Q"
+              placeholder={m.forms.roomCodePlaceholder}
               value={roomCode}
               maxLength={7}
               autoCapitalize="characters"
@@ -369,16 +370,16 @@ export function HomeScreen({
 
           {onlineError && (
             <p className="online-form__error" role="alert">
-              {onlineError}
+              {translateServerText(onlineError, m)}
             </p>
           )}
 
           <div className="modal__actions">
             <button type="button" className="btn" onClick={() => setShowOnlineModal(false)}>
-              Cancelar
+              {m.common.cancel}
             </button>
             <button type="submit" className="btn btn--primary" disabled={!hasOnlineName || !hasRoomCode || onlineBusy}>
-              Entrar na sala
+              {m.forms.joinRoom}
             </button>
           </div>
         </form>
@@ -387,19 +388,19 @@ export function HomeScreen({
       <Modal
         isOpen={showBotModal}
         onClose={() => setShowBotModal(false)}
-        title="Contra o computador"
+        title={m.home.vsComputer}
         showCloseButton={false}
       >
         <div className="player-form">
           <div className="player-form__field">
             <label htmlFor="solo-name" className="player-form__label">
-              Seu nome
+              {m.forms.yourName}
             </label>
             <input
               id="solo-name"
               type="text"
               className="player-form__input"
-              placeholder="Digite o seu nome"
+              placeholder={m.forms.namePlaceholder}
               value={soloName}
               maxLength={16}
               onChange={(e) => setSoloName(e.target.value)}
@@ -408,7 +409,7 @@ export function HomeScreen({
           </div>
 
           <fieldset className="player-count">
-            <legend className="player-form__label">Quantos adversários?</legend>
+            <legend className="player-form__label">{m.forms.howManyOpponents}</legend>
             <div className="player-count__options">
               {BOT_NAMES.map((_, index) => {
                 const count = index + 1;
@@ -426,7 +427,7 @@ export function HomeScreen({
                       checked={botCount === count}
                       onChange={() => setBotCount(count)}
                     />
-                    {count} {count === 1 ? 'adversário' : 'adversários'}
+                    {m.forms.opponents(count)}
                   </label>
                 );
               })}
@@ -434,7 +435,7 @@ export function HomeScreen({
           </fieldset>
 
           <fieldset className="player-count">
-            <legend className="player-form__label">Dificuldade</legend>
+            <legend className="player-form__label">{m.forms.difficulty}</legend>
             <div className="player-count__options">
               {(Object.keys(BOT_LEVEL_LABELS) as BotLevel[]).map((level) => (
                 <label
@@ -450,7 +451,7 @@ export function HomeScreen({
                     checked={botLevel === level}
                     onChange={() => setBotLevel(level)}
                   />
-                  {BOT_LEVEL_LABELS[level]}
+                  {m.bots.levels[level]}
                 </label>
               ))}
             </div>
@@ -458,7 +459,7 @@ export function HomeScreen({
 
           <div className="modal__actions">
             <button type="button" className="btn" onClick={() => setShowBotModal(false)}>
-              Cancelar
+              {m.common.cancel}
             </button>
             <button
               type="button"
@@ -466,7 +467,7 @@ export function HomeScreen({
               onClick={handleStartSolo}
               disabled={!canStartSolo}
             >
-              Jogar
+              {m.forms.play}
             </button>
           </div>
         </div>
@@ -475,12 +476,12 @@ export function HomeScreen({
       <Modal
         isOpen={showPlayerModal}
         onClose={() => setShowPlayerModal(false)}
-        title="Quem vai jogar?"
+        title={m.forms.whoPlays}
         showCloseButton={false}
       >
         <div className="player-form">
           <fieldset className="player-count">
-            <legend className="player-form__label">Quantos jogadores?</legend>
+            <legend className="player-form__label">{m.forms.howManyPlayers}</legend>
             <div className="player-count__options">
               {countOptions.map((count) => (
                 <label
@@ -496,7 +497,7 @@ export function HomeScreen({
                     checked={playerCount === count}
                     onChange={() => setPlayerCount(count)}
                   />
-                  {count} jogadores
+                  {m.forms.players(count)}
                 </label>
               ))}
             </div>
@@ -505,13 +506,13 @@ export function HomeScreen({
           {Array.from({ length: playerCount }, (_, index) => (
             <div className="player-form__field" key={index}>
               <label htmlFor={`player${index + 1}`} className="player-form__label">
-                Nome do Jogador {index + 1}
+                {m.forms.playerName(index + 1)}
               </label>
               <input
                 id={`player${index + 1}`}
                 type="text"
                 className="player-form__input"
-                placeholder={`Digite o nome do jogador ${index + 1}`}
+                placeholder={m.forms.playerPlaceholder(index + 1)}
                 value={names[index]}
                 maxLength={16}
                 onChange={(e) => handleNameChange(index, e.target.value)}
@@ -522,7 +523,7 @@ export function HomeScreen({
 
           <div className="modal__actions">
             <button type="button" className="btn" onClick={() => setShowPlayerModal(false)}>
-              Cancelar
+              {m.common.cancel}
             </button>
             <button
               type="button"
@@ -530,7 +531,7 @@ export function HomeScreen({
               onClick={handleStartGame}
               disabled={!canStart}
             >
-              Iniciar Jogo
+              {m.forms.start}
             </button>
           </div>
         </div>

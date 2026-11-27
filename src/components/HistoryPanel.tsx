@@ -1,3 +1,5 @@
+import { translateLog } from '../i18n/translate';
+import { useI18n } from '../i18n/useI18n';
 import './HistoryPanel.css';
 
 /**
@@ -12,15 +14,16 @@ function historyEntries(logs: string[]): string[] {
 }
 
 export function HistoryPanel({ logs }: { logs: string[] }) {
+  const { m } = useI18n();
   const entries = historyEntries(logs);
   if (entries.length === 0) {
-    return <p className="history__empty">Nenhuma jogada ainda.</p>;
+    return <p className="history__empty">{m.history.empty}</p>;
   }
   return (
-    <ol className="history" aria-label="Jogadas, da mais recente para a mais antiga">
+    <ol className="history" aria-label={m.history.label}>
       {entries.map((entry, index) => (
         <li key={entries.length - index} className={index === 0 ? 'history__item history__item--last' : 'history__item'}>
-          {entry}
+          {translateLog(entry, m)}
         </li>
       ))}
     </ol>

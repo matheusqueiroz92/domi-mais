@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import { DominoPiece } from './DominoPiece';
 import { PieceMotion } from './PieceMotion';
 import { CpuIcon } from './icons';
@@ -17,6 +18,7 @@ interface OpponentSeatProps {
 
 /** Adversário em volta da mesa: nome, quantidade de peças e os versos (somas). */
 export function OpponentSeat({ player, position, active = false, note, testId }: OpponentSeatProps) {
+  const { m } = useI18n();
   const count = player.hand.length;
   return (
     <div
@@ -26,7 +28,7 @@ export function OpponentSeat({ player, position, active = false, note, testId }:
     >
       <span className="seat__name">
         {player.botLevel && (
-          <span className="seat__bot" role="img" aria-label="Computador">
+          <span className="seat__bot" role="img" aria-label={m.common.computer}>
             <CpuIcon size={13} />
           </span>
         )}
@@ -34,7 +36,7 @@ export function OpponentSeat({ player, position, active = false, note, testId }:
       </span>
       {note && <span className="seat__note">{note}</span>}
       <span className="seat__count">
-        {count} {count === 1 ? 'peça' : 'peças'}
+        {m.common.pieces(count)}
       </span>
       {count > 0 && (
         <div className="seat__tiles">

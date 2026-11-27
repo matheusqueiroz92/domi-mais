@@ -5,7 +5,7 @@ export const DEFAULT_THEME: Theme = 'dark';
 export const THEME_STORAGE_KEY = 'domimais:theme';
 
 /** Cor da barra do navegador em cada tema (igual ao fundo da página). */
-const THEME_COLORS: Record<Theme, string> = { dark: '#12141C', light: '#F4F6FB' };
+const THEME_COLORS: Record<Theme, string> = { dark: '#111724', light: '#F3F7FB' };
 
 /** Lê o tema salvo neste navegador. Sem acesso ao armazenamento, usa o padrão. */
 export function readStoredTheme(): Theme {

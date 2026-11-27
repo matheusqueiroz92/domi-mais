@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import type { CSSProperties } from 'react';
 import type { DominoPiece as DominoPieceType } from '../game/state/game-types';
 import clsx from 'clsx';
@@ -52,7 +53,8 @@ export function DominoPiece({
   orientation = 'horizontal',
   flipped = false,
 }: DominoPieceProps) {
-  const label = isFaceUp ? `Peça ${piece.left}|${piece.right}` : `Peça virada, soma ${piece.sum}`;
+  const { m } = useI18n();
+  const label = isFaceUp ? m.piece.faceUp(piece.left, piece.right) : m.piece.faceDown(piece.sum);
   const horizontal = orientation === 'horizontal';
 
   const className = isFaceUp

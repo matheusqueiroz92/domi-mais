@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useI18n';
 import './TurnTransition.css';
 
 interface TurnTransitionProps {
@@ -14,6 +15,7 @@ interface TurnTransitionProps {
  * "Estou pronto".
  */
 export function TurnTransition({ playerName, onReady }: TurnTransitionProps) {
+  const { m } = useI18n();
   return (
     <div
       className="turn-transition"
@@ -23,13 +25,13 @@ export function TurnTransition({ playerName, onReady }: TurnTransitionProps) {
     >
       <div className="turn-transition__card">
         <h2 id="turn-transition-title" className="turn-transition__title">
-          Passe o dispositivo para {playerName}
+          {m.game.passDevice(playerName)}
         </h2>
         <p className="turn-transition__text">
-          {playerName}, toque no botão quando só você estiver vendo a tela.
+          {m.game.passDeviceText(playerName)}
         </p>
         <button type="button" className="btn btn--primary" onClick={onReady} autoFocus>
-          Estou pronto
+          {m.game.ready}
         </button>
       </div>
     </div>

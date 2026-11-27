@@ -1,14 +1,16 @@
-import { PARTNERS, PARTNERS_TITLE } from '../home/partners';
+import { PARTNERS } from '../home/partners';
+import { useI18n } from '../i18n/useI18n';
 import type { Partner } from '../home/partners';
 import './PartnersFooter.css';
 
 /** Logos dos parceiros, no rodapé da tela inicial. */
 export function PartnersFooter({ partners = PARTNERS }: { partners?: Partner[] }) {
+  const { m } = useI18n();
   if (partners.length === 0) return null;
   return (
     <section className="partners" aria-labelledby="partners-title">
       <h2 id="partners-title" className="partners__title">
-        {PARTNERS_TITLE}
+        {m.home.partners}
       </h2>
       <ul className="partners__list">
         {partners.map((partner) => {

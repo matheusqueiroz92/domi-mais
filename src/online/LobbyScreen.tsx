@@ -2,6 +2,7 @@ import { useTheme } from '../theme/useTheme';
 import { useSound } from '../sound/useSound';
 import { SoundToggle } from '../components/SoundToggle';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { LanguageToggle } from '../components/LanguageToggle';
 import { OnlineLobby } from './OnlineLobby';
 import { ChatPanel } from './ChatPanel';
 import type { OnlineRoom } from './useOnlineRoom';
@@ -20,6 +21,7 @@ export function LobbyScreen({ online }: { online: OnlineRoom }) {
         <div className="home__actions">
           <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <LanguageToggle />
         </div>
       </div>
       <OnlineLobby

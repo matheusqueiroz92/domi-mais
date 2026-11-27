@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.13.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.14.0-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff.svg)
@@ -49,9 +49,10 @@ em [domimais.com.br](https://domimais.com.br).
 
 As regras completas estão em [docs/REGRAS.md](docs/REGRAS.md).
 
-O jogo tem tema escuro e claro e sons de peças: os botões no topo da tela
-alternam o tema e ligam ou desligam o som, e as escolhas ficam salvas no
-navegador.
+O jogo tem tema escuro e claro, sons de peças e quatro idiomas (português,
+inglês, espanhol e chinês simplificado): os botões no topo da tela ligam ou
+desligam o som, alternam o tema e trocam o idioma, e as escolhas ficam salvas
+no navegador. Na primeira visita, o idioma é o do aparelho.
 
 ## 🛠️ Tecnologias
 
@@ -107,6 +108,7 @@ domi-mais/
 │   ├── components/        Componentes visuais e cálculo do layout da mesa
 │   ├── online/            Protocolo do modo online (compartilhado com o servidor)
 │   ├── theme/             Tema escuro/claro
+│   ├── i18n/              Idiomas: textos de cada idioma e tradução do histórico
 │   ├── sound/             Sons do jogo
 │   ├── test/              Configuração dos testes
 │   ├── App.tsx            Tela da partida
@@ -131,7 +133,9 @@ disparam ações. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
   [docs/ONLINE.md](docs/ONLINE.md))
 - [x] Peças maiores no celular, parceiros, contador de partidas e dominó físico
   ("Em breve")
-- [ ] Logos reais dos parceiros e foto do dominó físico
+- [x] Traduções para inglês, espanhol e chinês
+- [ ] Revisão das traduções por falantes nativos (principalmente o chinês)
+- [ ] Links dos parceiros e foto do dominó físico
 - [ ] Retirar o modo "mesmo aparelho" depois do teste com alunos
 
 O modo no mesmo dispositivo será removido quando os modos

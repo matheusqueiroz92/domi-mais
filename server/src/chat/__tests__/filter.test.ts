@@ -104,4 +104,19 @@ describe('o que passa (sem falsos positivos)', () => {
     expect(isClean('')).toBe(true);
     expect(isClean('!!! ???')).toBe(true);
   });
+
+  // 27/11/2026: jogo traduzido para inglês, espanhol e chinês.
+  it.each(['you are a b1tch', 'motherfucker', 'eres un pendejo', 'qué mierda', 'cabrón', 'hijo de puta', '你是傻逼', '他 妈 的'])(
+    'bloqueia em outros idiomas: "%s"',
+    (text) => {
+      expect(isClean(text)).toBe(false);
+    }
+  );
+
+  it.each(['Good game!', 'Nice move', '¡Buena jugada!', 'Tu turno', '打得好！', '轮到你了', 'Dickens', 'Maricá', 'night'])(
+    'frases comuns em outros idiomas passam: "%s"',
+    (text) => {
+      expect(isClean(text)).toBe(true);
+    }
+  );
 });
