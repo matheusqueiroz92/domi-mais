@@ -161,12 +161,6 @@ input {
   color: var(--accent);
 }
 
-.wordmark {
-  font-family: var(--font-head);
-  font-size: 20px;
-  font-weight: 700;
-}
-
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

@@ -299,6 +299,10 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
 
 ### Tela inicial
 
+- Logomarca: `Wordmark` (imagens em `public/logo/`: `logo-dark.webp` para o
+  tema escuro e `logo-light.webp`, com "Domi" escuro, para o claro). Também
+  usada na sala online e no topo da partida.
+
 - Contador de partidas: `src/stats/match-stats.ts` (detalhes em
   `docs/ONLINE.md`).
 - Parceiros: `src/home/partners.ts` (lista com nome, logo em

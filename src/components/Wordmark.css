@@ -1,0 +1,44 @@
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.wordmark__img {
+  display: block;
+  width: auto;
+  height: 36px;
+}
+
+.wordmark__img--light {
+  display: none;
+}
+
+:root[data-theme='light'] .wordmark__img--dark {
+  display: none;
+}
+
+:root[data-theme='light'] .wordmark__img--light {
+  display: block;
+}
+
+/* Na partida, um pouco menor: o topo divide espaço com os botões. */
+.game__header .wordmark__img {
+  height: 30px;
+}
+
+@media (min-width: 900px) {
+  .wordmark__img {
+    height: 44px;
+  }
+
+  .game__header .wordmark__img {
+    height: 36px;
+  }
+}
+
+@media (max-width: 380px) {
+  .wordmark__img {
+    height: 30px;
+  }
+}

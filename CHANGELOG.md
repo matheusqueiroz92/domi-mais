@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.1 — 27/11/2026 — logomarca
+
+- **Logomarca no topo** da tela inicial, da sala online e da partida, no
+  lugar do nome "DomiMais" em texto. A imagem recebida (JPG 2064×512, com
+  fundo azul-escuro) teve o fundo removido, as sobras cortadas e foi
+  reduzida para 486×120 (WebP de ~21 KB). Há duas versões: "Domi" branco
+  no tema escuro e "Domi" escuro no tema claro, trocadas pelo CSS
+  (`src/components/Wordmark.tsx`, arquivos em `public/logo/`).
+- No celular, durante a partida, a logo continua escondida (como o nome
+  antes), para caberem os botões.
+
 ## 0.12.0 — 25/11/2026 — mesa maior no celular e histórico de jogadas
 
 Menos texto em volta da mesa: o que já se vê nas próprias peças saiu, e a

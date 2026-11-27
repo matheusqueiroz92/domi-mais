@@ -12,6 +12,7 @@ import type { BotLevel } from '../game/state/game-types';
 import type { Theme } from '../theme/theme';
 import { formatMatchCount } from '../stats/match-stats';
 import './HomeScreen.css';
+import { Wordmark } from './Wordmark';
 
 interface HomeScreenProps {
   /**
@@ -119,7 +120,7 @@ export function HomeScreen({
   return (
     <main className="home">
       <div className="home__topbar">
-        <span className="wordmark">DomiMais</span>
+        <Wordmark />
         <div className="home__actions">
           <SoundToggle soundOn={soundOn} onToggle={onToggleSound} />
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />

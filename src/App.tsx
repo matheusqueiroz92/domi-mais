@@ -55,6 +55,7 @@ import { ChatIcon } from "./components/icons";
 import type { SeatView } from "./online/protocol";
 import { ONLINE_ENABLED } from "./online/config";
 import "./App.css";
+import { Wordmark } from "./components/Wordmark";
 
 /**
  * Índice de quem está olhando para a tela. Com uma única pessoa na partida
@@ -529,7 +530,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
     >
       {yourTurn && <TurnAlert key={turnKey} hint={turnHint(state)} />}
       <header className="game__header">
-        <span className="wordmark">DomiMais</span>
+        <Wordmark />
         <div className="game__actions">
           {isOnline && (
             <button

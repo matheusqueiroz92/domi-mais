@@ -5,6 +5,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { OnlineLobby } from './OnlineLobby';
 import { ChatPanel } from './ChatPanel';
 import type { OnlineRoom } from './useOnlineRoom';
+import { Wordmark } from '../components/Wordmark';
 
 /** Tela da sala de espera do modo online. */
 export function LobbyScreen({ online }: { online: OnlineRoom }) {
@@ -15,7 +16,7 @@ export function LobbyScreen({ online }: { online: OnlineRoom }) {
   return (
     <main className="home">
       <div className="home__topbar">
-        <span className="wordmark">DomiMais</span>
+        <Wordmark />
         <div className="home__actions">
           <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
