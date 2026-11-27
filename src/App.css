@@ -55,14 +55,6 @@
   display: contents;
 }
 
-.game__status {
-  order: 1;
-}
-
-.game__last-action {
-  order: 2;
-}
-
 .game__skip {
   order: 3;
 }
@@ -88,25 +80,6 @@
   display: none;
 }
 
-/* Alturas mínimas de duas linhas: a tela não pula quando o texto muda. */
-.game__status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.7em;
-  text-align: center;
-  font-weight: 500;
-}
-
-.game__last-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.7em;
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-}
 
 /* Resultado final */
 .final {
@@ -189,6 +162,20 @@
   .game-table {
     padding: 12px 6px;
   }
+
+  /* As pontas se veem na própria mesa: a legenda sai e a mesa cresce. */
+  .game-table__label {
+    display: none;
+  }
+
+  /* Durante a partida o nome do jogo não é necessário: sobra lugar para os botões. */
+  .game__header .wordmark {
+    display: none;
+  }
+
+  .game__header {
+    justify-content: flex-end;
+  }
 }
 
 /* Celular com altura suficiente: a partida cabe inteira na tela, sem rolar.
@@ -224,19 +211,6 @@
     gap: 8px;
   }
 
-  /* Aviso e última jogada numa linha cada. */
-  .game--fit .game__status {
-    min-height: 1.5em;
-  }
-
-  .game--fit .game__last-action {
-    display: block;
-    min-height: 1.4em;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
   .game--fit .pile {
     gap: 6px;
     padding: 8px 10px 10px;
@@ -251,12 +225,6 @@
     padding-top: 12px;
   }
 
-  /* O lugar do botão fica reservado: a mesa não muda de tamanho quando ele aparece. */
-  .game--fit .game__keep,
-  .game--fit .game__keep:empty {
-    display: block;
-    min-height: 48px;
-  }
 }
 
 /* Tablets */
@@ -313,11 +281,6 @@
     justify-content: flex-end;
     gap: 8px;
     min-width: 0;
-  }
-
-  .game__status,
-  .game__last-action {
-    min-height: 1.5em;
   }
 
   /* Com guia (tutorial ou dicas): uma coluna ao lado da mesa. A mesa fica mais
@@ -385,7 +348,7 @@
   animation: your-turn-glow 1.8s ease-in-out infinite;
 }
 
-.game--your-turn .game__status {
+.game--your-turn .pile__message--active {
   color: var(--accent);
   font-weight: 700;
 }

@@ -70,7 +70,7 @@ describe('aviso de "sua vez" (contra o computador)', () => {
     startSolo();
     untilAnaTurn();
     // Ana compra e fica com a peça: a vez passa para o computador.
-    if (screen.getByRole('region', { name: 'Monte' })) {
+    if (screen.getByRole('region', { name: /^Monte/ })) {
       fireEvent.click(screen.getAllByRole('button', { name: FACE_DOWN })[0]);
     }
     const keep = screen.queryByRole('button', { name: /^(Ficar com a peça|Passar a vez)$/ });

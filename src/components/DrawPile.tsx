@@ -21,6 +21,14 @@ interface DrawPileProps {
   columns?: number;
   /** Fileira que ficou toda vazia some, para sobrar espaço para a mesa (celular). */
   collapseEmptyRows?: boolean;
+  /**
+   * O que o jogador da vez deve fazer (ou o que está acontecendo). Fica no
+   * cabeçalho do monte, no lugar do título (pedido de 25/11/2026: a quantidade
+   * de peças já se vê no próprio monte). Sem mensagem, mostra "Monte".
+   */
+  message?: string | null;
+  /** É a vez de quem olha a tela: o aviso fica em destaque. */
+  messageActive?: boolean;
 }
 
 const HINTS: Record<PileMode, string> = {
@@ -43,6 +51,8 @@ export function DrawPile({
   onlyPieceId = null,
   columns = 14,
   collapseEmptyRows = false,
+  message = null,
+  messageActive = false,
 }: DrawPileProps) {
   const byId = new Map(pieces.map((piece) => [piece.id, piece]));
   const interactive = mode !== 'idle' && !hideTiles;
@@ -52,10 +62,21 @@ export function DrawPile({
     collapseEmptyRows && !hideTiles ? rows.filter((row) => row.some((id) => byId.has(id))) : rows;
 
   return (
-    <section className={`pile ${interactive ? 'pile--active' : ''}`} aria-label="Monte">
+    <section
+      className={`pile ${interactive ? 'pile--active' : ''}`}
+      aria-label={`Monte, ${pieces.length} ${pieces.length === 1 ? 'peça' : 'peças'}`}
+    >
       <div className="pile__header">
-        <h2 className="pile__title">Monte · {pieces.length} peças</h2>
-        <span className="pile__hint">{HINTS[mode]}</span>
+        {message ? (
+          <p className={`pile__message ${messageActive ? 'pile__message--active' : ''}`} role="status">
+            {message}
+          </p>
+        ) : (
+          <>
+            <h2 className="pile__title">Monte</h2>
+            <span className="pile__hint">{HINTS[mode]}</span>
+          </>
+        )}
       </div>
       <div
         className={`pile__grid ${columns < 14 ? 'pile__grid--compact' : ''}`}

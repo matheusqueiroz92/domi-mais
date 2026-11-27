@@ -33,7 +33,8 @@ import { TurnAlert } from "./components/TurnAlert";
 import { PwaNotice } from "./components/PwaNotice";
 import { usePwa } from "./pwa/usePwa";
 import { loadSavedGame } from "./game/state/saved-game";
-import { ExitIcon, HelpIcon } from "./components/icons";
+import { ExitIcon, HelpIcon, HistoryIcon } from "./components/icons";
+import { HistoryPanel } from "./components/HistoryPanel";
 import { createScatter, seatOpponents } from "./components/table-layout";
 import type { ScatterPoint } from "./components/table-layout";
 import { useSound } from "./sound/useSound";
@@ -64,21 +65,6 @@ function getViewerIndex(state: GameState): number {
     .map((player, index) => (player.botLevel === null ? index : -1))
     .filter((index) => index !== -1);
   return humans.length === 1 ? humans[0] : state.currentPlayerIndex;
-}
-
-/**
- * Ação mais recente de outro jogador, para a pessoa acompanhar o que o
- * computador fez. O registro é neutro: nunca diz se a peça encaixava.
- */
-function getLastOpponentAction(state: GameState, viewerIndex: number): string | null {
-  const ownPrefix = `${state.players[viewerIndex].name} `;
-  for (let i = state.logs.length - 1; i >= 0; i--) {
-    const log = state.logs[i];
-    if (log.startsWith("Vez de ") || log.startsWith("Jogo iniciado")) continue;
-    if (log.startsWith(ownPrefix)) continue;
-    return log;
-  }
-  return null;
 }
 
 /** Mensagem que orienta o jogador da vez sobre o que fazer agora. */
@@ -190,6 +176,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   const [savedGameVersion, setSavedGameVersion] = useState(0);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [resultDismissed, setResultDismissed] = useState(false);
   const [hintsOn, toggleHints] = usePersistentFlag(HINTS_STORAGE_KEY, false);
   // Vindo do fim do tutorial: a tela inicial já abre na partida contra o computador.
@@ -222,12 +209,6 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   const statusMessage = isShuffling
     ? "Embaralhando as peças…"
     : getStatusMessage(state, viewerIndex);
-  // Contra o computador e no online, a última ação dos outros aparece embaixo.
-  const showLastAction = hasBots || isOnline;
-  const lastOpponentAction =
-    showLastAction && isPlaying && !isShuffling
-      ? (onlineView?.notice ?? getLastOpponentAction(state, viewerIndex))
-      : null;
   const canKeep = isViewerTurn && canKeepPiece(state);
   const lastPlayed = state.lastPlayed;
   // A peça abre ao chegar à mesa quando vem virada: do monte (peça inicial)
@@ -285,9 +266,28 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   // Partida guiada: a adversária segue o roteiro e a pessoa só faz a ação pedida.
   const tutorial = useTutorial(dispatch, { onBotAction: handleBotAction });
   const inTutorial = tutorial.active;
+  // O aviso fica no cabeçalho do monte. No online, um aviso do servidor
+  // (tempo esgotado, alguém caiu ou voltou) vem antes. O que os outros
+  // jogaram fica no histórico (botão do relógio).
+  const pileMessage = inTutorial
+    ? null
+    : [isShuffling ? null : onlineView?.notice, statusMessage].filter(Boolean).join(" ") || null;
   const expected = tutorial.expected;
   /** Ação da pessoa: no tutorial passa pelo roteiro; fora dele vai direto ao jogo. */
   const act = (action: GameAction) => (inTutorial ? tutorial.perform(action) : dispatch(action));
+  // Encerrar o turno sem jogar. Para o motor é sempre a mesma ação
+  // (KEEP_PIECE); o texto muda só na tela do próprio jogador: "Passar a vez"
+  // quando nada encaixa, "Ficar com a peça" quando ele poderia jogar.
+  const keepButton =
+    canKeep && (!inTutorial || expected?.type === "KEEP_PIECE") ? (
+      <button
+        type="button"
+        className={`btn ${isPhone ? "btn--small" : "btn--block"} ${inTutorial ? "btn--target" : ""}`}
+        onClick={() => act({ type: "KEEP_PIECE" })}
+      >
+        {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
+      </button>
+    ) : null;
 
   // No celular a tela rola: a cada passo do tutorial, o que deve ser tocado
   // (peça do monte ou botão) é trazido para a área visível.
@@ -301,7 +301,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
   // O computador joga sozinho na vez dele; espera o embaralhar e as janelas abertas.
   useBotTurns(state, dispatch, {
     // No online quem joga pelo computador é o servidor.
-    paused: showHomeScreen || isShuffling || showRules || showExitModal || inTutorial || isOnline,
+    paused: showHomeScreen || isShuffling || showRules || showHistory || showExitModal || inTutorial || isOnline,
     onAction: handleBotAction,
   });
   const tutorialAllowsSide = (side: "left" | "right") =>
@@ -546,6 +546,17 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
           {!inTutorial && <HintToggle hintsOn={hintsOn} onToggle={toggleHints} />}
           <SoundToggle soundOn={soundOn} onToggle={toggleSound} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          {!inTutorial && (
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Histórico de jogadas"
+              title="Histórico de jogadas"
+              onClick={() => setShowHistory(true)}
+            >
+              <HistoryIcon />
+            </button>
+          )}
           <button
             type="button"
             className="icon-btn"
@@ -645,17 +656,12 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
               onSelectPiece={handlePilePiece}
               columns={isPhone ? 7 : 14}
               collapseEmptyRows={isPhone}
+              message={pileMessage}
+              messageActive={isViewerTurn && !isShuffling}
             />
           </div>
 
           <div className="game__me-col">
-            {/* Orientação para o jogador da vez */}
-            {!inTutorial && statusMessage && (
-              <p className="game__status" role="status">
-                {statusMessage}
-              </p>
-            )}
-
             {/* Online: 60 segundos por jogada. */}
             {onlineView?.turnDeadline && !isShuffling && (
               <TurnTimer
@@ -664,13 +670,6 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
                 label={isViewerTurn ? "Seu tempo" : `Tempo de ${currentPlayer.name}`}
                 onWarning={isViewerTurn ? () => play("warning") : undefined}
               />
-            )}
-
-            {/* Contra o computador e no online: o espaço fica reservado para a tela não pular. */}
-            {showLastAction && !inTutorial && (
-              <p className="game__last-action">
-                {lastOpponentAction && `Última jogada: ${lastOpponentAction}`}
-              </p>
             )}
 
             {showHands && !isShuffling && (
@@ -686,6 +685,7 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
                 }
                 onSelectPiece={(pieceId) => act({ type: "SELECT_PIECE", pieceId })}
                 compact={isPhone}
+                action={isPhone ? keepButton : null}
               />
             )}
 
@@ -693,17 +693,8 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
                 (KEEP_PIECE); o texto muda só na tela do próprio jogador: "Passar a
                 vez" quando nada encaixa, "Ficar com a peça" quando ele poderia jogar.
                 O espaço do botão fica reservado em telas grandes. */}
-            <div className="game__keep">
-              {canKeep && (!inTutorial || expected?.type === "KEEP_PIECE") && (
-                <button
-                  type="button"
-                  className={`btn btn--block ${inTutorial ? "btn--target" : ""}`}
-                  onClick={() => act({ type: "KEEP_PIECE" })}
-                >
-                  {hasPlayablePiece ? "Ficar com a peça" : "Passar a vez"}
-                </button>
-              )}
-            </div>
+            {/* No celular o botão fica no cabeçalho da mão (sem espaço reservado). */}
+            {!isPhone && <div className="game__keep">{keepButton}</div>}
           </div>
         </div>
       )}
@@ -768,6 +759,9 @@ function GameContent({ online, invite = null, onCreateRoom, onJoinRoom }: GameCo
         </Modal>
       )}
 
+      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="Histórico de jogadas">
+        <HistoryPanel logs={state.logs} />
+      </Modal>
       <Modal isOpen={showRules} onClose={() => setShowRules(false)} title="Como jogar">
         <RulesContent />
       </Modal>

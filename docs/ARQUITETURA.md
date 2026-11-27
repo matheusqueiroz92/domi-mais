@@ -283,6 +283,11 @@ Para criar ou ajustar um tema, altere só os tokens em `src/index.css`.
   partida recebe `game--fit`: ocupa a altura exata da tela, a mesa fica com o
   que sobra (`fitHeight`) e o lugar do botão de encerrar o turno fica
   reservado.
+- Desde a 0.12.0, no celular: o aviso da vez fica no cabeçalho do monte
+  (`DrawPile.message`, em todas as telas), o botão de encerrar o turno fica
+  no cabeçalho da mão (`PlayerHand.action`), a legenda das pontas e o nome do
+  jogo no topo somem. O histórico de jogadas (`HistoryPanel`, a partir de
+  `state.logs`, sem as linhas "Vez de") abre pelo botão do relógio.
 - **Tablet:** coluna única; a página rola se precisar e a mesa cresce para
   baixo.
 - **Telas grandes** (a partir de 1024 × 640): a partida ocupa a janela

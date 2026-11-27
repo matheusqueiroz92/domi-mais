@@ -9,7 +9,11 @@
  * - `url`: site ou Instagram da empresa; abre em outra aba. Sem `url`, a logo
  *   aparece sem link.
  *
- * TODO(Matheus): trocar os 5 lugares reservados pelas logos e links reais.
+ * As logos vieram como SVG com imagem PNG embutida (até 290 KB cada); foram
+ * convertidas para PNG (até 480 px de largura, de 13 a 27 KB), com o fundo branco e
+ * sem a margem branca em volta, para a logo ocupar bem o cartão.
+ *
+ * TODO(Matheus): preencher o `url` de cada empresa.
  */
 export interface Partner {
   name: string;
@@ -20,9 +24,9 @@ export interface Partner {
 export const PARTNERS_TITLE = 'Parceiros';
 
 export const PARTNERS: Partner[] = [
-  { name: 'Parceiro 1', logo: '/parceiros/parceiro-1.svg' },
-  { name: 'Parceiro 2', logo: '/parceiros/parceiro-2.svg' },
-  { name: 'Parceiro 3', logo: '/parceiros/parceiro-3.svg' },
-  { name: 'Parceiro 4', logo: '/parceiros/parceiro-4.svg' },
-  { name: 'Parceiro 5', logo: '/parceiros/parceiro-5.svg' },
+  { name: 'AZ News', logo: '/parceiros/az-news.png' },
+  { name: 'Mandacaru Bistrô & Gastrobar', logo: '/parceiros/mandacaru.png' },
+  { name: 'Supera Estimulação Cognitiva', logo: '/parceiros/supera.png' },
+  { name: "Domino's Pizza", logo: '/parceiros/dominos.png' },
+  { name: 'Sua marca aqui', logo: '/parceiros/sua-marca-aqui.png' },
 ];

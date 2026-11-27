@@ -31,3 +31,13 @@
   font-size: 13px;
   color: var(--muted);
 }
+
+/* Celular: cabeçalho com altura fixa (o botão de encerrar o turno aparece e some sem mexer na tela). */
+.hand--compact .hand__header {
+  min-height: 36px;
+  align-items: center;
+}
+
+.hand__label {
+  color: var(--muted);
+}

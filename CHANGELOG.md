@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.12.0 — 25/11/2026 — mesa maior no celular e histórico de jogadas
+
+Menos texto em volta da mesa: o que já se vê nas próprias peças saiu, e a
+mesa ganhou o espaço (num celular de 390×844, a área da mesa passou de 150
+para 250 px de altura no começo da partida).
+
+- **Histórico de jogadas:** botão do relógio no topo da partida abre a lista
+  das jogadas (a mais recente primeiro), com quem comprou e a soma do verso,
+  quem jogou e onde, e quem ficou com a peça, sem nunca dizer se encaixava.
+  Substitui a linha "Última jogada" embaixo da mesa. Contra o computador, o
+  computador espera enquanto o histórico está aberto.
+- **O aviso da vez fica no cabeçalho do monte** ("Ana, compre uma peça do
+  monte"), no lugar de "Monte · 28 peças": a quantidade se vê no próprio
+  monte. Na sua vez, o aviso fica em destaque. No online, avisos do servidor
+  (tempo esgotado, alguém caiu ou voltou) aparecem no mesmo lugar.
+- **Celular:**
+  - "Ficar com a peça"/"Passar a vez" fica no cabeçalho da mão, no lugar de
+    "Sua mão · N peças"; acabou o espaço reservado embaixo da mão.
+  - Sai a legenda "Pontas da mesa: X e Y" (as pontas se veem na mesa).
+  - Sai o nome "DomiMais" do topo durante a partida, para caberem os botões.
+- Telas grandes: mesmas mudanças de aviso e histórico; mão, botão e legenda
+  continuam como antes.
+- **Logos dos parceiros** no rodapé da tela inicial: AZ News, Mandacaru,
+  Supera, Domino's Pizza e "Sua marca aqui" (por último). Os SVGs recebidos
+  traziam uma imagem PNG embutida (até 290 KB cada); viraram PNGs de 13 a
+  27 KB, sem a margem branca em volta, e os cartões passaram a ter fundo
+  branco. Os links das empresas ainda não foram preenchidos.
+
 ## 0.11.0 — 25/11/2026 — celular, parceiros e contador
 
 > **Deploy:** o `deploy/docker-compose.yml` mudou (rota `/api/` e volume do

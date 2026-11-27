@@ -33,6 +33,22 @@
   text-align: right;
 }
 
+.pile__message {
+  flex: 1;
+  min-height: 2.6em;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+/* Na vez de quem olha a tela, o aviso fica em destaque. */
+.pile__message--active {
+  color: var(--text);
+}
+
 .pile--active .pile__hint {
   color: var(--text);
   font-weight: 600;

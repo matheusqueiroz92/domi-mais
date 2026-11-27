@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { DominoPiece } from './DominoPiece';
 import { PieceMotion } from './PieceMotion';
 import type { Player } from '../game/state/game-types';
@@ -13,6 +14,11 @@ interface PlayerHandProps {
   onSelectPiece: (pieceId: string) => void;
   /** Celular: peças um pouco menores, para sobrar espaço para a mesa e o monte. */
   compact?: boolean;
+  /**
+   * Celular: botão de encerrar o turno ("Ficar com a peça"/"Passar a vez") no
+   * cabeçalho da mão, no lugar do título com a contagem de peças (25/11/2026).
+   */
+  action?: ReactNode;
 }
 
 /** Mão do jogador da vez, aberta, na parte de baixo da tela. */
@@ -23,6 +29,7 @@ export function PlayerHand({
   canSelect,
   onSelectPiece,
   compact = false,
+  action = null,
 }: PlayerHandProps) {
   const count = player.hand.length;
   const drawn = player.hand.find((piece) => piece.id === drawnPieceId);
@@ -32,17 +39,29 @@ export function PlayerHand({
     : count > 10 ? 30 : count > 6 ? 36 : 44;
 
   return (
-    <section className="hand" aria-label={`Mão de ${player.name}`} data-testid="hand">
-      <div className="hand__header">
-        <span>
-          Sua mão · {count} {count === 1 ? 'peça' : 'peças'}
-        </span>
-        {drawn && (
-          <span className="hand__drawn">
-            {drawn.left}|{drawn.right} comprada agora
+    <section
+      className={`hand ${compact ? 'hand--compact' : ''}`}
+      aria-label={`Mão de ${player.name}`}
+      data-testid="hand"
+    >
+      {compact ? (
+        // Celular: a contagem e a peça comprada já se veem nas próprias peças.
+        <div className="hand__header">
+          <span className="hand__label">Sua mão</span>
+          {action}
+        </div>
+      ) : (
+        <div className="hand__header">
+          <span>
+            Sua mão · {count} {count === 1 ? 'peça' : 'peças'}
           </span>
-        )}
-      </div>
+          {drawn && (
+            <span className="hand__drawn">
+              {drawn.left}|{drawn.right} comprada agora
+            </span>
+          )}
+        </div>
+      )}
       {count > 0 ? (
         <div className="hand__pieces">
           {player.hand.map((piece) => (

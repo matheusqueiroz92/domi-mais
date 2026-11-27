@@ -1,0 +1,32 @@
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: min(60vh, 480px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.history__item {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.history__item:nth-child(odd) {
+  background: var(--panel);
+}
+
+/* A mais recente em destaque. */
+.history__item--last {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.history__empty {
+  color: var(--muted);
+}

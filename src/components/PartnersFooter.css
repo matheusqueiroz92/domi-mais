@@ -38,10 +38,10 @@
   align-items: center;
   justify-content: center;
   height: 48px;
-  padding: 6px;
+  padding: 4px;
   border-radius: 10px;
-  /* Fundo claro nos dois temas: as logos costumam ser feitas para fundo branco. */
-  background: #f6f5f1;
+  /* Fundo branco nos dois temas: as logos dos parceiros vêm com fundo branco. */
+  background: #ffffff;
   border: 1px solid var(--line);
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
@@ -66,6 +66,6 @@ a.partners__link:focus-visible {
 
   .partners__link {
     height: 64px;
-    padding: 8px 12px;
+    padding: 6px 10px;
   }
 }

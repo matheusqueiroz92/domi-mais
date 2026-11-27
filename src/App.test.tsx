@@ -195,7 +195,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       startMatch(['Ana', 'Beto'], false);
 
       expect(screen.getByRole('status')).toHaveTextContent('Embaralhando as peças…');
-      const pile = screen.getByRole('region', { name: 'Monte' });
+      const pile = screen.getByRole('region', { name: /^Monte/ });
       expect(pile.querySelectorAll('.pile__slot')).toHaveLength(28);
       expect(within(pile).queryAllByLabelText(FACE_DOWN)).toHaveLength(0);
       expect(pileButtons()).toHaveLength(0);
@@ -244,7 +244,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       startMatch();
       expect(screen.getByRole('status')).toHaveTextContent(/escolha a peça inicial do monte/);
       expect(pileButtons()).toHaveLength(28);
-      expect(screen.getByText('Monte · 28 peças')).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Monte, 28 peças' })).toBeInTheDocument();
     });
 
     it('quem escolhe a peça inicial não compra em seguida: a vez passa ao outro jogador', () => {
@@ -275,7 +275,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(pileButtons()).toHaveLength(0);
       expect(handButtons()).toHaveLength(1);
       expect(handButtons()[0]).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByText('Monte · 26 peças')).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Monte, 26 peças' })).toBeInTheDocument();
       expect(screen.getByText(/comprada agora/)).toBeInTheDocument();
     });
 
@@ -284,7 +284,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       chooseInitialPiece();
       fireEvent.click(pileButtons()[0]);
 
-      const pile = screen.getByRole('region', { name: 'Monte' });
+      const pile = screen.getByRole('region', { name: /^Monte/ });
       expect(within(pile).getAllByRole('img', { name: FACE_DOWN })).toHaveLength(26);
       expect(within(pile).queryAllByRole('button', { name: FACE_DOWN })).toHaveLength(0);
       expect(pile.querySelectorAll('.pile__slot')).toHaveLength(28);
@@ -446,7 +446,7 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(result).toHaveTextContent(
         new RegExp(names.map((name) => `${name}: \\d+`).join(' · '))
       );
-      expect(screen.queryByRole('region', { name: 'Monte' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: /^Monte/ })).not.toBeInTheDocument();
 
       // Depois do fim, todas as mãos ficam abertas no painel de resultado.
       fireEvent.click(within(result).getByRole('button', { name: 'Ver a mesa' }));
@@ -550,20 +550,13 @@ describe('App (jogo no mesmo dispositivo)', () => {
       expect(checked).toBeGreaterThanOrEqual(6);
     });
 
-    it('mostra a última jogada do computador, sem dizer se a peça encaixava', () => {
+    it('o histórico mostra as jogadas do computador, sem dizer se a peça encaixava', () => {
       startSolo(1, 'Fácil');
+      // Embaixo da mesa não há mais a linha "Última jogada".
+      expect(screen.queryByText(/^Última jogada:/)).toBeNull();
 
-      const seen = new Set<string>();
-      for (let step = 0; step < 80 && seen.size < 2; step++) {
+      for (let step = 0; step < 40; step++) {
         if (screen.queryByRole('dialog', { name: /Fim de jogo|Empate/ })) break;
-        const last = screen.queryByText(/^Última jogada:/);
-        if (last) {
-          const text = last.textContent ?? '';
-          expect(text).toMatch(/Bia /);
-          expect(text).not.toMatch(/blef|encaix/i);
-          if (/ficou com a peça/.test(text)) seen.add('ficou');
-          if (/jogou/.test(text)) seen.add('jogou');
-        }
         if (isHumanTurn()) {
           if (pileButtons().length > 0) fireEvent.click(pileButtons()[0]);
           const keep = screen.queryByRole('button', { name: KEEP });
@@ -573,7 +566,22 @@ describe('App (jogo no mesmo dispositivo)', () => {
         }
       }
 
-      expect(seen).toEqual(new Set(['ficou', 'jogou']));
+      fireEvent.click(screen.getByRole('button', { name: 'Histórico de jogadas' }));
+      const dialog = screen.getByRole('dialog', { name: 'Histórico de jogadas' });
+      const items = within(dialog).getAllByRole('listitem').map((item) => item.textContent ?? '');
+      expect(items.length).toBeGreaterThan(4);
+      // O começo da partida fica no fim da lista (a mais recente vem primeiro).
+      expect(items[items.length - 1]).toMatch(/^Jogo iniciado/);
+      expect(items.some((text) => /^Bia comprou uma peça do monte \(soma: \d+\)$/.test(text))).toBe(true);
+      expect(items.some((text) => /^Bia (jogou|ficou com a peça)/.test(text))).toBe(true);
+      expect(items.every((text) => !/blef|encaix|^Vez de /i.test(text))).toBe(true);
+    });
+
+    it('o aviso da vez fica no cabeçalho do monte, sem contar as peças', () => {
+      startSolo(1, 'Fácil');
+      const pile = screen.getByRole('region', { name: /^Monte/ });
+      expect(within(pile).getByRole('status')).toHaveTextContent(/compre uma peça do monte|escolha a peça inicial|Bia está/);
+      expect(within(pile).queryByText(/peças$/)).toBeNull();
     });
 
     it('o computador espera enquanto as regras estão abertas', () => {

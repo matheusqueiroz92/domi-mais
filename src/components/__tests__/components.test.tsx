@@ -96,7 +96,7 @@ describe('DrawPile (monte)', () => {
   it('tem sempre 28 lugares, em duas fileiras de 14', () => {
     const { container } = render(<DrawPile order={order} pieces={all} />);
     expect(container.querySelectorAll('.pile__slot')).toHaveLength(28);
-    expect(screen.getByText('Monte · 28 peças')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Monte, 28 peças' })).toBeInTheDocument();
     expect(screen.getAllByRole('img', { name: /^Peça virada, soma \d+$/ })).toHaveLength(28);
   });
 
@@ -108,7 +108,7 @@ describe('DrawPile (monte)', () => {
     expect(slots[3].children).toHaveLength(0);
     expect(slots[2].children).toHaveLength(1);
     expect(slots[4].children).toHaveLength(1);
-    expect(screen.getByText('Monte · 27 peças')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Monte, 27 peças' })).toBeInTheDocument();
   });
 
   it('parado, as peças não são clicáveis', () => {
