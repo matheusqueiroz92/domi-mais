@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.0 — 27/11/2026 — cores da logomarca
+
+As cores do jogo passam a seguir a logomarca (tokens em `src/index.css`):
+
+- **Ciano do "Mais" (#03cef2) no lugar do amarelo** como destaque principal:
+  botão "Mesmo aparelho", aviso "Sua vez!", borda da sua mão e do monte na
+  sua vez, links e foco. No tema claro, o destaque é o azul do dominó da
+  logo (#0279b9), que tem contraste com texto branco.
+- **Amarelo do "+" (#fddf40) só em pequenos detalhes:** a peça selecionada,
+  o número do contador de partidas e o cartão "Dominó físico".
+- **Fundo azul-marinho igual ao da logo** (#111724), painéis e bordas no
+  mesmo tom, e cor do app (barra do navegador e tela de abertura do PWA).
+- **Mesa azul-petróleo** no lugar da verde, e **versos das peças em azul**,
+  como o dominó da logo.
+- Ícone da aba com o fundo e o "+" nas novas cores.
+
 ## 0.12.1 — 27/11/2026 — logomarca
 
 - **Logomarca no topo** da tela inicial, da sala online e da partida, no

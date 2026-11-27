@@ -2,56 +2,65 @@
  * Tokens de tema do DomiMais.
  * O tema é escolhido pelo atributo data-theme em <html> (ver src/theme).
  * Escuro é o padrão; claro é a alternativa.
+ *
+ * Cores tiradas da logomarca (27/11/2026): fundo azul-marinho (#111724),
+ * ciano do "Mais" como destaque principal (#03cef2), azul do dominó (#0276b6)
+ * nos versos das peças e amarelo do "+" (#fddf40) só em pequenos detalhes:
+ * peça selecionada, número do contador e o cartão do dominó físico.
  */
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #12141c;
-  --panel: #1c2030;
-  --line: #2e3448;
-  --line-strong: #4a5273;
-  --text: #f2f3f7;
-  --muted: #a9b0c3;
-  --table: #0f4a3e;
-  --table-line: #2c6e5f;
-  --table-text: #d5e9e3;
+  --bg: #111724;
+  --panel: #19213a;
+  --line: #28334f;
+  --line-strong: #41507a;
+  --text: #f2f5fa;
+  --muted: #a6b1ca;
+  --table: #0b3b54;
+  --table-line: #1d6283;
+  --table-text: #cfeaf5;
   --piece: #fafaf7;
   --piece-line: transparent;
   --pip: #14161d;
-  --back: #2b3147;
-  --back-text: #f2f3f7;
-  --back-line: #4a5273;
-  --accent: #ffb627;
-  --on-accent: #14161d;
-  --select: #ffb627;
-  --overlay: rgba(5, 6, 10, 0.74);
-  --cover: #0b0d13;
+  --back: #1d3d66;
+  --back-text: #eef8ff;
+  --back-line: #33639a;
+  --accent: #03cef2;
+  --on-accent: #04222d;
+  --select: #fddf40;
+  --highlight: #fddf40;
+  --highlight-text: #fddf40;
+  --overlay: rgba(6, 10, 18, 0.74);
+  --cover: #0b101a;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f4f6fb;
+  --bg: #f3f7fb;
   --panel: #ffffff;
-  --line: #c9d6f2;
-  --line-strong: #8c9bc0;
-  --text: #1c2333;
-  --muted: #55607a;
-  --table: #e4ecfa;
-  --table-line: #c9d6f2;
-  --table-text: #3d4966;
+  --line: #cfe0ee;
+  --line-strong: #8fa8c2;
+  --text: #142033;
+  --muted: #4f5f78;
+  --table: #dff1f8;
+  --table-line: #b5d9ea;
+  --table-text: #2c4a5e;
   --piece: #ffffff;
-  --piece-line: #1c2333;
-  --pip: #1c2333;
-  --back: #1c2333;
+  --piece-line: #142033;
+  --pip: #142033;
+  --back: #0276b6;
   --back-text: #ffffff;
-  --back-line: #1c2333;
-  --accent: #2452d6;
+  --back-line: #025f93;
+  --accent: #0279b9;
   --on-accent: #ffffff;
-  --select: #c2410c;
-  --overlay: rgba(28, 35, 51, 0.6);
-  --cover: #1c2333;
-  --shadow: 0 1px 2px rgba(28, 35, 51, 0.25);
+  --select: #e6a700;
+  --highlight: #f2c200;
+  --highlight-text: #9a6a00;
+  --overlay: rgba(20, 32, 51, 0.6);
+  --cover: #142033;
+  --shadow: 0 1px 2px rgba(20, 32, 51, 0.25);
 }
 
 :root {

@@ -332,7 +332,7 @@
 .home__counter strong {
   font-family: var(--font-head);
   font-size: 16px;
-  color: var(--accent);
+  color: var(--highlight-text);
 }
 
 /* Dominó físico: cartão na tela inicial e pop-up "Em breve". */
@@ -344,7 +344,7 @@
   min-height: 64px;
   padding: 10px 16px;
   border-radius: 18px;
-  border: 1px dashed var(--accent);
+  border: 1px dashed var(--highlight);
   background: transparent;
   color: var(--text);
   font-family: inherit;
@@ -359,7 +359,7 @@
 
 .shop svg {
   flex: none;
-  color: var(--accent);
+  color: var(--highlight-text);
 }
 
 .shop .mode__soon,
